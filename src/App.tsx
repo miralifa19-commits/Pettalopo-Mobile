@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { SplashScreen as NativeSplashScreen } from '@capacitor/splash-screen';
 import { SplashScreen } from './components/SplashScreen';
 import { CleanTopAppBar } from './components/CleanTopAppBar';
 import { AndroidSidebar } from './components/AndroidSidebar';
@@ -149,13 +148,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
-        <SplashScreen
-          onReady={() => {
-            // Release Android's native layer only after the branded React splash has painted.
-            NativeSplashScreen.hide({ fadeOutDuration: 0 }).catch(() => {});
-          }}
-          onFinish={() => setShowPettalopoSplash(false)}
-        />
+        <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
       )}
       
       {/* Main Native App Container */}

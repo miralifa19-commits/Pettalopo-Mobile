@@ -109,9 +109,20 @@ jobs:
           package = json.loads(Path("package.json").read_text())
           gradle = Path("android/app/build.gradle")
           content = gradle.read_text()
-          content = re.sub(r'versionCode\s+\d+', f'versionCode {package.get("androidVersionCode", 8)}', content, count=1)
-          content = re.sub(r'versionName\s+"[^"]+"', f'versionName "{package["version"]}"', content, count=1)
+          version_name = package["version"]
+          version_code = int(package["androidVersionCode"])
+          expected_code = int(version_name.rsplit(".", 1)[-1])
+          if version_code != expected_code:
+              raise SystemExit(
+                  f"Version mismatch: versionName={version_name}, "
+                  f"androidVersionCode={version_code}; expected {expected_code}."
+              )
+          content, code_count = re.subn(r'versionCode\s+\d+', f'versionCode {version_code}', content, count=1)
+          content, name_count = re.subn(r'versionName\s+"[^"]+"', f'versionName "{version_name}"', content, count=1)
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Could not safely update both Android version fields.")
           gradle.write_text(content)
+          print(f"Android version verified: {version_name} (versionCode {version_code}).")
 
           source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
           if source.getchannel("A").getextrema()[0] == 255:

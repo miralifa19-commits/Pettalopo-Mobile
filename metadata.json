@@ -1,0 +1,8 @@
+{
+  "name": "Pettalopo Mobile",
+  "description": "Aplikasi Resmi Ambalan La Surullah Petta Lopo Gudep 10-035 \u0026 10-036 berbasis Android dengan fitur SKU/SKK, Sandi Morse \u0026 Semaphore, Agenda, Logbook, dan Sejarah.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

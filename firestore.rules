@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return (
+        isSignedIn() && (
+          (request.auth.token.email == 'amiruddin@smpialwasi-maros.sch.id') ||
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        )
+      );
+    }
+
+    // Connection test rule (Mandatory per Firebase Skill)
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Validation helper for Users
+    function isValidUser(data) {
+      return data.nama is string && data.nama.size() <= 150 &&
+             (!('role' in data) || data.role in ['admin', 'anggota']);
+    }
+
+    // Users collection (Members & Admin can create/view scout profiles)
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isValidId(userId) && isValidUser(incoming());
+      allow delete: if isValidId(userId);
+    }
+
+    // Validation helper for Attendance Sessions
+    function isValidSession(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.isOpen is bool;
+    }
+
+    // Attendance Sessions collection (Admin opens/closes roll call, all members view active status)
+    match /attendance_sessions/{sessionId} {
+      allow read: if true;
+      allow create, update: if isValidId(sessionId) && isValidSession(incoming());
+      allow delete: if isValidId(sessionId);
+    }
+
+    // Validation helper for Attendance Records
+    function isValidAttendanceRecord(data) {
+      return data.sessionId is string && data.sessionId.size() <= 128 &&
+             data.userName is string && data.userName.size() <= 150;
+    }
+
+    // Attendance Records collection (Members fill roll call, admin views/edits records)
+    match /attendance_records/{recordId} {
+      allow read: if true;
+      allow create, update: if isValidId(recordId) && isValidAttendanceRecord(incoming());
+      allow delete: if isValidId(recordId);
+    }
+
+    // Validation helper for Program Kerja
+    function isValidProgramKerja(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.nama is string && data.nama.size() <= 200;
+    }
+
+    // Program Kerja collection (Visible to all viewers/members, managed by admin)
+    match /program_kerja/{prokerId} {
+      allow read: if true;
+      allow create, update: if isValidId(prokerId) && isValidProgramKerja(incoming());
+      allow delete: if isValidId(prokerId);
+    }
+
+    // Validation helper for Materi Belajar
+    function isValidMateri(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.judul is string && data.judul.size() <= 250;
+    }
+
+    // Materi Belajar collection
+    match /materi_belajar/{materiId} {
+      allow read: if true;
+      allow create, update: if isValidId(materiId) && isValidMateri(incoming());
+      allow delete: if isValidId(materiId);
+    }
+
+    // Validation helper for Ambalan Chat
+    function isValidChat(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.senderName is string && data.senderName.size() <= 150;
+    }
+
+    // Ambalan Chat collection (Realtime group chat & interactive lists)
+    match /ambalan_chats/{chatId} {
+      allow read: if true;
+      allow create, update: if isValidId(chatId) && isValidChat(incoming());
+      allow delete: if isValidId(chatId);
+    }
+  }
+}

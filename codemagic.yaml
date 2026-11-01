@@ -1,0 +1,75 @@
+
+workflows:
+  android-workflow:
+    name: Build Android APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      node: 22
+      java: 21
+
+    scripts:
+      - name: Install Dependencies
+        script: |
+          set -e
+          npm install --legacy-peer-deps
+
+      - name: Build Web App
+        script: |
+          set -e
+          npm run build
+
+      - name: Setup Android
+        script: |
+          set -e
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Prepare Android SDK
+        script: |
+          set -e
+
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+
+          echo "Android SDK: $SDK_ROOT"
+
+          if [ ! -d "$SDK_ROOT" ]; then
+            echo "ERROR: Android SDK directory not found"
+            exit 1
+          fi
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER=$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -1 || true)
+          fi
+
+          if [ ! -f "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found"
+            exit 1
+          fi
+
+          echo "SDK Manager: $SDKMANAGER"
+
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > android/local.properties
+
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses || true
+
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" --install "build-tools;35.0.0"
+
+          test -d "$SDK_ROOT/build-tools/35.0.0"
+
+          echo "Android SDK preparation completed"
+
+      - name: Build Android APK
+        script: |
+          set -e
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk

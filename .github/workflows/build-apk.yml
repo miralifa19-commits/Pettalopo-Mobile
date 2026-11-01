@@ -1,0 +1,244 @@
+name: Build Android APK - Ambalan La Surullah
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build APK Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: 'true'
+          log-accepted-android-sdk-licenses: 'false'
+          packages: 'platform-tools'
+
+      - name: Install Android SDK Packages
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Build Web Application
+        run: bun run build
+
+      - name: Create Android Project
+        run: bunx cap add android
+
+      - name: Apply Pettalopo Mobile App Icon
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+
+          source = Image.open("public/assets/Desain tanpa judul_20261101_101811_0000.png").convert("RGBA")
+
+          # Remove only a near-white background connected to the image edges.
+          # White details enclosed inside the emblem remain untouched.
+          corners = [(0, 0), (source.width - 1, 0), (0, source.height - 1), (source.width - 1, source.height - 1)]
+          for point in corners:
+              pixel = source.getpixel(point)
+              if min(pixel[:3]) >= 238 and pixel[3] > 0:
+                  ImageDraw.floodfill(source, point, (0, 0, 0, 0), thresh=28)
+
+          sizes = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
+          foreground_sizes = {"mdpi": 108, "hdpi": 162, "xhdpi": 216, "xxhdpi": 324, "xxxhdpi": 432}
+
+          for density, size in sizes.items():
+              folder = Path(f"android/app/src/main/res/mipmap-{density}")
+              folder.mkdir(parents=True, exist_ok=True)
+
+              # Legacy launcher icons: transparent canvas, no white square.
+              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+              logo = source.copy()
+              logo.thumbnail((int(size * 0.82), int(size * 0.82)), Image.Resampling.LANCZOS)
+              canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
+              canvas.save(folder / "ic_launcher.png", optimize=True)
+              canvas.save(folder / "ic_launcher_round.png", optimize=True)
+
+              # Adaptive icon foreground remains transparent; Android applies brand-red
+              # background as a proper adaptive layer rather than a white bitmap box.
+              fg_size = foreground_sizes[density]
+              foreground = Image.new("RGBA", (fg_size, fg_size), (0, 0, 0, 0))
+              fg_logo = source.copy()
+              fg_logo.thumbnail((int(fg_size * 0.68), int(fg_size * 0.68)), Image.Resampling.LANCZOS)
+              foreground.alpha_composite(fg_logo, ((fg_size - fg_logo.width) // 2, (fg_size - fg_logo.height) // 2))
+              foreground.save(folder / "ic_launcher_foreground.png", optimize=True)
+
+          values = Path("android/app/src/main/res/values")
+          values.mkdir(parents=True, exist_ok=True)
+          colors = values / "pettalopo_colors.xml"
+          colors.write_text("""<?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="pettalopo_launcher_background">#E51C24</color>
+          </resources>
+          """)
+
+          adaptive = Path("android/app/src/main/res/mipmap-anydpi-v26")
+          adaptive.mkdir(parents=True, exist_ok=True)
+          xml = """<?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/pettalopo_launcher_background" />
+              <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+          </adaptive-icon>
+          """
+          (adaptive / "ic_launcher.xml").write_text(xml)
+          (adaptive / "ic_launcher_round.xml").write_text(xml)
+          PY
+
+      - name: Sync Capacitor
+        run: bunx cap sync android
+
+      - name: Configure Android APK installer access
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+              <files-path name="files" path="." />
+              <cache-path name="cache" path="." />
+              <external-files-path name="external-files" path="." />
+              <external-cache-path name="external-cache" path="." />
+          </paths>
+          XML
+          python - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          content = manifest.read_text()
+          permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          if "android.permission.REQUEST_INSTALL_PACKAGES" not in content:
+              content = content.replace("<manifest", "<manifest", 1)
+              insert_at = content.find(">", content.find("<manifest")) + 1
+              content = content[:insert_at] + "\\n" + permission + content[insert_at:]
+          manifest.write_text(content)
+          PY
+
+      - name: Apply Pettalopo Native Splash Image
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+
+          source = Image.open("public/assets/Desain tanpa judul_20261101_101811_0000.png").convert("RGBA")
+          size = 2732
+          canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+          source.thumbnail((int(size * 0.68), int(size * 0.68)), Image.Resampling.LANCZOS)
+          canvas.alpha_composite(source, ((size - source.width) // 2, (size - source.height) // 2))
+
+          target = Path("android/app/src/main/res/drawable")
+          target.mkdir(parents=True, exist_ok=True)
+          canvas.save(target / "splash.png", optimize=True)
+          PY
+
+      - name: Read app version
+        id: version
+        run: |
+          node -e 'const p = require("./package.json"); console.log("version=" + p.version)' >> "$GITHUB_OUTPUT"
+
+      - name: Set Android app version
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          package = json.loads(Path("package.json").read_text())
+          version = package["version"]
+          version_code = int(package["androidVersionCode"])
+          gradle = Path("android/app/build.gradle")
+          content = gradle.read_text()
+          import re
+          content, count_code = re.subn(r'versionCode\s+\d+', f'versionCode {version_code}', content, count=1)
+          content, count_name = re.subn(r'versionName\s+"[^"]+"', f'versionName "{version}"', content, count=1)
+          if count_code != 1 or count_name != 1:
+              raise SystemExit("Could not safely set Android versionCode/versionName")
+          gradle.write_text(content)
+          PY
+
+      - name: Configure permanent APK signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PETTALOPO_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.PETTALOPO_KEY_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Signing secrets are not configured."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release.jks
+          export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          marker = "android {"
+          if marker not in s:
+              raise SystemExit("Android Gradle configuration not found")
+          signing = """
+              signingConfigs {
+                  release {
+                      storeFile file("pettalopo-release.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+          """
+          s = s.replace(marker, marker + signing, 1)
+          s = s.replace('buildTypes {', 'buildTypes {\n        release { signingConfig signingConfigs.release }', 1)
+          p.write_text(s)
+          PY
+
+      - name: Build Release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Pettalopo Mobile v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: android/app/build/outputs/apk/release/app-release.apk
+          make_latest: true
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettalopo-Mobile-v${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14

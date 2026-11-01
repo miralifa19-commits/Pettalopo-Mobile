@@ -1,0 +1,142 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Scout member or admin profile in Ambalan La Surullah",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 60 },
+        "password": { "type": "string", "maxLength": 60 },
+        "email": { "type": "string", "maxLength": 128 },
+        "nama": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "anggota"] },
+        "gudep": { "type": "string", "enum": ["10-035", "10-036"] },
+        "satuan": { "type": "string", "enum": ["Putra", "Putri"] },
+        "tingkat": { "type": "string", "maxLength": 50 },
+        "sangga": { "type": "string", "enum": ["Perintis", "Penegas", "Pendobrak", "Pencoba", "Pelaksana"] },
+        "jabatan": { "type": "string", "maxLength": 50 },
+        "nomorKta": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "username", "nama", "role", "gudep", "satuan", "sangga"]
+    },
+    "AttendanceSession": {
+      "title": "AttendanceSession",
+      "description": "Session for active scout roll-call opened and closed by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "date": { "type": "string", "maxLength": 50 },
+        "isOpen": { "type": "boolean" },
+        "openedAt": { "type": "string", "maxLength": 50 },
+        "closedAt": { "type": "string", "maxLength": 50 },
+        "openedBy": { "type": "string", "maxLength": 128 },
+        "tipe": { "type": "string", "enum": ["Latihan Rutin", "Kegiatan"] }
+      },
+      "required": ["id", "title", "date", "isOpen", "openedBy", "tipe"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Individual member attendance entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "sessionId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 100 },
+        "gudep": { "type": "string", "enum": ["10-035", "10-036"] },
+        "sangga": { "type": "string", "enum": ["Perintis", "Penegas", "Pendobrak", "Pencoba", "Pelaksana"] },
+        "status": { "type": "string", "enum": ["Hadir", "Izin", "Sakit", "Alpa"] },
+        "notes": { "type": "string", "maxLength": 255 },
+        "timestamp": { "type": "string", "maxLength": 50 },
+        "submittedBy": { "type": "string", "enum": ["self", "admin"] }
+      },
+      "required": ["id", "sessionId", "userId", "userName", "gudep", "sangga", "status", "timestamp"]
+    },
+    "ProgramKerja": {
+      "title": "ProgramKerja",
+      "description": "Work program and regular scout drill schedule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tipe": { "type": "string", "enum": ["Kegiatan", "Latihan Rutin"] },
+        "nama": { "type": "string", "maxLength": 150 },
+        "waktuPelaksanaan": { "type": "string", "maxLength": 100 },
+        "bulan": { "type": "string", "maxLength": 30 },
+        "bulanUrutan": { "type": "number" },
+        "sasaran": { "type": "string", "maxLength": 150 },
+        "anggaran": { "type": "string", "maxLength": 100 },
+        "penanggungJawab": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["Direncanakan", "Berjalan", "Terlaksana", "Tidak Terlaksana"] },
+        "deskripsi": { "type": "string", "maxLength": 1000 },
+        "tempat": { "type": "string", "maxLength": 150 },
+        "seragam": { "type": "string", "maxLength": 150 },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "tipe", "nama", "waktuPelaksanaan", "bulan", "bulanUrutan", "sasaran", "penanggungJawab", "status", "deskripsi"]
+    },
+    "MateriBelajar": {
+      "title": "MateriBelajar",
+      "description": "Learning material and documents uploaded or beautified by AI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "judul": { "type": "string", "maxLength": 200 },
+        "kategori": { "type": "string", "maxLength": 100 },
+        "tipeFormat": { "type": "string", "enum": ["original", "ai_generated"] },
+        "isiMateriOriginal": { "type": "string", "maxLength": 100000 },
+        "isiMateriAi": { "type": "string", "maxLength": 100000 },
+        "ringkasan": { "type": "string", "maxLength": 5000 },
+        "tanggalDibuat": { "type": "string", "maxLength": 50 },
+        "penulis": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "judul", "kategori", "tipeFormat", "tanggalDibuat", "penulis"]
+    },
+    "AmbalanChat": {
+      "title": "AmbalanChat",
+      "description": "Group chat messages and interactive list messages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "senderId": { "type": "string", "maxLength": 128 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "senderGudep": { "type": "string", "maxLength": 20 },
+        "senderSangga": { "type": "string", "maxLength": 50 },
+        "type": { "type": "string", "enum": ["text", "list"] },
+        "text": { "type": "string", "maxLength": 5000 },
+        "listTitle": { "type": "string", "maxLength": 200 },
+        "timestamp": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "senderName", "type", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Member and admin user profiles"
+    },
+    "/attendance_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/AttendanceSession" },
+      "description": "Attendance sessions toggled by admin"
+    },
+    "/attendance_records/{recordId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Member attendance submissions"
+    },
+    "/program_kerja/{prokerId}": {
+      "schema": { "$ref": "#/entities/ProgramKerja" },
+      "description": "Activity and regular drill schedule"
+    },
+    "/materi_belajar/{materiId}": {
+      "schema": { "$ref": "#/entities/MateriBelajar" },
+      "description": "Learning materials uploaded by admin"
+    },
+    "/ambalan_chats/{chatId}": {
+      "schema": { "$ref": "#/entities/AmbalanChat" },
+      "description": "Realtime group chat and interactive list cards"
+    }
+  }
+}

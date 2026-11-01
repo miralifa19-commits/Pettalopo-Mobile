@@ -59,7 +59,7 @@ jobs:
           from PIL import Image, ImageDraw
           from pathlib import Path
 
-          source = Image.open("public/assets/Desain tanpa judul_20261101_101811_0000.png").convert("RGBA")
+          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
 
           # Remove only a near-white background connected to the image edges.
           # White details enclosed inside the emblem remain untouched.
@@ -77,7 +77,7 @@ jobs:
               folder.mkdir(parents=True, exist_ok=True)
 
               # Legacy launcher icons: transparent canvas, no white square.
-              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+              canvas = Image.new("RGBA", (size, size), (229, 28, 36, 255))
               logo = source.copy()
               logo.thumbnail((int(size * 0.82), int(size * 0.82)), Image.Resampling.LANCZOS)
               canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
@@ -98,7 +98,8 @@ jobs:
           colors = values / "pettalopo_colors.xml"
           colors.write_text("""<?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="pettalopo_launcher_background">#E51C24</color>
+              <color name="pettalopo_launcher_background">#00000000</color>
+              <color name="pettalopo_splash_background">#E51C24</color>
           </resources>
           """)
 
@@ -106,7 +107,7 @@ jobs:
           adaptive.mkdir(parents=True, exist_ok=True)
           xml = """<?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/pettalopo_launcher_background" />
+              <background android:drawable="@android:color/transparent" />
               <foreground android:drawable="@mipmap/ic_launcher_foreground" />
           </adaptive-icon>
           """
@@ -148,7 +149,7 @@ jobs:
           from PIL import Image
           from pathlib import Path
 
-          source = Image.open("public/assets/Desain tanpa judul_20261101_101811_0000.png").convert("RGBA")
+          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
           size = 2732
           canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
           source.thumbnail((int(size * 0.68), int(size * 0.68)), Image.Resampling.LANCZOS)
@@ -157,6 +158,45 @@ jobs:
           target = Path("android/app/src/main/res/drawable")
           target.mkdir(parents=True, exist_ok=True)
           canvas.save(target / "splash.png", optimize=True)
+          PY
+
+      - name: Configure Android 12+ launch splash to match Pettalopo
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import re
+
+          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
+          icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          source.thumbnail((340, 340), Image.Resampling.LANCZOS)
+          icon.alpha_composite(source, ((512 - source.width) // 2, (512 - source.height) // 2))
+          icon_dir = Path("android/app/src/main/res/drawable-nodpi")
+          icon_dir.mkdir(parents=True, exist_ok=True)
+          icon.save(icon_dir / "pettalopo_splash_icon.png", optimize=True)
+
+          styles = Path("android/app/src/main/res/values/styles.xml")
+          content = styles.read_text()
+          pattern = r'(<style name="AppTheme.NoActionBarLaunch"[^>]*>)(.*?)(</style>)'
+          match = re.search(pattern, content, re.S)
+          if not match:
+              raise SystemExit("AppTheme.NoActionBarLaunch was not found.")
+          opening, body, closing = match.groups()
+          opening = re.sub(r'parent="[^"]+"', 'parent="Theme.SplashScreen"', opening, count=1)
+          entries = [
+              ("windowSplashScreenBackground", "@color/pettalopo_splash_background"),
+              ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
+              ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
+              ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
+              ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
+              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon")
+          ]
+          for name, value in entries:
+              body = re.sub(r'<item\\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
+              body += f'\\n        <item name="{name}">{value}</item>'
+          content = content[:match.start()] + opening + body + closing + content[match.end():]
+          styles.write_text(content)
+          print("Android system splash now uses Pettalopo red and the same transparent logo.")
           PY
 
       - name: Read app version

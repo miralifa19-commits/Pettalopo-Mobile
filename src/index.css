@@ -9,3 +9,9 @@
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 }
+
+/* Branded launch fallback: avoid a white flash while the first React frame paints. */
+html, body, #root {
+  min-height: 100%;
+  background-color: #E51C24;
+}

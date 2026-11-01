@@ -66,10 +66,10 @@ jobs:
           gradle = Path("android/app/build.gradle")
           content = gradle.read_text()
           if "androidx.core:core-splashscreen" not in content:
-              match = re.search(r'dependencies\\s*\\{', content)
+              match = re.search(r'dependencies\s*\{', content)
               if not match:
                   raise SystemExit("Gradle dependencies block not found.")
-              content = content[:match.end()] + '\\n    implementation "androidx.core:core-splashscreen:1.0.1"' + content[match.end():]
+              content = content[:match.end()] + '\n    implementation "androidx.core:core-splashscreen:1.0.1"' + content[match.end():]
               gradle.write_text(content)
 
           candidates = [
@@ -85,12 +85,12 @@ jobs:
           source = activity.read_text()
           if activity.suffix == ".java":
               if "androidx.core.splashscreen.SplashScreen" not in source:
-                  source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\\nimport androidx.core.splashscreen.SplashScreen;")
+                  source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport androidx.core.splashscreen.SplashScreen;")
               if "SplashScreen.installSplashScreen(this);" not in source:
                   source = source.replace("super.onCreate(savedInstanceState);", "SplashScreen.installSplashScreen(this);\\n        super.onCreate(savedInstanceState);")
           else:
               if "androidx.core.splashscreen.SplashScreen" not in source:
-                  source = source.replace("import com.getcapacitor.BridgeActivity", "import com.getcapacitor.BridgeActivity\\nimport androidx.core.splashscreen.SplashScreen")
+                  source = source.replace("import com.getcapacitor.BridgeActivity", "import com.getcapacitor.BridgeActivity\nimport androidx.core.splashscreen.SplashScreen")
               if "SplashScreen.installSplashScreen(this)" not in source:
                   source = source.replace("super.onCreate(savedInstanceState)", "SplashScreen.installSplashScreen(this)\\n        super.onCreate(savedInstanceState)")
           activity.write_text(source)

@@ -185,15 +185,15 @@ jobs:
               ("android:windowBackground", "@color/pettalopo_splash_background")
           ]
           for name, value in entries:
-              body = re.sub(r'<item\\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
-              body += "\\n        <item name='" + name + "'>" + value + "</item>"
+              body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
+              body += "\n        <item name='" + name + "'>" + value + "</item>"
           styles.write_text(content[:match.start()] + opening + body + closing + content[match.end():])
 
           v31 = resources / "values-v31"
           v31.mkdir(parents=True, exist_ok=True)
-          v31_body = "\\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if not name.startswith("android:"))
+          v31_body = "\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if not name.startswith("android:"))
           (v31 / "styles.xml").write_text(
-              '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n'
+              '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
               '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\\n'
               + v31_body + '\\n    </style>\\n</resources>\\n'
           )

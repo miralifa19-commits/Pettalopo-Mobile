@@ -192,8 +192,8 @@ jobs:
               ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon")
           ]
           for name, value in entries:
-              body = re.sub(r'<item\\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
-              body += f'\\n        <item name="{name}">{value}</item>'
+              body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
+              body += "\n        <item name=\"" + name + "\">" + value + "</item>"
           content = content[:match.start()] + opening + body + closing + content[match.end():]
           styles.write_text(content)
           print("Android system splash now uses Pettalopo red and the same transparent logo.")

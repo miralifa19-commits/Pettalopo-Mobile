@@ -57,79 +57,121 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
-      - name: Configure app version and Android 12 splash screen
+      - name: Configure version, transparent launcher icon, and unified splash
         run: |
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
           import json
           import re
           from pathlib import Path
-          from PIL import Image
+          from PIL import Image, ImageDraw, ImageOps
 
           package = json.loads(Path("package.json").read_text())
           gradle = Path("android/app/build.gradle")
           content = gradle.read_text()
-          content = re.sub(r'versionCode\s+\d+', f'versionCode {package.get("androidVersionCode", 7)}', content, count=1)
+          content = re.sub(r'versionCode\s+\d+', f'versionCode {package.get("androidVersionCode", 8)}', content, count=1)
           content = re.sub(r'versionName\s+"[^"]+"', f'versionName "{package["version"]}"', content, count=1)
           gradle.write_text(content)
 
+          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
+          if source.getchannel("A").getextrema()[0] == 255:
+              corners = [(0, 0), (source.width - 1, 0), (0, source.height - 1), (source.width - 1, source.height - 1)]
+              for point in corners:
+                  pixel = source.getpixel(point)
+                  if min(pixel[:3]) >= 238:
+                      ImageDraw.floodfill(source, point, (0, 0, 0, 0), thresh=28)
+          bounds = source.getbbox()
+          if not bounds:
+              raise SystemExit("Official app logo is empty.")
+          source = source.crop(bounds)
+
           resources = Path("android/app/src/main/res")
+          colors = resources / "values/pettalopo_colors.xml"
+          colors.parent.mkdir(parents=True, exist_ok=True)
+          colors.write_text("""<?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="pettalopo_splash_background">#E51C24</color>
+          </resources>
+          """)
+
+          sizes = {"mipmap-mdpi": 48, "mipmap-hdpi": 72, "mipmap-xhdpi": 96, "mipmap-xxhdpi": 144, "mipmap-xxxhdpi": 192}
+          for folder, size in sizes.items():
+              target = resources / folder
+              target.mkdir(parents=True, exist_ok=True)
+              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+              logo = ImageOps.contain(source, (int(size * 0.82), int(size * 0.82)), Image.Resampling.LANCZOS)
+              canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
+              canvas.save(target / "ic_launcher.png", optimize=True)
+              canvas.save(target / "ic_launcher_round.png", optimize=True)
+              fg_size = size * 2.25
+              foreground = Image.new("RGBA", (int(fg_size), int(fg_size)), (0, 0, 0, 0))
+              fg_logo = ImageOps.contain(source, (int(fg_size * 0.66), int(fg_size * 0.66)), Image.Resampling.LANCZOS)
+              foreground.alpha_composite(fg_logo, ((foreground.width - fg_logo.width) // 2, (foreground.height - fg_logo.height) // 2))
+              foreground.save(target / "ic_launcher_foreground.png", optimize=True)
+
+          adaptive = resources / "mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+          adaptive_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/transparent" />
+              <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+          </adaptive-icon>
+          """
+          (adaptive / "ic_launcher.xml").write_text(adaptive_xml)
+          (adaptive / "ic_launcher_round.xml").write_text(adaptive_xml)
+
+          icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          splash_logo = ImageOps.contain(source, (340, 340), Image.Resampling.LANCZOS)
+          icon.alpha_composite(splash_logo, ((512 - splash_logo.width) // 2, (512 - splash_logo.height) // 2))
+          drawable_nodpi = resources / "drawable-nodpi"
+          drawable_nodpi.mkdir(parents=True, exist_ok=True)
+          icon.save(drawable_nodpi / "pettalopo_splash_icon.png", optimize=True)
+          icon.save(drawable_nodpi / "ic_launcher_foreground.png", optimize=True)
+
+          legacy_splash = Image.new("RGBA", (2732, 2732), (229, 28, 36, 255))
+          splash_logo = ImageOps.contain(source, (1858, 1858), Image.Resampling.LANCZOS)
+          legacy_splash.alpha_composite(splash_logo, ((2732 - splash_logo.width) // 2, (2732 - splash_logo.height) // 2))
           drawable = resources / "drawable"
           drawable.mkdir(parents=True, exist_ok=True)
-          Image.new("RGBA", (1, 1), (0, 0, 0, 0)).save(drawable / "transparent_splash.png")
+          legacy_splash.save(drawable / "splash.png", optimize=True)
+
+          entries = [
+              ("windowSplashScreenBackground", "@color/pettalopo_splash_background"),
+              ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
+              ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
+              ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
+              ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
+              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
+              ("android:windowBackground", "@drawable/splash")
+          ]
+          values = resources / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          styles_path = values / "styles.xml"
+          styles_content = styles_path.read_text()
+          pattern = r'(<style name="AppTheme.NoActionBarLaunch"[^>]*>)(.*?)(</style>)'
+          match = re.search(pattern, styles_content, re.S)
+          if not match:
+              raise SystemExit("AppTheme.NoActionBarLaunch was not found in styles.xml.")
+          opening, body, closing = match.groups()
+          opening = re.sub(r'parent="[^"]+"', 'parent="Theme.SplashScreen"', opening, count=1)
+          for name, value in entries:
+              body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
+              body += "\n        <item name='" + name + "'>" + value + "</item>"
+          styles_path.write_text(styles_content[:match.start()] + opening + body + closing + styles_content[match.end():])
 
           values_v31 = resources / "values-v31"
           values_v31.mkdir(parents=True, exist_ok=True)
-          styles = """<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-                  <item name="windowSplashScreenBackground">#E51C24</item>
-                  <item name="windowSplashScreenAnimatedIcon">@drawable/transparent_splash</item>
-                  <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
-                  <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-              </style>
-          </resources>
-          """
-          (values_v31 / "styles.xml").write_text(styles)
-          PY
-
-      - name: Apply uploaded Pettalopo launcher icon
-        run: |
-          python3 -m pip install --quiet Pillow
-          python3 - <<'PY'
-          from PIL import Image, ImageOps
-          from pathlib import Path
-
-          source = Image.open("pettalopo-logo.png").convert("RGBA")
-          android = Path("android/app/src/main/res")
-          sizes = {
-              "mipmap-mdpi": 48,
-              "mipmap-hdpi": 72,
-              "mipmap-xhdpi": 96,
-              "mipmap-xxhdpi": 144,
-              "mipmap-xxxhdpi": 192,
-          }
-          for folder, size in sizes.items():
-              target = android / folder
-              target.mkdir(parents=True, exist_ok=True)
-              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-              logo = ImageOps.contain(source, (int(size * 0.88), int(size * 0.88)), Image.Resampling.LANCZOS)
-              canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
-              canvas.save(target / "ic_launcher.png")
-              canvas.save(target / "ic_launcher_round.png")
-
-          foreground = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
-          logo = ImageOps.contain(source, (340, 340), Image.Resampling.LANCZOS)
-          foreground.alpha_composite(logo, ((432 - logo.width) // 2, (432 - logo.height) // 2))
-          drawable = android / "drawable-nodpi"
-          drawable.mkdir(parents=True, exist_ok=True)
-          foreground.save(drawable / "ic_launcher_foreground.png")
-
-          adaptive = android / "mipmap-anydpi-v26"
-          adaptive.mkdir(parents=True, exist_ok=True)
-          xml = '''<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@android:color/transparent" />\n    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n</adaptive-icon>\n'''
-          (adaptive / "ic_launcher.xml").write_text(xml)
-          (adaptive / "ic_launcher_round.xml").write_text(xml)
+          v31_body = "\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries)
+          v31_styles = (
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<resources>\n'
+              '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\n'
+              + v31_body + '\n'
+              '    </style>\n'
+              '</resources>\n'
+          )
+          (values_v31 / "styles.xml").write_text(v31_styles)
+          print("Transparent launcher icons and matching red native splash generated.")
           PY
 
       - name: Build debug APK

@@ -142,40 +142,34 @@ jobs:
           manifest.write_text(content)
           PY
 
-      - name: Apply Pettalopo Native Splash Image
+      - name: Configure blank native launch layer for AI Studio splash handoff
         run: |
           python -m pip install --quiet pillow
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
-
-          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
-          size = 2732
-          canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-          source.thumbnail((int(size * 0.68), int(size * 0.68)), Image.Resampling.LANCZOS)
-          canvas.alpha_composite(source, ((size - source.width) // 2, (size - source.height) // 2))
-
-          target = Path("android/app/src/main/res/drawable")
-          target.mkdir(parents=True, exist_ok=True)
-          canvas.save(target / "splash.png", optimize=True)
-          PY
-
-      - name: Configure Android 12+ launch splash to match Pettalopo
-        run: |
-          python - <<'PY'
-          from PIL import Image
-          from pathlib import Path
           import re
 
-          source = Image.open("public/assets/pettalopo-logo.png").convert("RGBA")
-          icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-          source.thumbnail((340, 340), Image.Resampling.LANCZOS)
-          icon.alpha_composite(source, ((512 - source.width) // 2, (512 - source.height) // 2))
-          icon_dir = Path("android/app/src/main/res/drawable-nodpi")
-          icon_dir.mkdir(parents=True, exist_ok=True)
-          icon.save(icon_dir / "pettalopo_splash_icon.png", optimize=True)
+          resources = Path("android/app/src/main/res")
+          values = resources / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          (values / "pettalopo_colors.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+          <resources><color name="pettalopo_splash_background">#E51C24</color></resources>
+          """)
 
-          styles = Path("android/app/src/main/res/values/styles.xml")
+          # Capacitor's legacy splash resource is kept as a transparent image,
+          # while the plugin/theme supplies the matching red background.
+          drawable = resources / "drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+          Image.new("RGBA", (1, 1), (0, 0, 0, 0)).save(drawable / "splash.png", optimize=True)
+
+          # Android 12+ requires a system splash, but its icon is transparent so
+          # users see only the same red field before the original React splash.
+          icon_dir = resources / "drawable-nodpi"
+          icon_dir.mkdir(parents=True, exist_ok=True)
+          Image.new("RGBA", (512, 512), (0, 0, 0, 0)).save(icon_dir / "pettalopo_splash_icon.png", optimize=True)
+
+          styles = values / "styles.xml"
           content = styles.read_text()
           pattern = r'(<style name="AppTheme.NoActionBarLaunch"[^>]*>)(.*?)(</style>)'
           match = re.search(pattern, content, re.S)
@@ -188,16 +182,22 @@ jobs:
               ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
               ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
-              ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
-              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
               ("android:windowBackground", "@color/pettalopo_splash_background")
           ]
           for name, value in entries:
-              body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
-              body += "\n        <item name=\"" + name + "\">" + value + "</item>"
-          content = content[:match.start()] + opening + body + closing + content[match.end():]
-          styles.write_text(content)
-          print("Android system splash now uses Pettalopo red and the same transparent logo.")
+              body = re.sub(r'<item\\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
+              body += "\\n        <item name='" + name + "'>" + value + "</item>"
+          styles.write_text(content[:match.start()] + opening + body + closing + content[match.end():])
+
+          v31 = resources / "values-v31"
+          v31.mkdir(parents=True, exist_ok=True)
+          v31_body = "\\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if not name.startswith("android:"))
+          (v31 / "styles.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n'
+              '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\\n'
+              + v31_body + '\\n    </style>\\n</resources>\\n'
+          )
+          print("Native launch layer is blank and red; original React splash is retained as the only branded splash.")
           PY
 
       - name: Read app version

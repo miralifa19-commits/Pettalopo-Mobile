@@ -142,7 +142,7 @@ jobs:
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
               ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
               ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
-              ("android:windowBackground", "@drawable/splash")
+              ("android:windowBackground", "@color/pettalopo_splash_background")
           ]
           values = resources / "values"
           values.mkdir(parents=True, exist_ok=True)

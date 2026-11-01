@@ -59,6 +59,7 @@ jobs:
 
       - name: Configure app version and Android 12 splash screen
         run: |
+          python3 -m pip install --quiet Pillow
           python3 - <<'PY'
           import json
           import re

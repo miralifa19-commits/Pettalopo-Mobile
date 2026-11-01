@@ -120,17 +120,14 @@ jobs:
           (adaptive / "ic_launcher.xml").write_text(adaptive_xml)
           (adaptive / "ic_launcher_round.xml").write_text(adaptive_xml)
 
+          # Android's mandatory launch layer is intentionally blank; the React AI Studio splash supplies the logo and text.
           icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-          splash_logo = ImageOps.contain(source, (340, 340), Image.Resampling.LANCZOS)
-          icon.alpha_composite(splash_logo, ((512 - splash_logo.width) // 2, (512 - splash_logo.height) // 2))
           drawable_nodpi = resources / "drawable-nodpi"
           drawable_nodpi.mkdir(parents=True, exist_ok=True)
           icon.save(drawable_nodpi / "pettalopo_splash_icon.png", optimize=True)
           icon.save(drawable_nodpi / "ic_launcher_foreground.png", optimize=True)
 
-          legacy_splash = Image.new("RGBA", (2732, 2732), (229, 28, 36, 255))
-          splash_logo = ImageOps.contain(source, (1858, 1858), Image.Resampling.LANCZOS)
-          legacy_splash.alpha_composite(splash_logo, ((2732 - splash_logo.width) // 2, (2732 - splash_logo.height) // 2))
+          legacy_splash = Image.new("RGBA", (2732, 2732), (0, 0, 0, 0))
           drawable = resources / "drawable"
           drawable.mkdir(parents=True, exist_ok=True)
           legacy_splash.save(drawable / "splash.png", optimize=True)
@@ -140,8 +137,6 @@ jobs:
               ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
               ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
-              ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
-              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
               ("android:windowBackground", "@color/pettalopo_splash_background")
           ]
           values = resources / "values"
@@ -171,7 +166,7 @@ jobs:
               '</resources>\n'
           )
           (values_v31 / "styles.xml").write_text(v31_styles)
-          print("Transparent launcher icons and matching red native splash generated.")
+          print("Transparent launcher icons and blank red native launch layer generated; React splash is the only branded splash.")
           PY
 
       - name: Build debug APK

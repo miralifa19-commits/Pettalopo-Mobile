@@ -57,6 +57,40 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
+      - name: Configure app version and Android 12 splash screen
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+          from PIL import Image
+
+          package = json.loads(Path("package.json").read_text())
+          gradle = Path("android/app/build.gradle")
+          content = gradle.read_text()
+          content = re.sub(r'versionCode\s+\d+', f'versionCode {package.get("androidVersionCode", 7)}', content, count=1)
+          content = re.sub(r'versionName\s+"[^"]+"', f'versionName "{package["version"]}"', content, count=1)
+          gradle.write_text(content)
+
+          resources = Path("android/app/src/main/res")
+          drawable = resources / "drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+          Image.new("RGBA", (1, 1), (0, 0, 0, 0)).save(drawable / "transparent_splash.png")
+
+          values_v31 = resources / "values-v31"
+          values_v31.mkdir(parents=True, exist_ok=True)
+          styles = """<?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+                  <item name="windowSplashScreenBackground">#E51C24</item>
+                  <item name="windowSplashScreenAnimatedIcon">@drawable/transparent_splash</item>
+                  <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+              </style>
+          </resources>
+          """
+          (values_v31 / "styles.xml").write_text(styles)
+          PY
+
       - name: Apply uploaded Pettalopo launcher icon
         run: |
           python3 -m pip install --quiet Pillow

@@ -87,12 +87,12 @@ jobs:
               if "androidx.core.splashscreen.SplashScreen" not in source:
                   source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport androidx.core.splashscreen.SplashScreen;")
               if "SplashScreen.installSplashScreen(this);" not in source:
-                  source = source.replace("super.onCreate(savedInstanceState);", "SplashScreen.installSplashScreen(this);\\n        super.onCreate(savedInstanceState);")
+                  source = source.replace("super.onCreate(savedInstanceState);", "SplashScreen.installSplashScreen(this);\n        super.onCreate(savedInstanceState);")
           else:
               if "androidx.core.splashscreen.SplashScreen" not in source:
                   source = source.replace("import com.getcapacitor.BridgeActivity", "import com.getcapacitor.BridgeActivity\nimport androidx.core.splashscreen.SplashScreen")
               if "SplashScreen.installSplashScreen(this)" not in source:
-                  source = source.replace("super.onCreate(savedInstanceState)", "SplashScreen.installSplashScreen(this)\\n        super.onCreate(savedInstanceState)")
+                  source = source.replace("super.onCreate(savedInstanceState)", "SplashScreen.installSplashScreen(this)\n        super.onCreate(savedInstanceState)")
           activity.write_text(source)
           print("Android system splash is configured independently of the Capacitor splash plugin.")
           PY

@@ -6,8 +6,9 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { FileOpener } from '@capawesome-team/capacitor-file-opener';
 import { Download, X, RefreshCw, Smartphone, LoaderCircle } from 'lucide-react';
 
-const CURRENT_VERSION = '1.0.2';
-const RELEASES_API = 'https://api.github.com/repos/amiruddin-stack/Ambalan-La-Surullah-Petta-Lopo/releases/latest';
+const CURRENT_VERSION = '1.0.6';
+// Hanya periksa rilis Pettalopo Mobile sendiri, bukan repositori aplikasi lain.
+const RELEASES_API = 'https://api.github.com/repos/miralifa19-commits/Pettalopo-Mobile/releases/latest';
 
 type ReleaseInfo = {
   tag_name?: string;
@@ -43,6 +44,8 @@ export function UpdateChecker() {
           headers: { Accept: 'application/vnd.github+json' },
           cache: 'no-store',
         });
+        // Jika belum ada rilis resmi atau repositori tidak dapat diakses publik,
+        // jangan tampilkan pemberitahuan pembaruan.
         if (!response.ok) return;
         const latest: ReleaseInfo = await response.json();
         const latestVersion = (latest.tag_name || '').replace(/^v/i, '');

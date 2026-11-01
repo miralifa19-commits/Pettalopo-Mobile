@@ -81,9 +81,19 @@ export default function App() {
 
   const isAdmin = user.role === 'admin';
 
-  // Keep the single native Android splash visible until the first React frame is mounted.
+  // Keep the native launch screen until the first web frame is painted,
+  // preventing a white WebView flash before the branded splash appears.
   useEffect(() => {
-    NativeSplashScreen.hide().catch(() => {});
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        NativeSplashScreen.hide().catch(() => {});
+      });
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame) cancelAnimationFrame(secondFrame);
+    };
   }, []);
 
   // Persist and sync user

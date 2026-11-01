@@ -3,18 +3,12 @@ import { LOGO_IMAGE_PATH } from '../data/scoutData';
 
 interface SplashScreenProps {
   onFinish: () => void;
-  onReady: () => void;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, onReady }) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    // Wait until the React splash has been painted before hiding Android's native launch layer.
-    let readyFrame = window.requestAnimationFrame(() => {
-      readyFrame = window.requestAnimationFrame(() => onReady());
-    });
-
     // Memberikan waktu yang cukup agar efek kilap pelan selesai dinikmati
     const fadeTimeout = setTimeout(() => {
       setIsFading(true);
@@ -25,11 +19,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, onReady })
     }, 4200);
 
     return () => {
-      window.cancelAnimationFrame(readyFrame);
       clearTimeout(fadeTimeout);
       clearTimeout(finishTimeout);
     };
-  }, [onFinish, onReady]);
+  }, [onFinish]);
 
   return (
     <div

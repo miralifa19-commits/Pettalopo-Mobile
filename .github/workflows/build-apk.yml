@@ -118,6 +118,46 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
+      - name: Keep Android system splash styling without Capacitor splash plugin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          gradle = Path("android/app/build.gradle")
+          content = gradle.read_text()
+          if "androidx.core:core-splashscreen" not in content:
+              match = re.search(r'dependencies\\s*\\{', content)
+              if not match:
+                  raise SystemExit("Gradle dependencies block not found.")
+              content = content[:match.end()] + '\\n    implementation "androidx.core:core-splashscreen:1.0.1"' + content[match.end():]
+              gradle.write_text(content)
+
+          candidates = [
+              Path("android/app/src/main/java/id/sch/smpialwasi_maros/ambalan/MainActivity.java"),
+              Path("android/app/src/main/java/id/sch/smpialwasi_maros/ambalan/MainActivity.kt")
+          ]
+          activity = next((p for p in candidates if p.exists()), None)
+          if activity is None:
+              matches = list(Path("android/app/src/main").rglob("MainActivity.*"))
+              activity = matches[0] if matches else None
+          if activity is None:
+              raise SystemExit("Capacitor MainActivity not found.")
+          source = activity.read_text()
+          if activity.suffix == ".java":
+              if "androidx.core.splashscreen.SplashScreen" not in source:
+                  source = source.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\\nimport androidx.core.splashscreen.SplashScreen;")
+              if "SplashScreen.installSplashScreen(this);" not in source:
+                  source = source.replace("super.onCreate(savedInstanceState);", "SplashScreen.installSplashScreen(this);\\n        super.onCreate(savedInstanceState);")
+          else:
+              if "androidx.core.splashscreen.SplashScreen" not in source:
+                  source = source.replace("import com.getcapacitor.BridgeActivity", "import com.getcapacitor.BridgeActivity\\nimport androidx.core.splashscreen.SplashScreen")
+              if "SplashScreen.installSplashScreen(this)" not in source:
+                  source = source.replace("super.onCreate(savedInstanceState)", "SplashScreen.installSplashScreen(this)\\n        super.onCreate(savedInstanceState)")
+          activity.write_text(source)
+          print("Android system splash is configured independently of the Capacitor splash plugin.")
+          PY
+
       - name: Configure Android APK installer access
         run: |
           mkdir -p android/app/src/main/res/xml

@@ -8,6 +8,7 @@ on:
       - ".github/workflows/build-debug-apk.yml"
       - "src/**"
       - "public/**"
+      - "pettalopo-logo.png"
       - "package.json"
       - "bun.lock"
       - "capacitor.config.ts"
@@ -55,6 +56,45 @@ jobs:
 
       - name: Sync Capacitor
         run: bunx cap sync android
+
+      - name: Apply uploaded Pettalopo launcher icon
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageOps
+          from pathlib import Path
+
+          source = Image.open("pettalopo-logo.png").convert("RGBA")
+          android = Path("android/app/src/main/res")
+          sizes = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+          for folder, size in sizes.items():
+              target = android / folder
+              target.mkdir(parents=True, exist_ok=True)
+              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+              logo = ImageOps.contain(source, (int(size * 0.88), int(size * 0.88)), Image.Resampling.LANCZOS)
+              canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
+              canvas.save(target / "ic_launcher.png")
+              canvas.save(target / "ic_launcher_round.png")
+
+          foreground = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+          logo = ImageOps.contain(source, (340, 340), Image.Resampling.LANCZOS)
+          foreground.alpha_composite(logo, ((432 - logo.width) // 2, (432 - logo.height) // 2))
+          drawable = android / "drawable-nodpi"
+          drawable.mkdir(parents=True, exist_ok=True)
+          foreground.save(drawable / "ic_launcher_foreground.png")
+
+          adaptive = android / "mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+          xml = '''<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@android:color/white" />\n    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n</adaptive-icon>\n'''
+          (adaptive / "ic_launcher.xml").write_text(xml)
+          (adaptive / "ic_launcher_round.xml").write_text(xml)
+          PY
 
       - name: Build debug APK
         run: |

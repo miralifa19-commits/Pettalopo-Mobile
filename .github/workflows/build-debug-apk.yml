@@ -1,0 +1,86 @@
+name: Build Pettalopo Android APK (Debug)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-debug-apk.yml"
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "bun.lock"
+      - "capacitor.config.ts"
+      - "vite.config.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build installable Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: "true"
+          packages: "platform-tools"
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build web application
+        run: bun run build
+
+      - name: Create Android project
+        run: bunx cap add android
+
+      - name: Sync Capacitor
+        run: bunx cap sync android
+
+      - name: Set Android app version
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          package = json.loads(Path("package.json").read_text())
+          gradle = Path("android/app/build.gradle")
+          content = gradle.read_text()
+          content, code_count = re.subn(r'versionCode\\s+\\d+', f'versionCode {int(package.get("androidVersionCode", 1))}', content, count=1)
+          content, name_count = re.subn(r'versionName\\s+"[^"]+"', f'versionName "{package["version"]}"', content, count=1)
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Could not set Android version safely")
+          gradle.write_text(content)
+          PY
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettalopo-Mobile-debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30

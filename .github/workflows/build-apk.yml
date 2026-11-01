@@ -77,7 +77,7 @@ jobs:
               folder.mkdir(parents=True, exist_ok=True)
 
               # Legacy launcher icons: transparent canvas, no white square.
-              canvas = Image.new("RGBA", (size, size), (229, 28, 36, 255))
+              canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
               logo = source.copy()
               logo.thumbnail((int(size * 0.82), int(size * 0.82)), Image.Resampling.LANCZOS)
               canvas.alpha_composite(logo, ((size - logo.width) // 2, (size - logo.height) // 2))
@@ -189,7 +189,8 @@ jobs:
               ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
               ("android:windowSplashScreenBackground", "@color/pettalopo_splash_background"),
-              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon")
+              ("android:windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
+              ("android:windowBackground", "@color/pettalopo_splash_background")
           ]
           for name, value in entries:
               body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)

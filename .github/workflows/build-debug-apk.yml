@@ -171,8 +171,11 @@ jobs:
           (adaptive / "ic_launcher.xml").write_text(adaptive_xml)
           (adaptive / "ic_launcher_round.xml").write_text(adaptive_xml)
 
-          # Android's mandatory launch layer is intentionally blank; the React AI Studio splash supplies the logo and text.
+          # Android 12+ native splash: reuse the same official logo and red background as the React splash.
+          # The native system splash supports a centered icon and solid background; the React splash retains its text/shimmer.
           icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          splash_logo = ImageOps.contain(source, (384, 384), Image.Resampling.LANCZOS)
+          icon.alpha_composite(splash_logo, ((512 - splash_logo.width) // 2, (512 - splash_logo.height) // 2))
           drawable_nodpi = resources / "drawable-nodpi"
           drawable_nodpi.mkdir(parents=True, exist_ok=True)
           icon.save(drawable_nodpi / "pettalopo_splash_icon.png", optimize=True)
@@ -217,7 +220,7 @@ jobs:
               '</resources>\n'
           )
           (values_v31 / "styles.xml").write_text(v31_styles)
-          print("Transparent launcher icons and blank red native launch layer generated; React splash is the only branded splash.")
+          print("Transparent launcher icons and branded Android 12+ splash generated with the official Pettalopo logo on #E51C24; React splash remains unchanged.")
           PY
 
       - name: Build debug APK

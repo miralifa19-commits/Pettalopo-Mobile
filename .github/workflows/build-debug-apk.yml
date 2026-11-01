@@ -56,21 +56,6 @@ jobs:
       - name: Sync Capacitor
         run: bunx cap sync android
 
-      - name: Set Android app version
-        run: |
-          python - <<'PY'
-          import json, re
-          from pathlib import Path
-          package = json.loads(Path("package.json").read_text())
-          gradle = Path("android/app/build.gradle")
-          content = gradle.read_text()
-          content, code_count = re.subn(r'versionCode\\s+\\d+', f'versionCode {int(package.get("androidVersionCode", 1))}', content, count=1)
-          content, name_count = re.subn(r'versionName\\s+"[^"]+"', f'versionName "{package["version"]}"', content, count=1)
-          if code_count != 1 or name_count != 1:
-              raise SystemExit("Could not set Android version safely")
-          gradle.write_text(content)
-          PY
-
       - name: Build debug APK
         run: |
           cd android

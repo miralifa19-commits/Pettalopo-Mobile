@@ -37,17 +37,6 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
-  // Render the original Google AI Studio splash before releasing Android's native launch screen.
-  useEffect(() => {
-    let frame = 0;
-    frame = window.requestAnimationFrame(() => {
-      NativeSplashScreen.hide({ fadeOutDuration: 0 }).catch(() => {
-        // The native plugin is unavailable in browser preview; the React splash still works.
-      });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
 
@@ -159,7 +148,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans antialiased text-slate-800">
-      {showPettalopoSplash && <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />}
+      {showPettalopoSplash && (
+        <SplashScreen
+          onReady={() => {
+            // Release Android's native layer only after the branded React splash has painted.
+            NativeSplashScreen.hide({ fadeOutDuration: 0 }).catch(() => {});
+          }}
+          onFinish={() => setShowPettalopoSplash(false)}
+        />
+      )}
       
       {/* Main Native App Container */}
       <div className="w-full max-w-lg mx-auto min-h-screen bg-white shadow-xl flex flex-col relative">

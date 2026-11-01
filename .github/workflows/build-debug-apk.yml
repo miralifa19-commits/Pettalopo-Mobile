@@ -85,6 +85,7 @@ jobs:
               <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
                   <item name="windowSplashScreenBackground">#E51C24</item>
                   <item name="windowSplashScreenAnimatedIcon">@drawable/transparent_splash</item>
+                  <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
                   <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
               </style>
           </resources>
@@ -126,7 +127,7 @@ jobs:
 
           adaptive = android / "mipmap-anydpi-v26"
           adaptive.mkdir(parents=True, exist_ok=True)
-          xml = '''<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@android:color/white" />\n    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n</adaptive-icon>\n'''
+          xml = '''<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@android:color/transparent" />\n    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n</adaptive-icon>\n'''
           (adaptive / "ic_launcher.xml").write_text(xml)
           (adaptive / "ic_launcher_round.xml").write_text(xml)
           PY

@@ -186,6 +186,20 @@ jobs:
           drawable.mkdir(parents=True, exist_ok=True)
           legacy_splash.save(drawable / "splash.png", optimize=True)
 
+          # Capacitor generates separate portrait/landscape and density-qualified
+          # splash.png files. Replace EVERY generated variant so an old logo cannot
+          # reappear through Android resource selection.
+          transparent_splash = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+          replaced_splashes = []
+          for splash_path in resources.rglob("splash.png"):
+              transparent_splash.save(splash_path, optimize=True)
+              replaced_splashes.append(str(splash_path))
+          print("Replaced all Capacitor splash variants with transparent images:")
+          for splash_path in replaced_splashes:
+              print(" -", splash_path)
+          if not replaced_splashes:
+              raise SystemExit("No generated splash.png resources were found.")
+
           entries = [
               ("windowSplashScreenBackground", "@color/pettalopo_splash_background"),
               ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
@@ -221,61 +235,6 @@ jobs:
           )
           (values_v31 / "styles.xml").write_text(v31_styles)
           print("Transparent launcher icons and branded Android 12+ splash generated with the official Pettalopo logo on #E51C24; React splash remains unchanged.")
-          PY
-
-      - name: Diagnose native splash resources (read-only)
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import xml.etree.ElementTree as ET
-
-          root = Path("android/app/src/main")
-          manifest = root / "AndroidManifest.xml"
-          print("========== ANDROID MANIFEST ==========")
-          if manifest.exists():
-              print(manifest.read_text())
-              try:
-                  parsed = ET.parse(manifest).getroot()
-                  ns = "{http://schemas.android.com/apk/res/android}"
-                  app = parsed.find("application")
-                  print("APPLICATION THEME:", app.get(ns + "theme") if app is not None else "NOT FOUND")
-                  for activity in parsed.findall(".//activity"):
-                      print("ACTIVITY:", activity.get(ns + "name"), "THEME:", activity.get(ns + "theme"))
-              except Exception as exc:
-                  print("MANIFEST XML PARSE ERROR:", repr(exc))
-          else:
-              print("AndroidManifest.xml NOT FOUND")
-
-          for rel in ("res/values/styles.xml", "res/values-v31/styles.xml"):
-              path = root / rel
-              print("==========", rel, "==========")
-              if path.exists():
-                  print(path.read_text())
-                  try:
-                      ET.parse(path)
-                      print("XML_PARSE: OK")
-                  except Exception as exc:
-                      print("XML_PARSE_ERROR:", repr(exc))
-              else:
-                  print("FILE NOT FOUND")
-
-          print("========== ALL SPLASH PNG RESOURCES ==========")
-          for path in sorted((root / "res").rglob("splash.png")):
-              data = path.read_bytes()
-              print(path, "bytes=", len(data), "sha256=", hashlib.sha256(data).hexdigest())
-
-          print("========== SPLASH REFERENCES IN XML ==========")
-          for path in sorted((root / "res").rglob("*.xml")):
-              try:
-                  lines = path.read_text().splitlines()
-              except Exception:
-                  continue
-              matches = [line.strip() for line in lines if "splash" in line.lower() or "windowbackground" in line.lower()]
-              if matches:
-                  print("---", path, "---")
-                  for line in matches:
-                      print(line)
           PY
 
       - name: Build debug APK

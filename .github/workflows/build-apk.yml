@@ -302,6 +302,61 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Diagnose native splash resources (read-only)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import xml.etree.ElementTree as ET
+
+          root = Path("android/app/src/main")
+          manifest = root / "AndroidManifest.xml"
+          print("========== ANDROID MANIFEST ==========")
+          if manifest.exists():
+              print(manifest.read_text())
+              try:
+                  parsed = ET.parse(manifest).getroot()
+                  ns = "{http://schemas.android.com/apk/res/android}"
+                  app = parsed.find("application")
+                  print("APPLICATION THEME:", app.get(ns + "theme") if app is not None else "NOT FOUND")
+                  for activity in parsed.findall(".//activity"):
+                      print("ACTIVITY:", activity.get(ns + "name"), "THEME:", activity.get(ns + "theme"))
+              except Exception as exc:
+                  print("MANIFEST XML PARSE ERROR:", repr(exc))
+          else:
+              print("AndroidManifest.xml NOT FOUND")
+
+          for rel in ("res/values/styles.xml", "res/values-v31/styles.xml"):
+              path = root / rel
+              print("==========", rel, "==========")
+              if path.exists():
+                  print(path.read_text())
+                  try:
+                      ET.parse(path)
+                      print("XML_PARSE: OK")
+                  except Exception as exc:
+                      print("XML_PARSE_ERROR:", repr(exc))
+              else:
+                  print("FILE NOT FOUND")
+
+          print("========== ALL SPLASH PNG RESOURCES ==========")
+          for path in sorted((root / "res").rglob("splash.png")):
+              data = path.read_bytes()
+              print(path, "bytes=", len(data), "sha256=", hashlib.sha256(data).hexdigest())
+
+          print("========== SPLASH REFERENCES IN XML ==========")
+          for path in sorted((root / "res").rglob("*.xml")):
+              try:
+                  lines = path.read_text().splitlines()
+              except Exception:
+                  continue
+              matches = [line.strip() for line in lines if "splash" in line.lower() or "windowbackground" in line.lower()]
+              if matches:
+                  print("---", path, "---")
+                  for line in matches:
+                      print(line)
+          PY
+
       - name: Build Release APK
         run: |
           cd android

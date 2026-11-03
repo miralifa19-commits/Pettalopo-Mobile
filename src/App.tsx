@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Award, Home, MessageCircle, Settings, Menu } from 'lucide-react';
+import { CalendarDays, Award, Home, MessageCircle, Settings } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
-import { AndroidSidebar } from './components/AndroidSidebar';
 
 // Views
 import { HomeView } from './components/views/HomeView';
@@ -32,7 +31,6 @@ import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
@@ -123,29 +121,6 @@ export default function App() {
     };
   }, []);
 
-  // Page title mapper
-  const getHeaderTitle = () => {
-    switch (activeMenu) {
-      case 'home': return '';
-      case 'dashboard':
-      case 'kegiatan_latihan':
-        return 'Kegiatan dan Latihan';
-      case 'profil_ambalan': return 'Profil Ambalan';
-      case 'dewan_ambalan': return 'Dewan Ambalan';
-      case 'sangga': return 'Sangga Ambalan';
-      case 'sku_skk': return 'SKU dan SKK Penegak';
-      case 'ruang_belajar': return 'Ruang Belajar Digital';
-      case 'quiz': return 'Quiz Kepramukaan';
-      case 'chat': return 'Obrolan Ambalan';
-      case 'pengaturan': return 'Pengaturan';
-      case 'program_kerja': return 'Program Kerja Tahunan';
-      case 'latihan_rutin': return 'Jadwal & Absensi Latihan';
-      case 'akun': return 'Akun & Profil Anggota';
-      case 'database': return 'Database Akun & Anggota';
-      default: return 'Ambalan La Surullah';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
@@ -158,7 +133,6 @@ export default function App() {
         <UpdateChecker />
 
         {/* Dynamic Main Body Scroll View */}
-        <header className="pettalopo-topbar"><div className="pettalopo-topbar-brand"><span className="pettalopo-brand-mark">PL</span><div><strong>Ambalan Petta Lopo</strong><small>Gudep 10-035 & 10-036</small></div></div><button type="button" className="pettalopo-menu-button" onClick={() => setIsSidebarOpen(true)} aria-label="Buka menu"><Menu size={22}/></button></header>
         <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
             <HomeView
@@ -266,17 +240,6 @@ export default function App() {
           <button type="button" onClick={() => setActiveMenu('chat')} aria-current={activeMenu === 'chat' ? 'page' : undefined}><MessageCircle size={19}/><span>Obrolan</span></button>
           <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-current={activeMenu === 'pengaturan' ? 'page' : undefined}><Settings size={19}/><span>Setelan</span></button>
         </nav>
-
-        {/* Sidebar Navigation Drawer */}
-        <AndroidSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          activeMenu={activeMenu === 'kegiatan_latihan' ? 'dashboard' : activeMenu}
-          onSelectMenu={(m) => setActiveMenu(m)}
-          user={user}
-          onUpdateUser={setUser}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        />
 
         {/* Dedicated Ambalan Login / Register Modal */}
         <AmbalanAuthModal

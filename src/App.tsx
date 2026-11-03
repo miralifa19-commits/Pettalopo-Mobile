@@ -127,7 +127,7 @@ export default function App() {
   // Page title mapper
   const getHeaderTitle = () => {
     switch (activeMenu) {
-      case 'home': return 'Beranda';
+      case 'home': return '';
       case 'dashboard':
       case 'kegiatan_latihan':
         return 'Kegiatan dan Latihan';
@@ -174,6 +174,7 @@ export default function App() {
             <HomeView
               user={user}
               onNavigateMenu={(m) => setActiveMenu(m)}
+              onOpenSidebar={() => setIsSidebarOpen(true)}
               programKerjaList={programKerjaList}
             />
           )}

@@ -18,21 +18,26 @@ import {
 } from 'lucide-react';
 import { ProgramKerjaItem, ProgramKerjaStatus } from '../../types';
 import { BULAN_LIST } from '../PetaPerjalananProker';
+import { SusunKegiatanModal } from '../dashboard/SusunKegiatanModal';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
 interface ProgramKerjaViewProps {
   programKerjaList: ProgramKerjaItem[];
   onUpdateList: (list: ProgramKerjaItem[]) => void;
   isAdmin?: boolean;
+  onBack?: () => void;
 }
 
 export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
   programKerjaList,
   onUpdateList,
-  isAdmin = true
+  isAdmin = true,
+  onBack
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<ProgramKerjaItem | null>(null);
   const [filterTipe, setFilterTipe] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>('Semua');
+  const [showSusunModal, setShowSusunModal] = useState(false);
   
   // FITUR URUTKAN: 'bulan' vs 'tanggal_diubah'
   const [sortBy, setSortBy] = useState<'bulan' | 'tanggal_diubah'>('bulan');
@@ -183,34 +188,31 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
   return (
     <div className="space-y-4 pb-24">
       
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-4 border-2 border-amber-400 shadow-sm flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-[#e51c24] border border-red-200">
-            Perencanaan & Evaluasi
-          </span>
-          <h1 className="text-base sm:text-lg font-black text-slate-900 mt-1">
-            Program Kerja (1 Tahun)
-          </h1>
-          <p className="text-xs text-slate-500">
-            Kelola, edit isi kegiatan, dan tentukan jadwal pelaksanaan
-          </p>
-        </div>
-
-        {isAdmin ? (
-          <button
-            onClick={handleOpenAdd}
-            className="px-3.5 py-2 rounded-xl bg-[#e51c24] hover:bg-[#c9141b] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm border border-amber-400 active:scale-95 transition-transform shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah</span>
-          </button>
-        ) : (
-          <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-300 shrink-0">
-            Mode Anggota (Viewer)
-          </span>
-        )}
-      </div>
+      {/* Header Card Program Kerja dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Program Kerja"
+        subtitle="Jadwal & perencanaan agenda masa bakti"
+        onBack={onBack || (() => {})}
+        actionRight={
+          isAdmin ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowSusunModal(true)}
+                className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold border border-white/30 transition-all shrink-0 cursor-pointer"
+                title="Pilih contoh kegiatan dari bank template"
+              >
+                Susun
+              </button>
+              <button
+                onClick={handleOpenAdd}
+                className="px-2.5 py-1 rounded-xl bg-white hover:bg-slate-100 text-[#e51c24] text-[11px] font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+              >
+                + Tambah
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* FILTER & FITUR URUTKAN */}
       <div className="bg-white rounded-2xl p-3 border-2 border-slate-100 shadow-xs space-y-2.5">
@@ -657,6 +659,17 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Susun Kegiatan dari Contoh (Khusus Admin) */}
+      {isAdmin && (
+        <SusunKegiatanModal
+          isOpen={showSusunModal}
+          onClose={() => setShowSusunModal(false)}
+          onAddKegiatan={(newItem) => {
+            onUpdateList([newItem, ...programKerjaList]);
+          }}
+        />
       )}
 
     </div>

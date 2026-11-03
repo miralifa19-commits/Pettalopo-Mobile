@@ -2,6 +2,8 @@ export type ActiveMenu =
   | 'home'
   | 'dashboard'
   | 'profil_ambalan'
+  | 'dewan_ambalan'
+  | 'laporan'
   | 'kegiatan_latihan'
   | 'sangga'
   | 'organisasi'
@@ -14,6 +16,49 @@ export type ActiveMenu =
   | 'latihan_rutin'
   | 'akun'
   | 'database';
+
+export interface KegiatanEvaluation {
+  id: string;
+  kegiatanId: string;
+  kegiatanNama: string;
+  kegiatanTipe?: 'Kegiatan' | 'Latihan Rutin';
+  memberUid?: string;
+  memberName: string;
+  satuan: 'Putra' | 'Putri';
+  sangga: string;
+  tingkat?: string;
+  statusKehadiran: 'Hadir' | 'Izin' | 'Sakit';
+  rating: number; // 1 to 5
+  kelebihan: string; // Evaluasi kelebihan
+  kekurangan: string; // Evaluasi kekurangan
+  masukan?: string;
+  submittedAt: string;
+  timestamp: number;
+}
+
+export interface ActiveKegiatanSession {
+  kegiatanId: string;
+  kegiatanNama: string;
+  tipe: 'Kegiatan' | 'Latihan Rutin';
+  waktuPelaksanaan: string;
+  tempat?: string;
+  isRunning: boolean;
+  isPresensiOpen: boolean;
+  sharedAt?: string;
+  startedAt?: string;
+}
+
+export interface AmbalanNotificationItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+  type?: 'general' | 'presensi';
+  kegiatanId?: string;
+  kegiatanNama?: string;
+  createdAtNumber?: number;
+}
 
 export interface ChatListItem {
   id: string;
@@ -32,7 +77,7 @@ export interface ChatMessage {
   senderAvatar?: string;
   senderGudep?: string;
   senderSangga?: string;
-  senderRole?: 'admin' | 'anggota';
+  senderRole?: UserRole;
   type: 'text' | 'list';
   text?: string;
   timestamp: string;
@@ -91,7 +136,7 @@ export interface MateriBelajar {
   penulis: string;
 }
 
-export type UserRole = 'admin' | 'anggota';
+export type UserRole = 'admin' | 'dewan' | 'anggota';
 
 export interface UserAccount {
   uid?: string;
@@ -100,6 +145,8 @@ export interface UserAccount {
   email?: string;
   nama: string;
   role: UserRole;
+  isDewan?: boolean; // Tanda keanggotaan Dewan Ambalan
+  dewanJabatan?: string; // Jabatan spesifik Dewan Ambalan (e.g. Pradana, Kerani, Hartaka, Pemangku Adat)
   gudep: '10-035' | '10-036';
   satuan: 'Putra' | 'Putri';
   tingkat: 'Tamu Ambalan' | 'Calon Bantara' | 'Penegak Bantara' | 'Penegak Laksana' | 'Penegak Garuda';
@@ -107,6 +154,12 @@ export interface UserAccount {
   jabatan: string;
   nomorKta: string;
   foto?: string; // Avatar/profile picture data URL
+  usia?: number; // Usia anggota (tahun)
+  namaPanggilan?: string;
+  ttl?: string; // Tempat, Tanggal Lahir
+  motto?: string;
+  progresSku?: string; // e.g. '19/23 Butir Bantara Teruji'
+  keaktifan?: 'Sangat Aktif' | 'Aktif' | 'Cukup Aktif' | 'Pasif'; // Status keaktifan latihan & kegiatan
   createdAt?: string;
 }
 
@@ -119,6 +172,8 @@ export interface AttendanceSession {
   closedAt?: string;
   openedBy: string;
   tipe: 'Latihan Rutin' | 'Kegiatan';
+  qrToken?: string;
+  lokasiPangkalan?: string;
 }
 
 // Supporting & Reference Types
@@ -184,6 +239,13 @@ export interface AttendanceRecord {
   notes?: string;
   timestamp?: string;
   submittedBy?: 'self' | 'admin';
+  metode?: 'manual' | 'lokasi' | 'qr_code';
+  koordinat?: {
+    lat: number;
+    lng: number;
+    akurasi?: number;
+    info?: string;
+  };
 }
 
 export interface LogbookEntry {

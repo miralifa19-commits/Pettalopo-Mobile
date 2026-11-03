@@ -21,20 +21,24 @@ import {
 } from 'lucide-react';
 import { UserAccount } from '../../types';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
+import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
 import { syncUserProfile, subscribeToAllMembers, DEFAULT_SEED_MEMBERS } from '../../services/firebaseService';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
 interface AkunViewProps {
   user: UserAccount;
   onUpdateUser: (updated: UserAccount) => void;
   onNavigateToDatabase?: () => void;
   onOpenAuthModal?: () => void;
+  onBack?: () => void;
 }
 
 export const AkunView: React.FC<AkunViewProps> = ({ 
   user, 
   onUpdateUser,
   onNavigateToDatabase,
-  onOpenAuthModal
+  onOpenAuthModal,
+  onBack
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [registeredMembers, setRegisteredMembers] = useState<UserAccount[]>([]);
@@ -94,6 +98,13 @@ export const AkunView: React.FC<AkunViewProps> = ({
   return (
     <div className="space-y-4 pb-24 font-sans">
       
+      {/* Header Card dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Akun Saya"
+        subtitle="Profil anggota & informasi kredensial"
+        onBack={onBack || (() => {})}
+      />
+
       {/* 1. Header Profile Card with Role Badge */}
       <div className="bg-white rounded-3xl p-5 border-2 border-amber-400 shadow-xs text-center relative overflow-hidden">
         
@@ -104,21 +115,22 @@ export const AkunView: React.FC<AkunViewProps> = ({
               <Crown className="w-3.5 h-3.5 text-amber-300" />
               <span>AKUN PEMBINA / ADMIN UTAMA</span>
             </span>
+          ) : (user.role === 'dewan' || Boolean(user.isDewan)) ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-[#e51c24] text-[11px] font-black shadow-xs border border-red-300">
+              <Crown className="w-3.5 h-3.5 text-amber-600" />
+              <span>DEWAN AMBALAN ({user.dewanJabatan || user.jabatan || 'PENGURUS'}) - AKSES ADMIN</span>
+            </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-[11px] font-bold border border-blue-200">
               <User className="w-3.5 h-3.5 text-blue-600" />
-              <span>AKUN ANGGOTA PENEGAK (VIEWER)</span>
+              <span>AKUN ANGGOTA PENEGAK</span>
             </span>
           )}
         </div>
 
-        {/* Logo without frame box */}
+        {/* Logo without frame box with 15s shine */}
         <div className="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
-          <img
-            src={LOGO_IMAGE_PATH}
-            alt="Logo Ambalan"
-            className="w-full h-full object-contain drop-shadow-md"
-          />
+          <ShiningAmbalanLogo className="w-16 h-16" alt="Logo Ambalan" />
         </div>
 
         <h1 className="text-base sm:text-lg font-black text-slate-900 mt-1">
@@ -206,27 +218,27 @@ export const AkunView: React.FC<AkunViewProps> = ({
         </div>
       </div>
 
-      {/* 2. ADMIN ONLY SHORTCUT: MENU DATABASE */}
-      {user.role === 'admin' && onNavigateToDatabase && (
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-5 text-slate-950 shadow-md border-2 border-amber-300 flex items-center justify-between gap-3">
+      {/* 2. ADMIN & DEWAN SHORTCUT: MENU DATABASE */}
+      {(user.role === 'admin' || user.role === 'dewan' || Boolean(user.isDewan)) && onNavigateToDatabase && (
+        <div className="bg-amber-400 rounded-3xl p-5 text-slate-950 shadow-md border-2 border-amber-500 flex items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <Database className="w-4 h-4 text-slate-950" />
               <span className="text-[10px] font-black uppercase font-mono tracking-wider bg-black/10 px-2 py-0.5 rounded-full">
-                Khusus Admin Pembina
+                Khusus Admin & Dewan Ambalan
               </span>
             </div>
             <h3 className="text-sm font-black text-slate-950">
               Database Akun Seluruh Anggota
             </h3>
             <p className="text-xs text-slate-900 font-medium leading-relaxed">
-              Lihat username dan password semua anggota ambalan untuk arsip pangkalan.
+              Kelola status kepengurusan Dewan Ambalan, rincian identitas, dan kredensial anggota.
             </p>
           </div>
 
           <button
             onClick={onNavigateToDatabase}
-            className="px-4 py-2.5 rounded-2xl bg-slate-950 text-white text-xs font-black shadow-md hover:bg-slate-900 transition-all shrink-0"
+            className="px-4 py-2.5 rounded-2xl bg-slate-950 text-white text-xs font-black shadow-md hover:bg-slate-900 transition-all shrink-0 cursor-pointer"
           >
             Buka Database →
           </button>
@@ -263,7 +275,9 @@ export const AkunView: React.FC<AkunViewProps> = ({
           <div className="py-2.5 flex justify-between">
             <span className="text-slate-500 font-medium">Hak Akses</span>
             <span className="font-bold text-slate-900">
-              {user.role === 'admin' ? '👑 Admin (Bisa edit proker & buka absen)' : '⚜️ Anggota (Viewer & Absensi mandiri)'}
+              {(user.role === 'admin' || user.role === 'dewan' || Boolean(user.isDewan)) 
+                ? `👑 ${user.role === 'admin' ? 'Pembina / Admin Utama' : 'Dewan Ambalan'} (Akses Penuh Pengelola)` 
+                : '⚜️ Anggota Biasa (Akses Anggota)'}
             </span>
           </div>
         </div>

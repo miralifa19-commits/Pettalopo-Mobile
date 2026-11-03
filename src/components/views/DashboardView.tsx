@@ -14,10 +14,19 @@ import {
   Info
 } from 'lucide-react';
 import { ProgramKerjaItem } from '../../types';
+import { SusunKegiatanModal } from '../dashboard/SusunKegiatanModal';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
 interface DashboardViewProps {
   programKerjaList: ProgramKerjaItem[];
   onNavigateToProgramKerja: () => void;
+  onBack?: () => void;
+  isAdmin?: boolean;
+  onAddProgramKerja?: (item: ProgramKerjaItem) => void;
+  activeKegiatan?: import('../../types').ActiveKegiatanSession | null;
+  onStopKegiatan?: () => void;
+  onSharePresensi?: (item: ProgramKerjaItem) => void;
+  onOpenPresensiModal?: (kegiatanId?: string) => void;
 }
 
 const INDONESIA_MONTHS = [
@@ -27,7 +36,14 @@ const INDONESIA_MONTHS = [
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   programKerjaList,
-  onNavigateToProgramKerja
+  onNavigateToProgramKerja,
+  onBack,
+  isAdmin = false,
+  onAddProgramKerja,
+  activeKegiatan,
+  onStopKegiatan,
+  onSharePresensi,
+  onOpenPresensiModal
 }) => {
   // Current Month calculation
   const now = new Date();
@@ -40,120 +56,172 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Selected item for Detailed Modal
   const [selectedItem, setSelectedItem] = useState<ProgramKerjaItem | null>(null);
 
-  // Sort by scout school year (Juli = 1 ... Juni = 12)
-  const sortedList = [...programKerjaList].sort(
-    (a, b) => (a.bulanUrutan || 1) - (b.bulanUrutan || 1)
-  );
+  // Susun Kegiatan dari Contoh Modal State (Admin Only)
+  const [showSusunModal, setShowSusunModal] = useState(false);
 
-  // Items for this current month
-  const currentMonthItems = sortedList.filter(
-    (item) => item.bulan?.toLowerCase() === currentMonthName.toLowerCase()
-  );
-
-  // Display list: only this month by default, or all if toggled via icon
-  const displayedList = showAllActivities ? sortedList : currentMonthItems;
+  // Sort all activities grouped by Indonesia months (Januari .. Desember)
+  const groupedMonths = INDONESIA_MONTHS.map((month) => {
+    const items = programKerjaList.filter(
+      (item) => (item.bulan || '').toLowerCase() === month.toLowerCase()
+    );
+    return {
+      month,
+      items
+    };
+  });
 
   return (
     <div className="space-y-4 pb-28 font-sans">
 
-      {/* 2. Header: Cukup tulisan "Kegiatan dan Latihan" & dibawahnya bulan saat ini */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs">
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          Kegiatan dan Latihan
-        </h1>
-        <p className="text-xs sm:text-sm font-bold text-[#e51c24] mt-0.5">
-          {showAllActivities ? 'Semua Bulan (Tahun Ajaran 2026/2027)' : `Bulan ${currentMonthName} ${currentYear}`}
-        </p>
-      </div>
+      {/* Header Card dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Kegiatan & Latihan"
+        subtitle="Agenda ambalan selama 1 masa bakti"
+        onBack={onBack || (() => {})}
+        actionRight={
+          isAdmin && onAddProgramKerja ? (
+            <button
+              onClick={() => setShowSusunModal(true)}
+              className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold border border-white/30 transition-all shrink-0 cursor-pointer"
+              title="Susun kegiatan dari contoh katalog"
+            >
+              Susun Kegiatan
+            </button>
+          ) : undefined
+        }
+      />
 
-      {/* 3. Daftar Program (Hanya bulan ini secara default, atau semua jika ikon diklik) */}
-      <div className="space-y-3">
-        {displayedList.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border-2 border-dashed border-slate-200 text-center space-y-2">
-            <Calendar className="w-8 h-8 text-slate-300 mx-auto" />
-            <h3 className="text-sm font-bold text-slate-700">
-              Tidak ada agenda di Bulan {currentMonthName}
+      {/* KARTU KEGIATAN SEDANG DILAKSANAKAN (LIVE SESSION) */}
+      {activeKegiatan && activeKegiatan.isRunning && (
+        <div className="bg-red-50 border-2 border-[#e51c24] rounded-3xl p-4 sm:p-5 shadow-xs space-y-3 animate-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+              <span className="text-[10px] font-black uppercase text-[#e51c24] font-mono tracking-wider">
+                Sedang Dilaksanakan
+              </span>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#e51c24] text-white text-[10px] font-mono font-black">
+              LIVE AKTIF
+            </span>
+          </div>
+
+          <div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+              {activeKegiatan.kegiatanNama}
             </h3>
-            <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Gunakan tombol ikon di bawah untuk melihat seluruh kegiatan tahunan.
+            <p className="text-xs text-slate-600 mt-0.5">
+              {activeKegiatan.waktuPelaksanaan} • {activeKegiatan.tipe} {activeKegiatan.tempat ? `• ${activeKegiatan.tempat}` : ''}
             </p>
           </div>
-        ) : (
-          displayedList.map((item) => {
-            const isKegiatan = (item.tipe || 'Kegiatan') === 'Kegiatan';
 
-            return (
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <button
+              onClick={() => {
+                const item = programKerjaList.find((p) => p.id === activeKegiatan.kegiatanId);
+                if (item && onSharePresensi) {
+                  onSharePresensi(item);
+                } else if (onSharePresensi) {
+                  onSharePresensi({
+                    id: activeKegiatan.kegiatanId,
+                    nama: activeKegiatan.kegiatanNama,
+                    tipe: activeKegiatan.tipe,
+                    waktuPelaksanaan: activeKegiatan.waktuPelaksanaan,
+                    bulan: 'Aktif',
+                    bulanUrutan: 1,
+                    sasaran: 'Seluruh Anggota',
+                    penanggungJawab: 'Dewan Ambalan',
+                    status: 'Berjalan',
+                    deskripsi: 'Kegiatan sedang berlangsung'
+                  });
+                }
+              }}
+              className="flex-1 min-w-[130px] py-2.5 px-3 rounded-xl bg-[#e51c24] hover:bg-red-700 text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <span>📢</span>
+              <span>Bagikan Presensi</span>
+            </button>
+
+            <button
+              onClick={() => onOpenPresensiModal && onOpenPresensiModal(activeKegiatan.kegiatanId)}
+              className="flex-1 min-w-[130px] py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <span>📋</span>
+              <span>Isi Presensi & Evaluasi</span>
+            </button>
+
+            {isAdmin && onStopKegiatan && (
+              <button
+                onClick={onStopKegiatan}
+                className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                title="Hentikan / Selesaikan Sesi Kegiatan Ini"
+              >
+                <span>⏹️ Selesai</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Daftar Kegiatan Selama 1 Masa Bakti Terurut per Bulan */}
+      <div className="space-y-4">
+        {groupedMonths.map(({ month, items }) => {
+          const isCurrentMonth = month.toLowerCase() === currentMonthName.toLowerCase();
+
+          return (
+            <div
+              key={month}
+              className={`bg-white rounded-2xl border transition-all overflow-hidden shadow-xs ${
+                isCurrentMonth ? 'border-[#e51c24]/50' : 'border-slate-200'
+              }`}
+            >
+              {/* Header Nama Bulan di Atasnya */}
               <div
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className={`group bg-white rounded-2xl p-4 sm:p-5 border transition-all cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5 ${
-                  isKegiatan
-                    ? 'border-l-4 border-l-[#e51c24] border-slate-200 hover:border-amber-400'
-                    : 'border-l-4 border-l-amber-400 border-slate-200 hover:border-amber-400'
+                className={`px-4 py-3 border-b flex items-center justify-between ${
+                  isCurrentMonth ? 'bg-red-50/70 border-red-200' : 'bg-slate-50 border-slate-200'
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  
-                  {/* Left: Clean Date & Title */}
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-slate-900 font-mono tracking-wider border border-amber-300">
-                        {item.bulan || currentMonthName}
-                      </span>
-                      <span className="text-[11px] font-semibold text-slate-400 font-mono">
-                        {item.waktuPelaksanaan}
-                      </span>
-                    </div>
-
-                    <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-[#e51c24] transition-colors leading-snug truncate">
-                      {item.nama}
-                    </h3>
-
-                    <p className="text-[11px] text-slate-500 font-normal">
-                      PJ: <strong>{item.penanggungJawab}</strong> • Sasaran: {item.sasaran}
-                    </p>
-                  </div>
-
-                  {/* Right: Status Pill & Arrow */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                      item.status === 'Terlaksana'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                        : item.status === 'Berjalan'
-                        ? 'bg-blue-50 text-blue-800 border-blue-300'
-                        : item.status === 'Tidak Terlaksana'
-                        ? 'bg-rose-50 text-rose-800 border-rose-300'
-                        : 'bg-amber-50 text-amber-800 border-amber-300'
-                    }`}>
-                      {item.status}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900">
+                    Bulan {month}
+                  </span>
+                  {isCurrentMonth && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#e51c24] text-white">
+                      Bulan Ini
                     </span>
-
-                    <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 group-hover:bg-[#e51c24] group-hover:text-white flex items-center justify-center transition-colors">
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-
+                  )}
                 </div>
+                <span className="text-[11px] font-mono text-slate-500 font-semibold bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                  {items.length} Agenda
+                </span>
               </div>
-            );
-          })
-        )}
-      </div>
 
-      {/* 4. Opsi untuk menampilkan semua kegiatan (Anggaplah ikon saja, tidak perlu pakai tulisan) */}
-      <div className="flex justify-center pt-2">
-        <button
-          onClick={() => setShowAllActivities(!showAllActivities)}
-          title={showAllActivities ? 'Tampilkan Hanya Bulan Ini' : 'Tampilkan Semua Kegiatan & Latihan'}
-          aria-label="Tampilkan semua kegiatan dan latihan"
-          className="w-12 h-12 rounded-2xl bg-[#e51c24] hover:bg-[#c9141b] text-white flex items-center justify-center shadow-md border border-red-700 transition-all active:scale-95 hover:rotate-180 duration-300"
-        >
-          {showAllActivities ? (
-            <ChevronUp className="w-6 h-6 stroke-[2.5]" />
-          ) : (
-            <Layers className="w-6 h-6 stroke-[2.2]" />
-          )}
-        </button>
+              {/* List Nama Kegiatan di Bawahnya (Hanya Nama Kegiatan, Klik Buka Detail) */}
+              <div className="divide-y divide-slate-100">
+                {items.length === 0 ? (
+                  <div className="p-3 text-center text-xs text-slate-400 italic">
+                    Belum ada agenda kegiatan di bulan ini
+                  </div>
+                ) : (
+                  items.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className="px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                    >
+                      <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-[#e51c24] transition-colors leading-snug">
+                        {item.nama}
+                      </span>
+                      <span className="text-slate-400 group-hover:text-[#e51c24] group-hover:translate-x-0.5 transition-all text-xs shrink-0">
+                        ›
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* 5. MODAL RINCIAN PROGRAM KERJA (PROGRESSIVE DISCLOSURE) */}
@@ -162,7 +230,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto animate-in zoom-in-95 duration-150">
             
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#e51c24] to-[#c9141b] text-white p-5 border-b border-red-700 relative">
+            <div className="bg-[#e51c24] text-white p-5 border-b border-red-700 relative">
               <button
                 onClick={() => setSelectedItem(null)}
                 className="absolute top-4 right-4 p-1.5 rounded-full bg-black/20 hover:bg-black/30 text-amber-300 transition-colors"
@@ -277,6 +345,62 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               )}
 
+              {/* Running Status & Action Strip in Modal */}
+              <div className="p-3 bg-red-50 rounded-2xl border border-red-200 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-slate-800">Operasional Kegiatan:</span>
+                  {activeKegiatan?.kegiatanId === selectedItem.id && activeKegiatan.isRunning ? (
+                    <span className="px-2 py-0.5 rounded-full bg-red-600 text-white font-mono font-black text-[10px] animate-pulse">
+                      🔴 SEDANG BERLANGSUNG
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Belum dijalankan
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activeKegiatan?.kegiatanId === selectedItem.id && activeKegiatan.isRunning ? (
+                    <>
+                      <button
+                        onClick={() => onSharePresensi && onSharePresensi(selectedItem)}
+                        className="flex-1 py-2 px-3 rounded-xl bg-[#e51c24] hover:bg-red-700 text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <span>📢</span>
+                        <span>Bagikan Presensi</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItem(null);
+                          if (onOpenPresensiModal) onOpenPresensiModal(selectedItem.id);
+                        }}
+                        className="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <span>📋</span>
+                        <span>Isi Presensi</span>
+                      </button>
+
+                      {isAdmin && onStopKegiatan && (
+                        <button
+                          onClick={onStopKegiatan}
+                          className="py-2 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs"
+                        >
+                          ⏹️ Selesai
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                      <span className="text-[11px] text-slate-600 font-medium leading-relaxed block">
+                        Pengaktifan kegiatan & latihan hanya dapat diaktifkan oleh Dewan Ambalan pada menu <strong>Kelola Program Kerja</strong>.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Actions Footer */}
               <div className="pt-2 flex items-center justify-between gap-3">
                 <button
@@ -291,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     setSelectedItem(null);
                     onNavigateToProgramKerja();
                   }}
-                  className="px-5 py-2.5 rounded-2xl bg-[#e51c24] hover:bg-[#c9141b] text-white font-black text-xs shadow-md border border-red-700 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5"
                 >
                   <span>Buka di Program Kerja</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -302,6 +426,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           </div>
         </div>
+      )}
+
+      {/* Modal Susun Kegiatan dari Contoh (Khusus Admin) */}
+      {isAdmin && onAddProgramKerja && (
+        <SusunKegiatanModal
+          isOpen={showSusunModal}
+          onClose={() => setShowSusunModal(false)}
+          onAddKegiatan={(newItem) => {
+            onAddProgramKerja(newItem);
+          }}
+        />
       )}
 
     </div>

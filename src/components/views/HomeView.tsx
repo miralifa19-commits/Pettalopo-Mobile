@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Award, 
   Sparkles, 
   Brain, 
-  Calendar, 
   ChevronRight, 
   X, 
-  Clock, 
-  UserCheck, 
-  Layers,
   ArrowRight
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from '../../data/defaultProgramKerja';
-import { LOGO_IMAGE_PATH } from '../../data/scoutData';
 
 interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
@@ -190,12 +185,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [selectedIdx, setSelectedIdx] = useState<number>(currentMonthIdx);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  // State untuk melihat/sembunyikan semua kegiatan (12 bulan)
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
   const activeItem = BULAN_LINGKARAN_SDG[selectedIdx] || BULAN_LINGKARAN_SDG[0];
 
   // Related proker from database for active month
   const relatedProker = programKerjaList.filter(
     p => p.bulan?.toLowerCase() === activeItem.bulan.toLowerCase()
   );
+
+  const handleSelectMonth = (idx: number) => {
+    setSelectedIdx(idx);
+  };
 
   // SVG Dimension constants
   const size = 320;
@@ -223,29 +225,31 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 2. RODA LINGKARAN 12 BULAN SDGs (SESUAI GAMBAR REFERENSI LINGKARAN) */}
+      {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
         
-        {/* Header Roda */}
+        {/* Header Roda yang Diperbarui */}
         <div className="text-center">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-            Kalender Agenda Tahunan
+            Agenda Ambalan
           </span>
-          <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight mt-1">
-            Roda Agenda 12 Bulan Ambalan
+          <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight mt-1">
+            Kegiatan dan Latihan Rutin
           </h3>
           <p className="text-[11px] text-slate-500">
-            Pilih atau sentuh segmen lingkaran untuk melihat kegiatan setiap bulan
+            Sentuh segmen bulan untuk melihat agenda
           </p>
         </div>
 
-        {/* Lingkaran Donut SDGs Interaktif */}
-        <div className="flex justify-center items-center py-2 relative">
-          <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] flex items-center justify-center">
-            
+        {/* Lingkaran Donut 12 Bulan Statis (Tidak Diputar) */}
+        <div className="flex justify-center items-center py-2 relative select-none">
+          <div 
+            className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] flex items-center justify-center"
+          >
+            {/* SVG Roda Statis Tetap pada Posisinya */}
             <svg 
               viewBox={`0 0 ${size} ${size}`} 
-              className="w-full h-full transform transition-transform duration-300"
+              className="w-full h-full"
             >
               {BULAN_LINGKARAN_SDG.map((m, idx) => {
                 const isSelected = selectedIdx === idx;
@@ -256,7 +260,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 const pathData = describeArcSegment(
                   center,
                   center,
-                  isSelected ? innerR - 3 : innerR,
+                  isSelected ? innerR - 4 : innerR,
                   isSelected ? outerR + 5 : outerR,
                   startAngle,
                   endAngle
@@ -267,15 +271,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 const labelPos = polarToCartesian(center, center, (innerR + outerR) / 2, midAngle);
 
                 return (
-                  <g key={m.id} className="cursor-pointer group" onClick={() => setSelectedIdx(idx)}>
+                  <g 
+                    key={m.id} 
+                    className="cursor-pointer" 
+                    onClick={() => handleSelectMonth(idx)}
+                  >
                     {/* Sektor Donut Lingkaran */}
                     <path
                       d={pathData}
                       fill={m.bgHex}
                       className="transition-all duration-200 hover:opacity-90 active:scale-[0.98] origin-center"
-                      filter={isSelected ? 'drop-shadow(0px 4px 6px rgba(0,0,0,0.25))' : undefined}
+                      filter={isSelected ? 'drop-shadow(0px 4px 6px rgba(0,0,0,0.3))' : undefined}
                       stroke={isSelected ? '#ffffff' : 'none'}
-                      strokeWidth={isSelected ? '2' : '0'}
+                      strokeWidth={isSelected ? '2.5' : '0'}
                     />
 
                     {/* Teks Singkatan Bulan di dalam Segmen */}
@@ -284,7 +292,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       y={labelPos.y + 3.5}
                       textAnchor="middle"
                       fill="#ffffff"
-                      fontSize={isSelected ? '10' : '9'}
+                      fontSize={isSelected ? '10.5' : '9'}
                       fontWeight="900"
                       fontFamily="sans-serif"
                       className="pointer-events-none select-none tracking-tighter"
@@ -296,11 +304,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               })}
             </svg>
 
-            {/* Bagian Tengah Lingkaran (Center Hub): Menampilkan Bulan yang Dipilih */}
+            {/* Bagian Tengah Lingkaran (Center Hub): Tetap stabil dan menampilkan bulan terpilih */}
             <div 
-              onClick={() => setIsDetailModalOpen(true)}
-              className="absolute inset-0 m-auto w-[150px] h-[150px] sm:w-[160px] sm:h-[160px] rounded-full bg-white shadow-inner flex flex-col items-center justify-center p-3 text-center cursor-pointer border border-slate-100 hover:scale-105 active:scale-95 transition-all group"
-              title="Klik untuk membuka rincian lengkap agenda bulan ini"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDetailModalOpen(true);
+              }}
+              className="absolute inset-0 m-auto w-[150px] h-[150px] sm:w-[160px] sm:h-[160px] rounded-full bg-white shadow-md flex flex-col items-center justify-center p-3 text-center cursor-pointer border border-slate-100 hover:scale-105 active:scale-95 transition-all group z-10"
+              title="Klik untuk membuka rincian bulan ini"
             >
               <div 
                 style={{ backgroundColor: activeItem.bgHex }}
@@ -333,51 +344,107 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* Kartu Rincian Bulan Terpilih (Di Bawah Lingkaran) */}
+        {/* KONTEN DI BAWAH RODA: TULISAN BULAN DAN LIST KEGIATAN */}
         <div 
           style={{ borderLeftColor: activeItem.bgHex }}
-          className="p-4 rounded-2xl bg-slate-50 border border-slate-200 border-l-4 space-y-2 text-xs transition-all animate-in fade-in duration-150"
+          className="p-4 rounded-2xl bg-slate-50 border border-slate-200 border-l-4 space-y-3 text-xs transition-all animate-in fade-in duration-150"
         >
+          {/* Header Bulan Terpilih */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="flex items-center gap-1.5 mb-1">
                 <span 
                   style={{ backgroundColor: activeItem.bgHex }}
-                  className="px-2 py-0.5 rounded-full text-white font-mono font-bold text-[9px] uppercase tracking-wider"
+                  className="px-2.5 py-0.5 rounded-full text-white font-mono font-bold text-[10px] uppercase tracking-wider"
                 >
-                  {activeItem.bulan} 2026/2027
+                  Bulan {activeItem.bulan}
                 </span>
-                <span className="text-slate-400 font-mono text-[10px]">
-                  {relatedProker.length} Program Kerja
+                <span className="text-slate-500 font-mono text-[10px] font-bold">
+                  {relatedProker.length} Kegiatan Terjadwal
                 </span>
               </div>
-              <h4 className="text-xs sm:text-sm font-black text-slate-900 leading-snug">
+              <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
                 {activeItem.kegiatanUtama}
               </h4>
+              <p className="text-slate-600 text-[11px] leading-relaxed mt-1">
+                {activeItem.deskripsi}
+              </p>
             </div>
 
             <button
               onClick={() => setIsDetailModalOpen(true)}
-              className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#e51c24] transition-colors shrink-0 shadow-2xs"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#e51c24] transition-colors shrink-0 shadow-2xs"
               title="Buka Rincian Lengkap"
             >
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-slate-600 text-[11px] leading-relaxed">
-            {activeItem.deskripsi}
-          </p>
+          {/* List Kegiatan & Latihan Rutin Bulan Terpilih */}
+          <div className="space-y-2 pt-2 border-t border-slate-200">
+            <h5 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+              <span>📋</span>
+              <span>Daftar Kegiatan & Latihan Bulan {activeItem.bulan}:</span>
+            </h5>
+
+            {relatedProker.length === 0 ? (
+              <div className="p-3 rounded-xl bg-white border border-slate-200 text-slate-500 text-[11px] space-y-1">
+                <div className="flex items-center justify-between font-bold text-slate-800">
+                  <span>{activeItem.kegiatanUtama}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[9px] text-slate-600 font-mono">
+                    Agenda Rutin
+                  </span>
+                </div>
+                <p className="text-slate-500">
+                  Waktu: Menyesuaikan kalender latihan ambalan semester ini.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {relatedProker.map((p) => (
+                  <div
+                    key={p.id}
+                    className="p-3 rounded-xl bg-white border border-slate-200 hover:border-red-300 transition-all shadow-2xs flex items-start justify-between gap-2"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                          p.tipe === 'Latihan Rutin' ? 'bg-amber-100 text-amber-900' : 'bg-red-100 text-red-900'
+                        }`}>
+                          {p.tipe}
+                        </span>
+                        <strong className="text-xs font-bold text-slate-900 truncate">
+                          {p.nama}
+                        </strong>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        📅 {p.waktuPelaksanaan} {p.tempat ? `• 📍 ${p.tempat}` : ''}
+                      </p>
+                      {p.penanggungJawab && (
+                        <p className="text-[10px] text-slate-400">
+                          PJ: {p.penanggungJawab}
+                        </p>
+                      )}
+                    </div>
+
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[9px] font-bold text-slate-700 border border-slate-200 shrink-0">
+                      {p.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Tab Geser Cepat 12 Bulan */}
+        {/* Tab Geser 12 Bulan */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 -mx-2 px-2 scrollbar-thin">
           {BULAN_LINGKARAN_SDG.map((m, idx) => {
             const isSelected = selectedIdx === idx;
             return (
               <button
                 key={m.id}
-                onClick={() => setSelectedIdx(idx)}
+                onClick={() => handleSelectMonth(idx)}
                 style={{
                   backgroundColor: isSelected ? m.bgHex : '#f1f5f9',
                   color: isSelected ? '#ffffff' : '#475569'
@@ -388,6 +455,119 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </button>
             );
           })}
+        </div>
+
+        {/* ========================================================
+            TOMBOL TOGGLE: LIHAT / SEMBUNYIKAN SEMUA KEGIATAN (12 BULAN)
+            ======================================================== */}
+        <div className="pt-2 border-t border-slate-200 space-y-3">
+          <button
+            onClick={() => setShowAllActivities(prev => !prev)}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition-all font-bold text-xs shadow-xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">{showAllActivities ? '🙈' : '📅'}</span>
+              <span>
+                {showAllActivities ? 'Sembunyikan Semua Kegiatan' : 'Lihat Semua Kegiatan (Semua Bulan)'}
+              </span>
+            </div>
+
+            {/* Icon Klik Toggle */}
+            <div className="p-1.5 rounded-xl bg-white/15 text-white flex items-center justify-center font-bold text-xs">
+              <span>{showAllActivities ? '▲' : '▼'}</span>
+            </div>
+          </button>
+
+          {/* DAFTAR SEMUA KEGIATAN DARI SELURUH 12 BULAN (JIKA DIBUKA) */}
+          {showAllActivities && (
+            <div className="space-y-3 pt-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-slate-800">
+                  Daftar Kegiatan Lengkap (12 Bulan Ambalan)
+                </span>
+                <span className="text-[10px] font-mono text-slate-500 font-bold">
+                  Total: {programKerjaList.length} Program Kerja
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {BULAN_LINGKARAN_SDG.map((b) => {
+                  const prokerBulan = programKerjaList.filter(
+                    (p) => p.bulan?.toLowerCase() === b.bulan.toLowerCase()
+                  );
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-2 shadow-2xs"
+                    >
+                      {/* Header Tiap Bulan */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span 
+                            style={{ backgroundColor: b.bgHex }}
+                            className="w-6 h-6 rounded-lg text-white text-xs flex items-center justify-center font-bold"
+                          >
+                            {b.id}
+                          </span>
+                          <strong className="text-xs font-bold text-slate-900">
+                            {b.bulan}
+                          </strong>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            ({prokerBulan.length} Kegiatan)
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => handleSelectMonth(b.id - 1)}
+                          className="text-[10px] text-red-600 font-bold hover:underline"
+                        >
+                          Pilih di Roda
+                        </button>
+                      </div>
+
+                      {/* Agenda Utama */}
+                      <p className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <strong>Agenda:</strong> {b.kegiatanUtama}
+                      </p>
+
+                      {/* List Kegiatan Terdaftar di Bulan Ini */}
+                      {prokerBulan.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          {prokerBulan.map((p) => (
+                            <div
+                              key={p.id}
+                              className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-start justify-between gap-2"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                                    p.tipe === 'Latihan Rutin' ? 'bg-amber-100 text-amber-900' : 'bg-red-100 text-red-900'
+                                  }`}>
+                                    {p.tipe}
+                                  </span>
+                                  <strong className="text-xs font-bold text-slate-900 truncate">
+                                    {p.nama}
+                                  </strong>
+                                </div>
+                                <span className="text-[10px] text-slate-500 block">
+                                  📅 {p.waktuPelaksanaan} {p.tempat ? `• 📍 ${p.tempat}` : ''}
+                                </span>
+                              </div>
+
+                              <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[9px] font-bold text-slate-700 shrink-0">
+                                {p.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

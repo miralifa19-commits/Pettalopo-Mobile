@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { Shield, Sparkles, BookOpen, Users, Compass, ChevronRight, Award, Flame } from 'lucide-react';
 import { LOGO_IMAGE_PATH, FILOSOFI_LOGO, SEJARAH_TOKOH } from '../../data/scoutData';
-import { UserProfile } from '../../types';
+import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { UserProfile, UserAccount } from '../../types';
 
 interface ProfilAmbalanViewProps {
   profile?: UserProfile;
+  allMembers?: UserAccount[];
+  onBack?: () => void;
 }
 
-export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = () => {
+export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack }) => {
   const [activeElement, setActiveElement] = useState(FILOSOFI_LOGO[0]);
 
-  const dewanAmbalan = [
-    { jabatan: 'Pradana Putra', nama: 'Amiruddin S.', gudep: '10-035', peran: 'Ketua Dewan Ambalan Satuan Putra' },
-    { jabatan: 'Pradana Putri', nama: 'Siti Nur Aisyah', gudep: '10-036', peran: 'Ketua Dewan Ambalan Satuan Putri' },
-    { jabatan: 'Kerani (Sekretaris)', nama: 'Muh. Fikri Haikal', gudep: '10-035/036', peran: 'Ketertiban Administrasi & Surat Menyurat' },
-    { jabatan: 'Hartaka (Bendahara)', nama: 'Nur Fadilah', gudep: '10-035/036', peran: 'Pengelolaan Keuangan & Iuran Sangga' },
-    { jabatan: 'Pemangku Adat', nama: 'Andi Baso Pratama', gudep: '10-035/036', peran: 'Penjaga Tradisi, Adat & Sandi Ambalan' }
-  ];
+  // Dewan Ambalan berasal dari anggota yang ditunjuk oleh Admin
+  const dewanMembers = allMembers.filter(
+    (m) => m.role === 'dewan' || m.role === 'admin' || Boolean(m.isDewan)
+  );
 
   const adatAmbalanRules = [
     'Menjunjung tinggi kehormatan Ambalan, bangsa, dan agama dengan senantiasa berpegang teguh pada prinsip "Siri\' na Pacce".',
@@ -27,16 +28,19 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = () => {
   ];
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-20 font-sans">
       
+      {/* Header Card dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Profil Ambalan"
+        subtitle="Gudep 10-035 & 10-036 La Surullah Petta Lopo"
+        onBack={onBack || (() => {})}
+      />
+
       {/* Top Banner Profile */}
       <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm text-center relative overflow-hidden">
-        <div className="w-32 h-32 mx-auto rounded-3xl bg-white p-2 border border-slate-200 shadow-lg mb-3">
-          <img
-            src={LOGO_IMAGE_PATH}
-            alt="Lambang Ambalan La Surullah Petta Lopo"
-            className="w-full h-full object-contain"
-          />
+        <div className="w-32 h-32 mx-auto rounded-3xl bg-white p-2 border border-slate-200 shadow-lg mb-3 flex items-center justify-center">
+          <ShiningAmbalanLogo className="w-28 h-28" />
         </div>
 
         <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-[#e51c24] text-white font-mono shadow-xs">
@@ -152,20 +156,26 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = () => {
           </h3>
         </div>
 
-        <div className="divide-y divide-slate-100">
-          {dewanAmbalan.map((dewan, idx) => (
-            <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
-              <div>
-                <h4 className="font-bold text-slate-900">{dewan.jabatan}</h4>
-                <p className="text-[11px] text-slate-500">{dewan.peran}</p>
+        {dewanMembers.length === 0 ? (
+          <div className="py-6 text-center text-slate-400 text-xs">
+            Belum ada pengurus Dewan Ambalan yang ditetapkan. Admin dapat menetapkan anggota menjadi Dewan Ambalan melalui Database Anggota.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {dewanMembers.map((dewan) => (
+              <div key={dewan.uid || dewan.username} className="py-2.5 flex items-center justify-between text-xs">
+                <div>
+                  <h4 className="font-bold text-slate-900">{dewan.dewanJabatan || dewan.jabatan || 'Dewan Ambalan'}</h4>
+                  <p className="text-[11px] text-slate-500">Sangga {dewan.sangga} • Satuan {dewan.satuan}</p>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-[#e51c24]">{dewan.nama}</span>
+                  <p className="text-[10px] font-mono text-slate-400">Gudep {dewan.gudep}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="font-bold text-[#e51c24]">{dewan.nama}</span>
-                <p className="text-[10px] font-mono text-slate-400">{dewan.gudep}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Adat Ambalan */}

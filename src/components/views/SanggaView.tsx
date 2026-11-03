@@ -1,199 +1,208 @@
-import React, { useState } from 'react';
-import { Users, Compass, Shield, Award, Flag, ChevronRight, UserCheck } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import { UserAccount } from '../../types';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
 interface SanggaViewProps {
   currentUser: UserAccount;
   allMembers?: UserAccount[];
+  onBack?: () => void;
 }
 
-interface SanggaInfo {
-  nama: 'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana';
-  arti: string;
-  filosofi: string;
-  warna: string;
-  tugas: string;
-  iconBg: string;
-  borderColor: string;
+type SanggaName = 'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana';
+
+const SANGGA_LIST: SanggaName[] = ['Perintis', 'Penegas', 'Pendobrak', 'Pencoba', 'Pelaksana'];
+
+/**
+ * Mengurutkan anggota sangga:
+ * 1. Pimpinan Sangga (Pinsang) di urutan PALING ATAS
+ * 2. Anggota Biasa di bagian tengah
+ * 3. Wakil Pimpinan Sangga (Wapinsang) di urutan PALING BAWAH
+ */
+function sortMembersPinsangWapinsang(members: UserAccount[]): UserAccount[] {
+  if (members.length <= 1) return members;
+
+  const pinsang = members.find((m) => {
+    const jab = (m.jabatan || '').toLowerCase();
+    return jab.includes('pinsang') || jab.includes('pemimpin sangga') || jab.includes('pimpinan sangga');
+  });
+
+  const wapinsang = members.find((m) => {
+    if (m === pinsang) return false;
+    const jab = (m.jabatan || '').toLowerCase();
+    return jab.includes('wapinsang') || jab.includes('wakil');
+  });
+
+  const regulars = members.filter((m) => m !== pinsang && m !== wapinsang);
+
+  const result: UserAccount[] = [];
+  if (pinsang) result.push(pinsang);
+  result.push(...regulars);
+  if (wapinsang) result.push(wapinsang);
+
+  return result;
 }
 
-const SANGGA_DATA: SanggaInfo[] = [
-  {
-    nama: 'Perintis',
-    arti: 'Perintisan Gerakan Kebangkitan Nasional 1908 (Boedi Oetomo)',
-    filosofi: 'Menjadi pionir pemikiran inovatif, pembuka jalan bagi kemajuan Ambalan, dan inisiator ide-ide baru yang konstruktif.',
-    warna: 'Merah Putih',
-    tugas: 'Menginisiasi gagasan kegiatan, merancang konsep baru, dan menjadi penggerak awal dinamika ambalan.',
-    iconBg: 'bg-red-500 text-white',
-    borderColor: 'border-red-400'
-  },
-  {
-    nama: 'Penegas',
-    arti: 'Penegasan Tekad Sumpah Pemuda 1928',
-    filosofi: 'Menegakkan disiplin adat ambalan, memantapkan tekad kebersamaan, dan memperkokoh persaudaraan pandu.',
-    warna: 'Kuning Emas',
-    tugas: 'Mempertegas kesepakatan dewan ambalan, mengawal kepatuhan adat, dan penegak ketertiban latihan.',
-    iconBg: 'bg-amber-500 text-white',
-    borderColor: 'border-amber-400'
-  },
-  {
-    nama: 'Pendobrak',
-    arti: 'Pendobrakan Belenggu Penjajahan (Proklamasi 1945)',
-    filosofi: 'Berani mendobrak kemalasan, rintangan medan, dan kekakuan demi pencapaian prestasi penegak sejati.',
-    warna: 'Merah Jingga',
-    tugas: 'Pelopor kegiatan penjelajahan alam, navigasi darat, survival, dan tanggap darurat bencana.',
-    iconBg: 'bg-orange-600 text-white',
-    borderColor: 'border-orange-400'
-  },
-  {
-    nama: 'Pencoba',
-    arti: 'Percobaan & Pengujian Teknologi Pembangunan Nasional',
-    filosofi: 'Selalu haus akan ilmu pengetahuan, siap menguji teori kepramukaan dalam praktik pionering dan teknologi tepat guna.',
-    warna: 'Hijau Daun',
-    tugas: 'Eksperimen teknik pionering, simpul-ikatan rumit, pemetaan, sandi morse lanjutan, dan kaji lingkungan.',
-    iconBg: 'bg-emerald-600 text-white',
-    borderColor: 'border-emerald-400'
-  },
-  {
-    nama: 'Pelaksana',
-    arti: 'Pelaksanaan Amanah Pembangunan Menuju Masa Depan',
-    filosofi: 'Setia bekerja tuntas, amanah dalam eksekusi tugas, dan bertanggung jawab penuh atas keberhasilan program kerja.',
-    warna: 'Biru Langit',
-    tugas: 'Pengorganisasian teknis lapangan, logistik perlengkapan ambalan, dan pelaksanaan bakti sosial masyarakat.',
-    iconBg: 'bg-blue-600 text-white',
-    borderColor: 'border-blue-400'
-  }
-];
-
-export const SanggaView: React.FC<SanggaViewProps> = ({ currentUser, allMembers = [] }) => {
-  const [selectedSangga, setSelectedSangga] = useState<'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana'>(
-    currentUser.sangga || 'Perintis'
+export const SanggaView: React.FC<SanggaViewProps> = ({ currentUser, allMembers = [], onBack }) => {
+  // Pilihan Satuan: Sangga Putra vs Sangga Putri (Tanpa icon)
+  const [selectedSatuan, setSelectedSatuan] = useState<'Putra' | 'Putri'>(
+    currentUser.satuan === 'Putri' ? 'Putri' : 'Putra'
   );
 
-  const activeInfo = SANGGA_DATA.find(s => s.nama === selectedSangga) || SANGGA_DATA[0];
-  const sanggaMembers = allMembers.filter(m => m.sangga === selectedSangga);
+  // Selected Sangga
+  const [selectedSangga, setSelectedSangga] = useState<SanggaName>('Perintis');
+
+  // Anggota sangga yang dipilih (Pinsang atas, Wapinsang bawah)
+  const currentSanggaMembers = useMemo(() => {
+    const list = allMembers.filter(
+      (m) => m.satuan === selectedSatuan && m.sangga === selectedSangga
+    );
+    return sortMembersPinsangWapinsang(list);
+  }, [allMembers, selectedSatuan, selectedSangga]);
 
   return (
     <div className="space-y-4 pb-24 font-sans">
       
-      {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e51c24] flex items-center justify-center border border-red-200 shadow-xs shrink-0">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-mono tracking-wider">
-              Satuan Terkecil Penegak
+      {/* Header Card Sangga dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Sangga Penegak"
+        subtitle="Struktur sangga ambalan putra & putri"
+        onBack={onBack || (() => {})}
+      />
+      
+      {/* 1. Pemilihan Satuan Putra / Putri (Tanpa icon) */}
+      <div className="bg-white rounded-2xl p-2.5 border border-slate-200 shadow-xs">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedSatuan('Putra')}
+            className={`py-2.5 px-3 rounded-xl border text-center transition-all ${
+              selectedSatuan === 'Putra'
+                ? 'bg-slate-900 border-slate-900 text-white font-bold shadow-xs'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700 font-medium'
+            }`}
+          >
+            <span className="text-xs sm:text-sm block">Sangga Putra</span>
+            <span className={`text-[10px] block mt-0.5 ${selectedSatuan === 'Putra' ? 'text-slate-300' : 'text-slate-500'}`}>
+              Gudep 10-035
             </span>
-            <h1 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-              Sangga Ambalan La Surullah
-            </h1>
-            <p className="text-xs text-slate-500">
-              Sangga Anda: <strong className="text-[#e51c24]">Sangga {currentUser.sangga}</strong>
-            </p>
-          </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedSatuan('Putri')}
+            className={`py-2.5 px-3 rounded-xl border text-center transition-all ${
+              selectedSatuan === 'Putri'
+                ? 'bg-slate-900 border-slate-900 text-white font-bold shadow-xs'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700 font-medium'
+            }`}
+          >
+            <span className="text-xs sm:text-sm block">Sangga Putri</span>
+            <span className={`text-[10px] block mt-0.5 ${selectedSatuan === 'Putri' ? 'text-slate-300' : 'text-slate-500'}`}>
+              Gudep 10-036
+            </span>
+          </button>
         </div>
+      </div>
 
-        {/* 5 Sangga Selector Tabs */}
-        <div className="grid grid-cols-5 gap-1.5 mt-4 pt-3 border-t border-slate-100">
-          {SANGGA_DATA.map((s) => {
-            const isSelected = selectedSangga === s.nama;
-            const isUserSangga = currentUser.sangga === s.nama;
-
+      {/* 2. Tombol Pilihan 5 Sangga (Tanpa Icon) */}
+      <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs">
+        <div className="grid grid-cols-5 gap-1 text-center">
+          {SANGGA_LIST.map((nama) => {
+            const isSelected = selectedSangga === nama;
             return (
               <button
-                key={s.nama}
-                onClick={() => setSelectedSangga(s.nama)}
-                className={`py-2 px-1 rounded-xl text-center transition-all relative ${
+                key={nama}
+                onClick={() => setSelectedSangga(nama)}
+                className={`py-2 px-1 rounded-xl text-center text-xs transition-all ${
                   isSelected
-                    ? 'bg-[#e51c24] text-white shadow-xs font-black'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold'
+                    ? 'bg-[#e51c24] text-white font-bold shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium'
                 }`}
               >
-                <span className="text-xs block truncate">{s.nama}</span>
-                {isUserSangga && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mx-auto mt-0.5 block" />
-                )}
+                <span className="block truncate">{nama}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Detail Sangga Aktif */}
-      <div className={`bg-white rounded-2xl p-5 border-2 ${activeInfo.borderColor} shadow-xs space-y-4`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-black ${activeInfo.iconBg}`}>
-                Sangga {activeInfo.nama}
-              </span>
-              <span className="text-xs text-slate-400 font-mono font-bold">
-                Warna: {activeInfo.warna}
-              </span>
-            </div>
-            <h2 className="text-sm sm:text-base font-extrabold text-slate-900 mt-2">
-              {activeInfo.arti}
-            </h2>
-          </div>
+      {/* 3. Menampilkan Nama Sangga & Anggotanya Langsung (Pinsang atas, Wapinsang bawah, hanya list nama) */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h2 className="text-sm sm:text-base font-bold text-slate-900">
+            Sangga {selectedSangga} ({selectedSatuan})
+          </h2>
+          <span className="text-xs text-slate-500">
+            {currentSanggaMembers.length} Anggota
+          </span>
         </div>
 
-        {/* Filosofi & Tugas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase font-mono block">
-              Filosofi Perjuangan:
-            </span>
-            <p className="text-slate-700 leading-relaxed">
-              {activeInfo.filosofi}
-            </p>
+        {/* List Nama Anggota (Hanya nama, 1 baris per nama) */}
+        {currentSanggaMembers.length === 0 ? (
+          <div className="py-6 text-center text-slate-400 text-xs">
+            Belum ada anggota di Sangga {selectedSangga} {selectedSatuan}.
           </div>
+        ) : (
+          <div className="space-y-1.5">
+            {currentSanggaMembers.map((m) => (
+              <div
+                key={m.uid || m.username || m.nama}
+                className="bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-200"
+              >
+                <span className="text-xs sm:text-sm font-medium text-slate-800 block truncate">
+                  {m.nama}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase font-mono block">
-              Tugas & Karakteristik:
-            </span>
-            <p className="text-slate-700 leading-relaxed">
-              {activeInfo.tugas}
-            </p>
-          </div>
+      {/* 4. Daftar Lengkap Seluruh 5 Sangga Langsung (Tanpa Icon) */}
+      <div className="space-y-3 pt-1">
+        <div className="text-xs font-bold text-slate-700 uppercase tracking-wide px-1">
+          Semua Sangga {selectedSatuan}
         </div>
 
-        {/* Daftar Anggota Sangga */}
-        <div className="pt-2 border-t border-slate-100 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <h3 className="font-extrabold text-slate-900 flex items-center gap-1.5">
-              <UserCheck className="w-4 h-4 text-[#e51c24]" />
-              <span>Daftar Anggota Sangga {activeInfo.nama} ({sanggaMembers.length})</span>
-            </h3>
-          </div>
+        {SANGGA_LIST.map((namaSangga) => {
+          const members = sortMembersPinsangWapinsang(
+            allMembers.filter((m) => m.satuan === selectedSatuan && m.sangga === namaSangga)
+          );
 
-          {sanggaMembers.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-2">
-              Belum ada anggota yang terdaftar di Sangga {activeInfo.nama}.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-2">
-              {sanggaMembers.map((m) => (
-                <div
-                  key={m.uid || m.username}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs"
-                >
-                  <div className="min-w-0 pr-2">
-                    <strong className="text-slate-900 block truncate">{m.nama}</strong>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {m.jabatan || 'Anggota Sangga'} • {m.tingkat}
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-mono text-slate-600 shrink-0">
-                    Gudep {m.gudep}
+          return (
+            <div
+              key={namaSangga}
+              className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-2"
+            >
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-900">
+                  Sangga {namaSangga}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {members.length} Anggota
+                </span>
+              </div>
+
+              {/* List Nama Anggota (Hanya Nama) */}
+              <div className="space-y-1">
+                {members.length === 0 ? (
+                  <span className="text-xs text-slate-400 block py-1">
+                    Belum ada anggota.
                   </span>
-                </div>
-              ))}
+                ) : (
+                  members.map((m) => (
+                    <div
+                      key={m.uid || m.username || m.nama}
+                      className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100 text-xs font-medium text-slate-800 truncate"
+                    >
+                      {m.nama}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
 
     </div>

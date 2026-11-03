@@ -122,5 +122,26 @@ service cloud.firestore {
       allow create, update: if isValidId(chatId) && isValidChat(incoming());
       allow delete: if isValidId(chatId);
     }
+
+    // Kegiatan Evaluations & Presensi Records
+    match /kegiatan_evaluations/{evalId} {
+      allow read: if true;
+      allow create, update: if isValidId(evalId);
+      allow delete: if isValidId(evalId);
+    }
+
+    // Active Running Kegiatan Session
+    match /active_kegiatan/{sessionId} {
+      allow read: if true;
+      allow create, update: if isValidId(sessionId);
+      allow delete: if isValidId(sessionId);
+    }
+
+    // Ambalan Shared Notifications
+    match /ambalan_notifications/{notifId} {
+      allow read: if true;
+      allow create, update: if isValidId(notifId);
+      allow delete: if isValidId(notifId);
+    }
   }
 }

@@ -171,9 +171,12 @@ export function subscribeToProgramKerja(
         snapshot.forEach((docSnap) => {
           items.push({ ...docSnap.data(), id: docSnap.id } as ProgramKerjaItem);
         });
-        if (items.length === 0 && DEFAULT_PROGRAM_KERJA_ITEMS.length > 0) {
+        if (items.length < 24 && DEFAULT_PROGRAM_KERJA_ITEMS.length > 0) {
           seedDefaultProgramKerja(DEFAULT_PROGRAM_KERJA_ITEMS).catch(() => {});
-          callback(DEFAULT_PROGRAM_KERJA_ITEMS);
+          // Combine existing with missing defaults
+          const existingIds = new Set(items.map(i => i.id));
+          const combined = [...items, ...DEFAULT_PROGRAM_KERJA_ITEMS.filter(d => !existingIds.has(d.id))];
+          callback(combined);
         } else {
           callback(items);
         }
@@ -211,93 +214,25 @@ export async function deleteProgramKerjaItem(id: string): Promise<void> {
  *  3. USER PROFILES & AMBALAN ACCOUNT SYSTEM
  * ========================================================== */
 
-export const DEFAULT_SEED_MEMBERS: UserAccount[] = [
-  {
-    uid: 'admin_pembina_01',
-    username: 'admin',
-    password: 'ambalan10035',
-    email: 'amiruddin@smpialwasi-maros.sch.id',
-    nama: 'Amiruddin S., S.Pd.',
-    role: 'admin',
-    gudep: '10-035',
-    satuan: 'Putra',
-    tingkat: 'Penegak Garuda',
-    sangga: 'Perintis',
-    jabatan: 'Pembina Gugus Depan',
-    nomorKta: '10.035.1985.001',
-    createdAt: '2026-07-01'
-  },
-  {
-    uid: 'member_pradana_putra',
-    username: 'muh_fadli',
-    password: 'pramuka10035',
-    nama: 'Muhammad Fadli Pratama',
-    role: 'anggota',
-    gudep: '10-035',
-    satuan: 'Putra',
-    tingkat: 'Penegak Laksana',
-    sangga: 'Perintis',
-    jabatan: 'Pradana Putra',
-    nomorKta: '10.035.2008.012',
-    createdAt: '2026-07-10'
-  },
-  {
-    uid: 'member_pradana_putri',
-    username: 'nurul_aisyah',
-    password: 'pramuka10036',
-    nama: 'Nurul Aisyah Wardani',
-    role: 'anggota',
-    gudep: '10-036',
-    satuan: 'Putri',
-    tingkat: 'Penegak Laksana',
-    sangga: 'Penegas',
-    jabatan: 'Pradana Putri',
-    nomorKta: '10.036.2008.025',
-    createdAt: '2026-07-10'
-  },
-  {
-    uid: 'member_kerani',
-    username: 'andi_tenri',
-    password: 'kerani2026',
-    nama: 'Andi Tenri Sumpala',
-    role: 'anggota',
-    gudep: '10-036',
-    satuan: 'Putri',
-    tingkat: 'Penegak Bantara',
-    sangga: 'Pendobrak',
-    jabatan: 'Kerani Dewan Ambalan',
-    nomorKta: '10.036.2009.044',
-    createdAt: '2026-07-15'
-  },
-  {
-    uid: 'member_hartaka',
-    username: 'ilham_ramadhan',
-    password: 'hartaka2026',
-    nama: 'Ilham Ramadhan',
-    role: 'anggota',
-    gudep: '10-035',
-    satuan: 'Putra',
-    tingkat: 'Penegak Bantara',
-    sangga: 'Pencoba',
-    jabatan: 'Hartaka / Bendahara',
-    nomorKta: '10.035.2009.038',
-    createdAt: '2026-07-15'
-  },
-  {
-    uid: 'member_fajar',
-    username: 'fajar_sidiq',
-    password: 'fajar2026',
-    nama: 'Fajar Sidiq Al-Farabi',
-    role: 'anggota',
-    gudep: '10-035',
-    satuan: 'Putra',
-    tingkat: 'Calon Bantara',
-    sangga: 'Pelaksana',
-    jabatan: 'Anggota Sangga',
-    nomorKta: '10.035.2010.071',
-    createdAt: '2026-08-01'
-  }
-];
+export const DEFAULT_ADMIN_ACCOUNT: UserAccount = {
+  uid: "admin_pembina_01",
+  username: "admin",
+  password: "ambalan10035",
+  email: "admin@ambalan-pettalopo.sch.id",
+  nama: "Pembina Gugus Depan",
+  role: "admin",
+  gudep: "10-035",
+  satuan: "Putra",
+  tingkat: "Penegak Garuda",
+  sangga: "Perintis",
+  jabatan: "Pembina Gugus Depan",
+  nomorKta: "10.035.1985.001",
+  usia: 38,
+  keaktifan: "Sangat Aktif",
+  createdAt: "2026-07-01"
+};
+
+export const DEFAULT_SEED_MEMBERS: UserAccount[] = [DEFAULT_ADMIN_ACCOUNT];
 
 export async function seedDefaultMembers(): Promise<void> {
   try {
@@ -378,11 +313,18 @@ export function subscribeToAllMembers(
       (snapshot) => {
         const members: UserAccount[] = [];
         snapshot.forEach((docSnap) => {
-          members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
+          // Bersihkan data dummy lama jika masih tersisa di Firestore
+          if (docSnap.id.startsWith('member_putra_') || docSnap.id.startsWith('member_putri_')) {
+            deleteDoc(doc(db, USERS_PATH, docSnap.id)).catch(() => {});
+          } else {
+            members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
+          }
         });
+
+        // Jika database belum memiliki data sama sekali, pastikan akun Admin Utama tersinkron
         if (members.length === 0) {
-          seedDefaultMembers().catch(() => {});
-          callback(DEFAULT_SEED_MEMBERS);
+          syncUserProfile(DEFAULT_ADMIN_ACCOUNT).catch(() => {});
+          callback([DEFAULT_ADMIN_ACCOUNT]);
         } else {
           callback(members);
         }
@@ -507,3 +449,192 @@ export async function updateAmbalanChatList(
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
+
+/* ==========================================================
+ *  5. ACTIVE KEGIATAN, EVALUASI & PRESENSI, NOTIFICATIONS
+ * ========================================================== */
+
+const ACTIVE_KEGIATAN_PATH = 'active_kegiatan';
+const EVALUATIONS_PATH = 'kegiatan_evaluations';
+const NOTIFICATIONS_PATH = 'ambalan_notifications';
+
+export function subscribeToActiveKegiatanSession(
+  callback: (session: import('../types').ActiveKegiatanSession | null) => void
+) {
+  try {
+    const docRef = doc(db, ACTIVE_KEGIATAN_PATH, 'current_session');
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          callback(docSnap.data() as import('../types').ActiveKegiatanSession);
+        } else {
+          // Check local storage fallback
+          const saved = localStorage.getItem('pettalopo_active_kegiatan');
+          if (saved) {
+            try { callback(JSON.parse(saved)); return; } catch {}
+          }
+          callback(null);
+        }
+      },
+      () => {
+        const saved = localStorage.getItem('pettalopo_active_kegiatan');
+        if (saved) {
+          try { callback(JSON.parse(saved)); return; } catch {}
+        }
+        callback(null);
+      }
+    );
+  } catch {
+    const saved = localStorage.getItem('pettalopo_active_kegiatan');
+    if (saved) {
+      try { callback(JSON.parse(saved)); } catch {}
+    }
+  }
+}
+
+export async function saveActiveKegiatanSession(
+  session: import('../types').ActiveKegiatanSession
+): Promise<void> {
+  localStorage.setItem('pettalopo_active_kegiatan', JSON.stringify(session));
+  try {
+    const docRef = doc(db, ACTIVE_KEGIATAN_PATH, 'current_session');
+    await setDoc(docRef, session);
+  } catch (error) {
+    console.warn('Fallback saving active kegiatan locally:', error);
+  }
+}
+
+export async function stopActiveKegiatanSession(): Promise<void> {
+  localStorage.removeItem('pettalopo_active_kegiatan');
+  try {
+    const docRef = doc(db, ACTIVE_KEGIATAN_PATH, 'current_session');
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.warn('Fallback stopping active kegiatan locally:', error);
+  }
+}
+
+export async function saveKegiatanEvaluation(
+  evalData: import('../types').KegiatanEvaluation
+): Promise<void> {
+  // Save locally
+  const saved = localStorage.getItem('pettalopo_evaluations_list');
+  let currentList: import('../types').KegiatanEvaluation[] = [];
+  if (saved) {
+    try { currentList = JSON.parse(saved); } catch {}
+  }
+  // Remove duplicate if same member & kegiatan
+  currentList = currentList.filter(
+    (e) => !(e.kegiatanId === evalData.kegiatanId && e.memberName === evalData.memberName)
+  );
+  currentList.unshift(evalData);
+  localStorage.setItem('pettalopo_evaluations_list', JSON.stringify(currentList));
+
+  // Sync to firestore
+  try {
+    const docRef = doc(db, EVALUATIONS_PATH, evalData.id);
+    await setDoc(docRef, evalData);
+  } catch (error) {
+    console.warn('Saved evaluation locally:', error);
+  }
+}
+
+export function subscribeToKegiatanEvaluations(
+  callback: (evals: import('../types').KegiatanEvaluation[]) => void
+) {
+  try {
+    const q = query(collection(db, EVALUATIONS_PATH));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const evals: import('../types').KegiatanEvaluation[] = [];
+        snapshot.forEach((docSnap) => {
+          evals.push(docSnap.data() as import('../types').KegiatanEvaluation);
+        });
+        if (evals.length > 0) {
+          evals.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          localStorage.setItem('pettalopo_evaluations_list', JSON.stringify(evals));
+          callback(evals);
+        } else {
+          const saved = localStorage.getItem('pettalopo_evaluations_list');
+          if (saved) {
+            try { callback(JSON.parse(saved)); return; } catch {}
+          }
+          callback([]);
+        }
+      },
+      () => {
+        const saved = localStorage.getItem('pettalopo_evaluations_list');
+        if (saved) {
+          try { callback(JSON.parse(saved)); return; } catch {}
+        }
+        callback([]);
+      }
+    );
+  } catch {
+    const saved = localStorage.getItem('pettalopo_evaluations_list');
+    if (saved) {
+      try { callback(JSON.parse(saved)); } catch {}
+    }
+  }
+}
+
+export async function addAmbalanNotification(
+  notif: import('../types').AmbalanNotificationItem
+): Promise<void> {
+  const saved = localStorage.getItem('pettalopo_notifications_list');
+  let current: import('../types').AmbalanNotificationItem[] = [];
+  if (saved) {
+    try { current = JSON.parse(saved); } catch {}
+  }
+  current = [notif, ...current.filter((n) => n.id !== notif.id)];
+  localStorage.setItem('pettalopo_notifications_list', JSON.stringify(current));
+
+  try {
+    const docRef = doc(db, NOTIFICATIONS_PATH, notif.id);
+    await setDoc(docRef, notif);
+  } catch (error) {
+    console.warn('Saved notification locally:', error);
+  }
+}
+
+export function subscribeToAmbalanNotifications(
+  callback: (notifs: import('../types').AmbalanNotificationItem[]) => void
+) {
+  try {
+    const q = query(collection(db, NOTIFICATIONS_PATH));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items: import('../types').AmbalanNotificationItem[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as import('../types').AmbalanNotificationItem);
+        });
+        if (items.length > 0) {
+          items.sort((a, b) => (b.createdAtNumber || 0) - (a.createdAtNumber || 0));
+          callback(items);
+        } else {
+          const saved = localStorage.getItem('pettalopo_notifications_list');
+          if (saved) {
+            try { callback(JSON.parse(saved)); return; } catch {}
+          }
+          callback([]);
+        }
+      },
+      () => {
+        const saved = localStorage.getItem('pettalopo_notifications_list');
+        if (saved) {
+          try { callback(JSON.parse(saved)); return; } catch {}
+        }
+        callback([]);
+      }
+    );
+  } catch {
+    const saved = localStorage.getItem('pettalopo_notifications_list');
+    if (saved) {
+      try { callback(JSON.parse(saved)); } catch {}
+    }
+  }
+}
+

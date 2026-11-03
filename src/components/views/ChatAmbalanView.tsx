@@ -13,7 +13,8 @@ import {
   Sparkles,
   ClipboardList,
   Edit2,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from 'lucide-react';
 import { ChatMessage, ChatListItem, UserAccount } from '../../types';
 import { 
@@ -25,9 +26,10 @@ import {
 
 interface ChatAmbalanViewProps {
   currentUser: UserAccount;
+  onBack?: () => void;
 }
 
-export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser }) => {
+export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser, onBack }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(DEFAULT_INITIAL_CHATS);
   const [inputText, setInputText] = useState('');
   
@@ -180,19 +182,25 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser })
   return (
     <div className="flex flex-col h-[calc(100vh-125px)] sm:h-[calc(100vh-135px)] bg-slate-100 rounded-3xl overflow-hidden border border-slate-200 shadow-md font-sans">
       
-      {/* WA STYLE GROUP HEADER (Tema Merah Putih) */}
-      <div className="bg-gradient-to-r from-[#e51c24] to-[#b81219] text-white px-4 py-3 flex items-center justify-between shadow-xs border-b border-red-700 shrink-0">
+      {/* WA STYLE GROUP HEADER (Tema Merah Ambalan) */}
+      <div className="bg-[#e51c24] text-white px-3.5 py-3 flex items-center justify-between shadow-xs border-b border-red-700 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-white text-[#e51c24] flex items-center justify-center font-black text-sm shadow-xs border border-white shrink-0">
-            ⚜️
-          </div>
+          <button
+            type="button"
+            onClick={onBack || (() => {})}
+            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 text-white flex items-center justify-center transition-all border border-white/30 shrink-0 cursor-pointer shadow-2xs"
+            title="Kembali"
+            aria-label="Kembali"
+          >
+            <ArrowLeft className="w-4 h-4 text-white stroke-[2.5]" />
+          </button>
           <div className="min-w-0">
             <h2 className="text-xs sm:text-sm font-black truncate leading-tight">
-              Ambalan La Surullah
+              Ruang Obrolan
             </h2>
-            <p className="text-[10px] text-white/90 truncate flex items-center gap-1.5 mt-0.5">
+            <p className="text-[10px] text-red-100 truncate flex items-center gap-1.5 mt-0.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Grup Koordinasi Gudep 10-035 & 10-036</span>
+              <span>Grup Koordinasi Gudep 10-035/036</span>
             </p>
           </div>
         </div>

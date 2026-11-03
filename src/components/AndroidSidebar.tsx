@@ -2,7 +2,9 @@ import React, { useRef } from 'react';
 import { 
   Home,
   Shield, 
+  Crown,
   CalendarCheck, 
+  FileText,
   Users, 
   Award, 
   GraduationCap, 
@@ -85,9 +87,19 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
       icon: Shield
     },
     {
+      id: 'dewan_ambalan' as ActiveMenu,
+      label: 'Dewan Ambalan',
+      icon: Crown
+    },
+    {
       id: 'dashboard' as ActiveMenu,
       label: 'Kegiatan dan Latihan',
       icon: CalendarCheck
+    },
+    {
+      id: 'laporan' as ActiveMenu,
+      label: 'Laporan Kegiatan',
+      icon: FileText
     },
     {
       id: 'sangga' as ActiveMenu,
@@ -133,7 +145,7 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
       <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white shadow-2xl flex flex-col z-10 border-r border-slate-200 animate-in slide-in-from-left duration-200">
         
         {/* BAGIAN WARNA MERAH: DIPERKECIL & HANYA FOTO, NAMA BOLD, GOLONGAN */}
-        <div className="relative bg-gradient-to-r from-[#e51c24] to-[#c9141b] text-white px-4 py-3.5 border-b border-red-700">
+        <div className="relative bg-[#e51c24] text-white px-4 py-3.5 border-b border-red-700">
           <button
             onClick={onClose}
             className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors"

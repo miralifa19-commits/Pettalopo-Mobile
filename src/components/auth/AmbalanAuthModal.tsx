@@ -44,19 +44,20 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
 
   // Sign Up Form State
   const [nama, setNama] = useState('');
+  const [namaPanggilan, setNamaPanggilan] = useState('');
+  const [ttl, setTtl] = useState('');
+  const [motto, setMotto] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('anggota');
   const [gudep, setGudep] = useState<'10-035' | '10-036'>('10-035');
   const [satuan, setSatuan] = useState<'Putra' | 'Putri'>('Putra');
   const [sangga, setSangga] = useState<'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana'>('Perintis');
   const [tingkat, setTingkat] = useState<'Tamu Ambalan' | 'Calon Bantara' | 'Penegak Bantara' | 'Penegak Laksana' | 'Penegak Garuda'>('Calon Bantara');
-  const [jabatan, setJabatan] = useState('Anggota Sangga');
   const [nomorKta, setNomorKta] = useState('');
 
   if (!isOpen) return null;
 
-  // Combine live members with default seed members
+  // Use real registered members or default admin account
   const memberPool = allMembers && allMembers.length > 0 ? allMembers : DEFAULT_SEED_MEMBERS;
 
   // Handle Sign In with internal Ambalan username & password
@@ -94,7 +95,7 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
         if (userExists) {
           setErrorMessage('Password yang Anda masukkan salah. Hubungi Pembina (Admin) untuk melihat/mereset password.');
         } else {
-          setErrorMessage(`Username "${cleanUser}" belum terdaftar. Silakan lakukan pendaftaran akun Ambalan di tab Daftar.`);
+          setErrorMessage(`Username "${cleanUser}" belum terdaftar. Silakan daftar di tab "Daftar Anggota Baru".`);
         }
         setIsLoading(false);
       }
@@ -104,11 +105,12 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
     }
   };
 
-  // Quick switch for sample accounts / demo
-  const handleQuickLogin = (selectedUser: UserAccount) => {
-    setSuccessMessage(`Beralih ke akun ${selectedUser.nama} (${selectedUser.role === 'admin' ? 'Pembina/Admin' : 'Anggota'})`);
+  // Quick login helper for master admin
+  const handleAdminQuickLogin = () => {
+    const adminUser = memberPool.find(m => m.username === 'admin') || DEFAULT_SEED_MEMBERS[0];
+    setSuccessMessage(`Masuk sebagai Pembina / Admin Utama`);
     setTimeout(() => {
-      onLoginSuccess(selectedUser);
+      onLoginSuccess(adminUser);
       onClose();
     }, 400);
   };
@@ -122,6 +124,11 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
     const cleanUser = username.trim().toLowerCase().replace(/\s+/g, '_');
     const cleanPass = password.trim();
 
+    if (!nama.trim()) {
+      setErrorMessage('Harap isi Nama Lengkap anggota.');
+      return;
+    }
+
     if (!cleanUser || cleanUser.length < 3) {
       setErrorMessage('Username minimal 3 karakter tanpa spasi.');
       return;
@@ -129,11 +136,6 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
 
     if (!cleanPass || cleanPass.length < 4) {
       setErrorMessage('Password minimal 4 karakter.');
-      return;
-    }
-
-    if (!nama.trim()) {
-      setErrorMessage('Harap isi Nama Lengkap anggota.');
       return;
     }
 
@@ -152,13 +154,19 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
       username: cleanUser,
       password: cleanPass,
       nama: nama.trim(),
-      role: role,
+      namaPanggilan: namaPanggilan.trim() || nama.trim().split(' ')[0],
+      ttl: ttl.trim() || 'Maros, 12 Juli 2009',
+      motto: motto.trim() || 'Satyaku Kudarmakan, Darmaku Kubaktikan',
+      role: 'anggota',
+      isDewan: false,
       gudep: gudep,
       satuan: satuan,
       sangga: sangga,
       tingkat: tingkat,
-      jabatan: jabatan.trim() || 'Anggota Sangga',
+      jabatan: 'Anggota Sangga',
       nomorKta: generatedKta,
+      keaktifan: 'Aktif',
+      progresSku: '0/23 Butir SKU Penegak',
       createdAt: new Date().toISOString().split('T')[0]
     };
 
@@ -341,36 +349,23 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
                 )}
               </button>
 
-              {/* Quick Select for Fast Testing / Demo */}
+              {/* Admin Login Shortcut Card */}
               <div className="pt-3 border-t border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 font-mono">
-                  ⚡ Masuk Cepat (Akun Uji / Terdaftar):
-                </span>
-                <div className="space-y-1.5">
-                  {memberPool.slice(0, 4).map((m) => (
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-slate-700">👑 Akses Admin / Pembina</span>
                     <button
-                      key={m.uid || m.username}
                       type="button"
-                      onClick={() => handleQuickLogin(m)}
-                      className="w-full text-left p-2 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all flex items-center justify-between text-xs group"
+                      onClick={handleAdminQuickLogin}
+                      className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-[10px] transition-all shadow-2xs"
                     >
-                      <div className="min-w-0 pr-2">
-                        <span className="font-bold text-slate-800 block truncate group-hover:text-[#e51c24]">
-                          {m.nama}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          user: <strong>{m.username}</strong> • pass: <strong>{m.password || 'ambalan10035'}</strong>
-                        </span>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black shrink-0 ${
-                        m.role === 'admin'
-                          ? 'bg-amber-400 text-slate-950'
-                          : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        {m.role === 'admin' ? 'Pembina' : m.sangga}
-                      </span>
+                      Masuk Otomatis
                     </button>
-                  ))}
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-500 flex items-center justify-between">
+                    <span>User: <strong className="text-slate-800">admin</strong></span>
+                    <span>Sandi: <strong className="text-slate-800">ambalan10035</strong></span>
+                  </div>
                 </div>
               </div>
             </form>
@@ -382,7 +377,7 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
               <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <span>
-                  Setiap anggota Ambalan membuat akun dengan username & password sendiri. Akun ini digunakan untuk absensi dan melihat program kerja.
+                  Daftarkan diri Anda sebagai anggota Ambalan La Surullah Petta Lopo. Akun Anda akan langsung tercatat di pangkalan dan dapat dikelola oleh Admin.
                 </span>
               </div>
 
@@ -403,7 +398,48 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Username *
+                    Nama Panggilan
+                  </label>
+                  <input
+                    type="text"
+                    value={namaPanggilan}
+                    onChange={(e) => setNamaPanggilan(e.target.value)}
+                    placeholder="Contoh: Ihsan"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tempat, Tanggal Lahir
+                  </label>
+                  <input
+                    type="text"
+                    value={ttl}
+                    onChange={(e) => setTtl(e.target.value)}
+                    placeholder="Contoh: Maros, 12 Juli 2009"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Motto Hidup
+                </label>
+                <input
+                  type="text"
+                  value={motto}
+                  onChange={(e) => setMotto(e.target.value)}
+                  placeholder="Contoh: Satyaku Kudarmakan, Darmaku Kubaktikan"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Username Akun *
                   </label>
                   <input
                     type="text"
@@ -411,7 +447,7 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Contoh: ihsan_pramuka"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#e51c24] focus:outline-none font-mono"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#e51c24] focus:outline-none font-mono"
                   />
                 </div>
 
@@ -425,7 +461,7 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Minimal 4 digit"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#e51c24] focus:outline-none font-mono"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#e51c24] focus:outline-none font-mono"
                   />
                 </div>
               </div>
@@ -496,35 +532,6 @@ export const AmbalanAuthModal: React.FC<AmbalanAuthModalProps> = ({
                     <option value="Penegak Bantara">Penegak Bantara</option>
                     <option value="Penegak Laksana">Penegak Laksana</option>
                     <option value="Penegak Garuda">Penegak Garuda</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Jabatan Ambalan
-                  </label>
-                  <input
-                    type="text"
-                    value={jabatan}
-                    onChange={(e) => setJabatan(e.target.value)}
-                    placeholder="Anggota / Pradana / Kerani"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Peran Akun
-                  </label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none font-bold"
-                  >
-                    <option value="anggota">Anggota Biasa (Viewer)</option>
-                    <option value="admin">Pembina / Admin (Pengelola)</option>
                   </select>
                 </div>
               </div>

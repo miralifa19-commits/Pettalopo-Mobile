@@ -15,15 +15,18 @@ import {
   UserCheck
 } from 'lucide-react';
 import { UserAccount } from '../../types';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
 interface PengaturanViewProps {
   currentUser: UserAccount;
   onNavigateToAkun?: () => void;
+  onBack?: () => void;
 }
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({
   currentUser,
-  onNavigateToAkun
+  onNavigateToAkun,
+  onBack
 }) => {
   const [notifKegiatan, setNotifKegiatan] = useState(true);
   const [notifChat, setNotifChat] = useState(true);
@@ -38,26 +41,13 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
 
   return (
     <div className="space-y-4 pb-24 font-sans">
-      
-      {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e51c24] flex items-center justify-center border border-red-200 shadow-xs shrink-0">
-            <Settings className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-mono tracking-wider">
-              Preferensi Aplikasi
-            </span>
-            <h1 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-              Pengaturan Sistem
-            </h1>
-            <p className="text-xs text-slate-500">
-              Ambalan La Surullah Petta Lopo • Versi 2.4
-            </p>
-          </div>
-        </div>
-      </div>
+
+      {/* Header Card dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Pengaturan"
+        subtitle="Preferensi aplikasi & notifikasi ambalan"
+        onBack={onBack || (() => {})}
+      />
 
       {/* 1. Pengaturan Notifikasi */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">

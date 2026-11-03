@@ -25,19 +25,35 @@ import {
   syncUserProfile, 
   DEFAULT_SEED_MEMBERS 
 } from '../../services/firebaseService';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
+
+const DEWAN_JABATAN_OPTIONS = [
+  'Pradana Putra',
+  'Pradana Putri',
+  'Pemangku Adat Putra',
+  'Pemangku Adat Putri',
+  'Kerani (Sekretaris)',
+  'Hartaka (Bendahara)',
+  'Sie Kegiatan & Operasional',
+  'Sie Penelitian & Pengembangan',
+  'Sie Hubungan Masyarakat',
+  'Anggota Dewan Ambalan'
+];
 
 interface DatabaseAnggotaViewProps {
   allMembers: UserAccount[];
   currentUser: UserAccount;
   onRefreshMembers?: () => void;
   onSelectUserForTesting?: (user: UserAccount) => void;
+  onBack?: () => void;
 }
 
 export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
   allMembers,
   currentUser,
   onRefreshMembers,
-  onSelectUserForTesting
+  onSelectUserForTesting,
+  onBack
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGudep, setFilterGudep] = useState<'all' | '10-035' | '10-036'>('all');
@@ -55,6 +71,8 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formRole, setFormRole] = useState<UserRole>('anggota');
+  const [formIsDewan, setFormIsDewan] = useState(false);
+  const [formDewanJabatan, setFormDewanJabatan] = useState('Pradana Putra');
   const [formGudep, setFormGudep] = useState<'10-035' | '10-036'>('10-035');
   const [formSatuan, setFormSatuan] = useState<'Putra' | 'Putri'>('Putra');
   const [formSangga, setFormSangga] = useState<'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana'>('Perintis');
@@ -94,6 +112,33 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     setTimeout(() => setCopiedId(null), 1800);
   };
 
+  // Quick toggle Dewan Ambalan status
+  const handleQuickToggleDewan = async (targetUser: UserAccount) => {
+    const isDewanNow = targetUser.role === 'dewan' || Boolean(targetUser.isDewan);
+    if (isDewanNow) {
+      const confirmRemove = window.confirm(`Lepaskan Kak ${targetUser.nama} dari status Dewan Ambalan?`);
+      if (!confirmRemove) return;
+      const updated: UserAccount = {
+        ...targetUser,
+        role: targetUser.role === 'admin' ? 'admin' : 'anggota',
+        isDewan: false,
+        dewanJabatan: undefined,
+        jabatan: 'Anggota Sangga'
+      };
+      await registerAmbalanUser(updated);
+    } else {
+      const defaultPos = targetUser.satuan === 'Putri' ? 'Pradana Putri' : 'Pradana Putra';
+      const updated: UserAccount = {
+        ...targetUser,
+        role: 'dewan',
+        isDewan: true,
+        dewanJabatan: defaultPos,
+        jabatan: defaultPos
+      };
+      await registerAmbalanUser(updated);
+    }
+  };
+
   // Open Edit/Add Modal
   const handleOpenAddModal = () => {
     setEditingUser(null);
@@ -101,6 +146,8 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     setFormUsername('');
     setFormPassword('ambalan10035');
     setFormRole('anggota');
+    setFormIsDewan(false);
+    setFormDewanJabatan('Pradana Putra');
     setFormGudep('10-035');
     setFormSatuan('Putra');
     setFormSangga('Perintis');
@@ -117,6 +164,9 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     setFormUsername(user.username);
     setFormPassword(user.password || 'ambalan10035');
     setFormRole(user.role);
+    const isUserDewan = user.role === 'dewan' || Boolean(user.isDewan);
+    setFormIsDewan(isUserDewan);
+    setFormDewanJabatan(user.dewanJabatan || user.jabatan || (user.satuan === 'Putri' ? 'Pradana Putri' : 'Pradana Putra'));
     setFormGudep(user.gudep);
     setFormSatuan(user.satuan);
     setFormSangga(user.sangga);
@@ -135,17 +185,24 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     const cleanUsername = formUsername.trim().toLowerCase().replace(/\s+/g, '_');
     const uid = editingUser?.uid || `user_${cleanUsername}_${Date.now()}`;
 
+    const isDewan = formIsDewan;
+    const finalRole: UserRole = formRole === 'admin' ? 'admin' : (isDewan ? 'dewan' : 'anggota');
+    const finalDewanJabatan = isDewan ? formDewanJabatan : undefined;
+    const finalJabatan = isDewan ? formDewanJabatan : (formJabatan.trim() || 'Anggota Sangga');
+
     const updatedAccount: UserAccount = {
       uid,
       username: cleanUsername,
       password: formPassword.trim() || 'ambalan10035',
       nama: formNama.trim(),
-      role: formRole,
+      role: finalRole,
+      isDewan: isDewan,
+      dewanJabatan: finalDewanJabatan,
       gudep: formGudep,
       satuan: formSatuan,
       sangga: formSangga,
       tingkat: formTingkat,
-      jabatan: formJabatan.trim() || 'Anggota Sangga',
+      jabatan: finalJabatan,
       nomorKta: formNomorKta.trim() || `${formGudep}.2026.${Math.floor(100 + Math.random() * 900)}`,
       createdAt: editingUser?.createdAt || new Date().toISOString().split('T')[0]
     };
@@ -186,68 +243,21 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
   return (
     <div className="space-y-4 pb-24 font-sans">
       
-      {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-5 border-2 border-amber-400 shadow-xs relative overflow-hidden">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e51c24] flex items-center justify-center border-2 border-amber-300 shadow-xs shrink-0">
-              <Database className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                  Panel Khusus Admin
-                </span>
-                <span className="text-[10px] font-bold text-slate-500 font-mono">
-                  Gudep 10-035 & 10-036
-                </span>
-              </div>
-              <h1 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-                Database Akun & Anggota
-              </h1>
-            </div>
-          </div>
-
+      {/* Header Card Database Anggota dengan Tombol Kembali Melingkar */}
+      <MenuHeaderCard
+        title="Database Anggota"
+        subtitle="Data & akun penegak Gudep 10-035/036"
+        onBack={onBack || (() => {})}
+        actionRight={
           <button
             onClick={handleOpenAddModal}
-            className="px-4 py-2 rounded-xl bg-[#e51c24] text-white text-xs font-black shadow-xs border-2 border-amber-400 hover:bg-[#c9141b] transition-all flex items-center gap-1.5 shrink-0"
+            className="px-2.5 py-1 rounded-xl bg-white hover:bg-slate-100 text-[#e51c24] text-[11px] font-bold shadow-xs transition-all flex items-center gap-1 shrink-0 cursor-pointer"
           >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Tambah Anggota</span>
+            <UserPlus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>+ Tambah</span>
           </button>
-        </div>
-
-        {/* Info strip regarding username & password visibility */}
-        <div className="mt-4 p-3 bg-red-50/70 rounded-2xl border border-red-200 text-xs text-slate-700 flex items-start gap-2.5">
-          <ShieldCheck className="w-4 h-4 text-[#e51c24] shrink-0 mt-0.5" />
-          <div className="space-y-0.5 leading-relaxed text-[11px]">
-            <strong className="text-[#e51c24] block font-bold">Akses Kredensial Pembina:</strong>
-            <span>
-              Sebagai Admin Pembina, Anda dapat melihat seluruh <strong>Username</strong> dan <strong>Password</strong> akun anggota di bawah ini untuk kemudahan administrasi, pendataan, dan pemulihan akun pangkalan.
-            </span>
-          </div>
-        </div>
-
-        {/* Counter Summary */}
-        <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-slate-100 text-center">
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200">
-            <span className="text-[10px] text-slate-500 font-bold block">Total</span>
-            <span className="text-lg font-black text-slate-900">{totalAnggota}</span>
-          </div>
-          <div className="p-2 rounded-xl bg-blue-50/60 border border-blue-200">
-            <span className="text-[10px] text-blue-700 font-bold block">Putra (035)</span>
-            <span className="text-lg font-black text-blue-950">{totalPutra}</span>
-          </div>
-          <div className="p-2 rounded-xl bg-pink-50/60 border border-pink-200">
-            <span className="text-[10px] text-pink-700 font-bold block">Putri (036)</span>
-            <span className="text-lg font-black text-pink-950">{totalPutri}</span>
-          </div>
-          <div className="p-2 rounded-xl bg-amber-50 border border-amber-300">
-            <span className="text-[10px] text-amber-900 font-bold block">Pembina</span>
-            <span className="text-lg font-black text-amber-950">{totalAdmin}</span>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filter and Password Visibility Toolbar */}
       <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-xs space-y-3">
@@ -343,15 +353,18 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
       {/* Member Cards / Records */}
       <div className="space-y-3">
         {filteredList.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border-2 border-dashed border-slate-200 text-center space-y-2">
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-2">
             <Users className="w-8 h-8 text-slate-300 mx-auto" />
-            <h3 className="text-sm font-bold text-slate-700">Tidak ada anggota yang cocok</h3>
-            <p className="text-xs text-slate-400">Coba ubah kata kunci pencarian atau filter.</p>
+            <h3 className="text-sm font-bold text-slate-700">Belum Ada Anggota Terdaftar</h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              Anggota baru dapat mendaftar langsung di aplikasi atau ditambahkan oleh Admin melalui tombol &ldquo;+ Tambah&rdquo;.
+            </p>
           </div>
         ) : (
           filteredList.map((member, index) => {
             const isPasswordVisible = showAllPasswords || visiblePasswords[member.uid || member.username];
             const isCurrentActive = member.uid === currentUser.uid;
+            const isDewan = member.role === 'dewan' || Boolean(member.isDewan);
 
             return (
               <div
@@ -359,7 +372,9 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                 className={`bg-white rounded-2xl p-4 border transition-all shadow-xs space-y-3 relative overflow-hidden ${
                   member.role === 'admin'
                     ? 'border-l-4 border-l-amber-500 border-amber-300/80 bg-gradient-to-r from-amber-50/20 to-white'
-                    : 'border-l-4 border-l-[#e51c24] border-slate-200 hover:border-amber-300'
+                    : isDewan
+                    ? 'border-l-4 border-l-[#e51c24] border-red-200 bg-red-50/10'
+                    : 'border-l-4 border-l-slate-300 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 {/* Header Row: Nama & Role */}
@@ -376,18 +391,24 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      {member.jabatan} • Gudep <strong>{member.gudep}</strong> ({member.satuan})
+                      {member.dewanJabatan || member.jabatan} • Gudep <strong>{member.gudep}</strong> ({member.satuan})
                     </p>
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
-                      member.role === 'admin'
-                        ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
-                        : 'bg-slate-100 text-slate-700 border-slate-300'
-                    }`}>
-                      {member.role === 'admin' ? '👑 Pembina/Admin' : 'Anggota'}
-                    </span>
+                    {member.role === 'admin' ? (
+                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 border border-amber-500 shadow-xs">
+                        👑 Pembina/Admin
+                      </span>
+                    ) : isDewan ? (
+                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-red-100 text-[#e51c24] border border-red-300 shadow-xs">
+                        🏛️ Dewan: {member.dewanJabatan || member.jabatan || 'Pengurus'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+                        Anggota Sangga
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -396,7 +417,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                   <div className="flex items-center justify-between text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
                     <span>Kredensial Masuk Ambalan:</span>
                     <span className="text-[9px] text-[#e51c24] lowercase font-sans">
-                      *hanya terlihat oleh Pembina
+                      *hanya terlihat oleh Pembina/Dewan
                     </span>
                   </div>
 
@@ -412,7 +433,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                       <button
                         onClick={() => handleCopy(member.username, `user_${member.uid || member.username}`)}
                         title="Salin Username"
-                        className="p-1 text-slate-400 hover:text-slate-700 ml-1 shrink-0"
+                        className="p-1 text-slate-400 hover:text-slate-700 ml-1 shrink-0 cursor-pointer"
                       >
                         {copiedId === `user_${member.uid || member.username}` ? (
                           <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -435,14 +456,14 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                         <button
                           onClick={() => toggleSinglePassword(member.uid || member.username)}
                           title="Tampilkan / Sembunyikan Sandi"
-                          className="p-1 text-slate-400 hover:text-amber-800"
+                          className="p-1 text-slate-400 hover:text-amber-800 cursor-pointer"
                         >
                           {isPasswordVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                         <button
                           onClick={() => handleCopy(member.password || 'ambalan10035', `pass_${member.uid || member.username}`)}
                           title="Salin Password"
-                          className="p-1 text-slate-400 hover:text-slate-700"
+                          className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
                         >
                           {copiedId === `pass_${member.uid || member.username}` ? (
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -469,21 +490,35 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                     </span>
                   </div>
 
-                  {/* Action buttons: Edit, Switch Account, Delete */}
+                  {/* Action buttons: Jadikan Dewan, Edit, Switch Account, Delete */}
                   <div className="flex items-center gap-1.5">
+                    {member.role !== 'admin' && (
+                      <button
+                        onClick={() => handleQuickToggleDewan(member)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                          isDewan
+                            ? 'bg-red-50 text-[#e51c24] border-red-200 hover:bg-red-100'
+                            : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                        }`}
+                        title={isDewan ? 'Lepaskan dari Dewan Ambalan' : 'Jadikan Dewan Ambalan'}
+                      >
+                        {isDewan ? 'Cabut Dewan' : '+ Jadi Dewan'}
+                      </button>
+                    )}
+
                     {onSelectUserForTesting && (
                       <button
                         onClick={() => onSelectUserForTesting(member)}
                         title="Beralih ke akun ini untuk pengujian"
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 text-[10px] font-bold border border-slate-200 transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 text-[10px] font-bold border border-slate-200 transition-colors cursor-pointer"
                       >
-                        Beralih Akun
+                        Beralih
                       </button>
                     )}
 
                     <button
                       onClick={() => handleOpenEditModal(member)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
                       title="Edit Data & Password"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -492,7 +527,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                     <button
                       onClick={() => handleDeleteUser(member)}
                       disabled={isCurrentActive}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                         isCurrentActive
                           ? 'opacity-30 cursor-not-allowed text-slate-300'
                           : 'bg-red-50 hover:bg-red-100 text-red-600'
@@ -655,16 +690,49 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                 </div>
               </div>
 
+              {/* PENGATURAN STATUS DEWAN AMBALAN */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="block font-bold text-slate-800 text-xs">Jadikan Dewan Ambalan</span>
+                    <span className="text-[10px] text-slate-500">Mendapatkan hak akses penuh setara Admin</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formIsDewan}
+                    onChange={(e) => setFormIsDewan(e.target.checked)}
+                    className="w-4 h-4 text-[#e51c24] rounded accent-[#e51c24] cursor-pointer"
+                  />
+                </div>
+
+                {formIsDewan && (
+                  <div className="pt-2 border-t border-slate-200">
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Jabatan di Dewan Ambalan:
+                    </label>
+                    <select
+                      value={formDewanJabatan}
+                      onChange={(e) => setFormDewanJabatan(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800"
+                    >
+                      {DEWAN_JABATAN_OPTIONS.map((pos) => (
+                        <option key={pos} value={pos}>{pos}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Jabatan
+                    Jabatan Biasa
                   </label>
                   <input
                     type="text"
                     value={formJabatan}
                     onChange={(e) => setFormJabatan(e.target.value)}
-                    placeholder="Anggota / Pradana"
+                    placeholder="Anggota Sangga"
                     className="w-full px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
@@ -678,8 +746,8 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                     onChange={(e) => setFormRole(e.target.value as UserRole)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
                   >
-                    <option value="anggota">Anggota (Viewer)</option>
-                    <option value="admin">Pembina / Admin</option>
+                    <option value="anggota">Anggota Biasa</option>
+                    <option value="admin">Pembina / Admin Utama</option>
                   </select>
                 </div>
               </div>

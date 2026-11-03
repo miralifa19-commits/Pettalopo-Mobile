@@ -1,317 +1,110 @@
 import { ProgramKerjaItem } from '../types';
 
 export const DEFAULT_PROGRAM_KERJA_ITEMS: ProgramKerjaItem[] = [
-  // 1. Juli (Urutan 1)
+  // 1. Januari (Urutan 1)
   {
-    id: 'proker_01_juli_pta',
-    tipe: 'Kegiatan',
-    nama: 'Penerimaan Tamu Ambalan (PTA) & Masa Orientasi Penegak',
-    waktuPelaksanaan: '18 - 20 Juli 2026',
-    bulan: 'Juli',
-    bulanUrutan: 1,
-    sasaran: 'Peserta Didik Baru Kelas X',
-    anggaran: 'Rp 2.500.000',
-    penanggungJawab: 'Pradana & Sangga Kerja PTA',
-    status: 'Terlaksana',
-    deskripsi: 'Penyambutan dan orientasi calon penegak baru ke dalam adat istiadat dan tradisi Ambalan La Surullah Petta Lopo.',
-    tempat: 'Bumi Perkemahan Pangkalan',
-    seragam: 'Seragam Pramuka Lengkap'
-  },
-  {
-    id: 'proker_02_juli_rutin',
-    tipe: 'Latihan Rutin',
-    nama: 'Latihan Rutin: Dinamika Sangga & Pengenalan Adat Ambalan',
-    waktuPelaksanaan: 'Jumat, 25 Juli 2026',
-    bulan: 'Juli',
-    bulanUrutan: 1,
-    sasaran: 'Seluruh Penegak Calon Bantara',
-    anggaran: 'Rp 150.000',
-    penanggungJawab: 'Kerani & Pinsang',
-    status: 'Terlaksana',
-    deskripsi: 'Pembentukan dan pemantapan sangga (Perintis, Penegas, Pendobrak, Pencoba, Pelaksana) serta pembacaan Sandi Ambalan.',
-    tempat: 'Aula Sanggar Pramuka',
-    seragam: 'Seragam Pramuka / Kaos Lapangan'
-  },
-
-  // 2. Agustus (Urutan 2)
-  {
-    id: 'proker_03_agustus_harpram',
-    tipe: 'Kegiatan',
-    nama: 'Peringatan Hari Pramuka Ke-65 & Renungan Ulang Janji',
-    waktuPelaksanaan: '13 - 14 Agustus 2026',
-    bulan: 'Agustus',
-    bulanUrutan: 2,
-    sasaran: 'Seluruh Ambalan & Pembina Gudep',
-    anggaran: 'Rp 1.800.000',
-    penanggungJawab: 'Pemangku Adat & Dewan Ambalan',
-    status: 'Terlaksana',
-    deskripsi: 'Upacara peringatan Hari Pramuka, malam renungan ulang janji Tri Satya, dan api unggun keakraban.',
-    tempat: 'Lapangan Utama Pangkalan',
-    seragam: 'Seragam Pramuka Lengkap Upacara'
-  },
-  {
-    id: 'proker_04_agustus_rutin',
-    tipe: 'Latihan Rutin',
-    nama: 'Latihan Rutin: PBB Tongkat & Kolone Senapan/Tongkat',
-    waktuPelaksanaan: 'Jumat, 22 Agustus 2026',
-    bulan: 'Agustus',
-    bulanUrutan: 2,
-    sasaran: 'Seluruh Anggota Sangga',
-    anggaran: 'Rp 100.000',
-    penanggungJawab: 'Sie Latihan & Ketangkasan',
-    status: 'Terlaksana',
-    deskripsi: 'Latihan baris-berbaris menggunakan tongkat pramuka, formasi aba-aba pluit, dan kekompakan barisan.',
-    tempat: 'Lapangan Olahraga Pangkalan',
-    seragam: 'Kaos Sangga & Topi Rimba'
-  },
-
-  // 3. September (Urutan 3)
-  {
-    id: 'proker_05_september_ldk',
-    tipe: 'Kegiatan',
-    nama: 'Latihan Dasar Kepemimpinan (LDK) Penegak & Manajemen Sangga',
-    waktuPelaksanaan: '12 - 13 September 2026',
-    bulan: 'Agustus',
-    bulanUrutan: 3,
-    sasaran: 'Calon Dewan Ambalan & Pimpinan Sangga',
-    anggaran: 'Rp 3.000.000',
-    penanggungJawab: 'Pembina Satuan & Pradana',
-    status: 'Terlaksana',
-    deskripsi: 'Pelatihan kepemimpinan, teknik persidangan, manajemen risiko kegiatan alam bebas, dan public speaking.',
-    tempat: 'Pusdiklatcab Maros',
-    seragam: 'Baju Batik Pangkalan / PDL'
-  },
-  {
-    id: 'proker_06_september_rutin',
-    tipe: 'Latihan Rutin',
-    nama: 'Latihan Rutin: Pionering Menara Kaki Tiga & Jembatan Tali',
-    waktuPelaksanaan: 'Jumat, 19 September 2026',
-    bulan: 'September',
-    bulanUrutan: 3,
-    sasaran: 'Seluruh Anggota Sangga',
-    anggaran: 'Rp 250.000',
-    penanggungJawab: 'Sie Perlengkapan & Pionering',
-    status: 'Terlaksana',
-    deskripsi: 'Praktik ikatan silang, ikatan canggah, dan pembuatan prototipe menara pandang kaki tiga.',
-    tempat: 'Halaman Pangkalan Belakang',
-    seragam: 'Kaos Lapangan Ambalan'
-  },
-
-  // 4. Oktober (Urutan 4 - Bulan Saat Ini)
-  {
-    id: 'proker_07_oktober_jenazah',
-    tipe: 'Latihan Rutin',
-    nama: 'Penyelenggaraan Jenazah',
-    waktuPelaksanaan: '10 Oktober 2026',
-    bulan: 'Oktober',
-    bulanUrutan: 4,
-    sasaran: 'Seluruh Anggota Ambalan & Penegak',
-    anggaran: 'Rp 350.000',
-    penanggungJawab: 'Dewan Ambalan',
-    status: 'Belum Terlaksana',
-    deskripsi: 'Melatih anggota ambalan dalam tata cara penyelenggaraan jenazah sesuai syariat Islam.',
-    tempat: 'Aula / Lapangan Sekolah',
-    seragam: 'Seragam Pramuka / Muslim'
-  },
-  {
-    id: 'proker_08_oktober_baksos',
-    tipe: 'Kegiatan',
-    nama: 'Bakti Sosial',
-    waktuPelaksanaan: '17 Oktober 2026',
-    bulan: 'Oktober',
-    bulanUrutan: 4,
-    sasaran: 'Masyarakat Sekitar & Warga Sekolah',
-    anggaran: 'Rp 1.500.000',
-    penanggungJawab: 'OSIS & Ambalan',
-    status: 'Menunggu',
-    deskripsi: 'Aksi kepedulian bakti sosial masyarakat, bantuan sembako, dan pembersihan lingkungan pangkalan.',
-    tempat: 'Lingkungan Sekitar Sekolah',
-    seragam: 'Kaos Pramuka Peduli'
-  },
-  {
-    id: 'proker_09_oktober_kepemimpinan',
-    tipe: 'Kegiatan',
-    nama: 'Latihan Kepemimpinan',
-    waktuPelaksanaan: '24 Oktober 2026',
-    bulan: 'Oktober',
-    bulanUrutan: 4,
-    sasaran: 'Pradana, Pinsang, dan Calon Pengurus',
-    anggaran: 'Rp 1.200.000',
-    penanggungJawab: 'Pradana & Dewan Ambalan',
-    status: 'Terlaksana',
-    deskripsi: 'Materi dan pembekalan teknik kepemimpinan, public speaking, dan manajemen organisasi ambalan.',
-    tempat: 'Aula Pertemuan Pangkalan',
-    seragam: 'Seragam Pramuka Lengkap'
-  },
-
-  // 5. November (Urutan 5)
-  {
-    id: 'proker_09_november_baksos',
-    tipe: 'Kegiatan',
-    nama: 'Bakti Sosial Lingkungan & Penanaman Pohon Pramuka Peduli',
-    waktuPelaksanaan: '15 November 2026',
-    bulan: 'November',
-    bulanUrutan: 5,
-    sasaran: 'Masyarakat Sekitar Gugus Depan',
-    anggaran: 'Rp 2.000.000',
-    penanggungJawab: 'Sie Pengabdian Masyarakat',
-    status: 'Direncanakan',
-    deskripsi: 'Aksi peduli lingkungan hidup, pembersihan saluran air, dan pembagian bibit pohon produktif.',
-    tempat: 'Desa Binaan Pangkalan Maros',
-    seragam: 'Kaos Bakti Pramuka Peduli'
-  },
-  {
-    id: 'proker_10_november_rutin',
-    tipe: 'Latihan Rutin',
-    nama: 'Latihan Rutin: Survival Lapangan & P3K / PPGD Tanggap Darurat',
-    waktuPelaksanaan: 'Jumat, 21 November 2026',
-    bulan: 'November',
-    bulanUrutan: 5,
-    sasaran: 'Seluruh Penegak',
-    anggaran: 'Rp 200.000',
-    penanggungJawab: 'Sie Kesehatan & Survival',
-    status: 'Direncanakan',
-    deskripsi: 'Teknik pembuatan bivak darurat, mencari air bersih dan tumbuhan hutan yang aman dikonsumsi, serta pembidaian patah tulang.',
-    tempat: 'Hutan Kota Maros',
-    seragam: 'Kaos Lapangan Ambalan'
-  },
-
-  // 6. Desember (Urutan 6)
-  {
-    id: 'proker_11_desember_pelantikan',
-    tipe: 'Kegiatan',
-    nama: 'Pelantikan Penegak Bantara & Musyawarah Ambalan (MUSAM)',
-    waktuPelaksanaan: '19 - 20 Desember 2026',
-    bulan: 'Desember',
-    bulanUrutan: 6,
-    sasaran: 'Calon Bantara & Seluruh Dewan Ambalan',
-    anggaran: 'Rp 3.500.000',
-    penanggungJawab: 'Ketua Musam & Pembina Satuan',
-    status: 'Direncanakan',
-    deskripsi: 'Penyematan tanda pangkat Bantara, sidang adat pencucian pusaka badik La Surullah, dan laporan pertanggungjawaban semester.',
-    tempat: 'Puncak Pangkalan & Aula Utama',
-    seragam: 'Seragam Pramuka Lengkap Kebesaran'
-  },
-  {
-    id: 'proker_12_desember_rutin',
-    tipe: 'Latihan Rutin',
-    nama: 'Latihan Rutin: Evaluasi Portofolio SKU & Bedah Adat Ambalan',
-    waktuPelaksanaan: 'Jumat, 12 Desember 2026',
-    bulan: 'Desember',
-    bulanUrutan: 6,
-    sasaran: 'Seluruh Anggota',
-    anggaran: 'Rp 100.000',
-    penanggungJawab: 'Dewan Kehormatan Ambalan',
-    status: 'Direncanakan',
-    deskripsi: 'Verifikasi buku catatan SKU semester ganjil dan pendalaman 4 pilar filosofi Bugis (Siri\', Pacce, Getteng, Lempu\').',
-    tempat: 'Sanggar Ambalan',
-    seragam: 'Seragam Pramuka Lengkap'
-  },
-
-  // 7. Januari (Urutan 7)
-  {
-    id: 'proker_13_januari_latgab',
+    id: 'proker_01_januari_latgab',
     tipe: 'Kegiatan',
     nama: 'Latihan Gabungan Antar-Ambalan se-Kwartir Cabang Maros',
     waktuPelaksanaan: '17 Januari 2027',
     bulan: 'Januari',
-    bulanUrutan: 7,
+    bulanUrutan: 1,
     sasaran: 'Penegak Bantara & Laksana',
     anggaran: 'Rp 1.500.000',
     penanggungJawab: 'Pradana & Sie Hubungan Antar Lembaga',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Uji keterampilan terpadu, pertukaran wawasan adat ambalan, dan forum silaturahmi penegak se-Kabupaten Maros.',
     tempat: 'Kawasan Wisata Bantimurung',
     seragam: 'Seragam Pramuka Lengkap'
   },
   {
-    id: 'proker_14_januari_rutin',
+    id: 'proker_02_januari_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Taksir Ukur (Tinggi Pohon, Lebar Sungai & Kecepatan Arus)',
     waktuPelaksanaan: 'Jumat, 23 Januari 2027',
     bulan: 'Januari',
-    bulanUrutan: 7,
+    bulanUrutan: 1,
     sasaran: 'Seluruh Anggota',
     anggaran: 'Rp 120.000',
     penanggungJawab: 'Sie Latihan',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Praktik menaksir menggunakan metode segitiga sama kaki, bayangan tongkat, dan pita ukur lapangan.',
     tempat: 'Bantaran Sungai Pangkalan',
     seragam: 'Kaos Sangga & Celana Lapangan'
   },
 
-  // 8. Februari (Urutan 8)
+  // 2. Februari (Urutan 2)
   {
-    id: 'proker_15_februari_bpday',
+    id: 'proker_03_februari_bpday',
     tipe: 'Kegiatan',
     nama: 'Peringatan Baden Powell Day & Festival Kepanduan La Surullah',
     waktuPelaksanaan: '21 - 22 Februari 2027',
     bulan: 'Februari',
-    bulanUrutan: 8,
+    bulanUrutan: 2,
     sasaran: 'Seluruh Pangkalan & Gugus Depan Sahabat',
     anggaran: 'Rp 3.200.000',
     penanggungJawab: 'Sangga Kerja BP Day',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Lomba ketangkasan pionering mini, bedah buku Scouting for Boys, dan pameran foto sejarah ambalan.',
     tempat: 'Plaza Utama Gugus Depan',
     seragam: 'Seragam Pramuka + Scarf Spesial'
   },
   {
-    id: 'proker_16_februari_rutin',
+    id: 'proker_04_februari_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Taktik Navigasi Darat & Orientering Kompas',
     waktuPelaksanaan: 'Jumat, 27 Februari 2027',
     bulan: 'Februari',
-    bulanUrutan: 8,
+    bulanUrutan: 2,
     sasaran: 'Seluruh Penegak',
     anggaran: 'Rp 150.000',
     penanggungJawab: 'Sie Lapangan',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Membaca peta topografi kontur, resection & intersection menggunakan kompas bidik silva.',
     tempat: 'Perbukitan Sekitar Pangkalan',
     seragam: 'PDL Pramuka'
   },
 
-  // 9. Maret (Urutan 9)
+  // 3. Maret (Urutan 3)
   {
-    id: 'proker_17_maret_skk',
+    id: 'proker_05_maret_skk',
     tipe: 'Kegiatan',
     nama: 'Kemah Uji Tanda Kecakapan Khusus (TKK) & Wirausaha Kreatif',
     waktuPelaksanaan: '20 - 21 Maret 2027',
     bulan: 'Maret',
-    bulanUrutan: 9,
+    bulanUrutan: 3,
     sasaran: 'Penegak Bantara Menuju Laksana',
     anggaran: 'Rp 2.800.000',
     penanggungJawab: 'Sie Uji SKK & Hartaka',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Ujian TKK Berkemah, Juru Masak, Pengatur Ruangan, Pertolongan Pertama, dan pameran bazar wirausaha sangga.',
     tempat: 'Bumi Perkemahan Pangkalan',
     seragam: 'Seragam Pramuka Lengkap'
   },
   {
-    id: 'proker_18_maret_rutin',
+    id: 'proker_06_maret_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Jurnalistik Pramuka & Pengelolaan Media Sosial',
     waktuPelaksanaan: 'Jumat, 13 Maret 2027',
     bulan: 'Maret',
-    bulanUrutan: 9,
+    bulanUrutan: 3,
     sasaran: 'Kerani & Tim Cyber Ambalan',
     anggaran: 'Rp 100.000',
     penanggungJawab: 'Sie Publikasi & Dokumentasi',
-    status: 'Direncanakan',
+    status: 'Terlaksana',
     deskripsi: 'Pelatihan penulisan berita kegiatan, fotografi lapangan, dan arsip digital ambalan.',
     tempat: 'Lab Komputer Pangkalan',
     seragam: 'Baju Bebas Rapi / Almamater'
   },
 
-  // 10. April (Urutan 10)
+  // 4. April (Urutan 4)
   {
-    id: 'proker_19_april_ramadhan',
+    id: 'proker_07_april_ramadhan',
     tipe: 'Kegiatan',
     nama: 'Safari Ramadhan Berkah & Tebar Takjil Pramuka Peduli',
     waktuPelaksanaan: '9 April 2027',
     bulan: 'April',
-    bulanUrutan: 10,
+    bulanUrutan: 4,
     sasaran: 'Masyarakat Maros & Kaum Dhuafa',
     anggaran: 'Rp 2.200.000',
     penanggungJawab: 'Sie Kerohanian & Baksos',
@@ -321,12 +114,12 @@ export const DEFAULT_PROGRAM_KERJA_ITEMS: ProgramKerjaItem[] = [
     seragam: 'Busana Muslim Berkerah / Kacu Pramuka'
   },
   {
-    id: 'proker_20_april_rutin',
+    id: 'proker_08_april_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Bedah Nilai Dasa Darma dalam Kehidupan Modern',
     waktuPelaksanaan: 'Jumat, 16 April 2027',
     bulan: 'April',
-    bulanUrutan: 10,
+    bulanUrutan: 4,
     sasaran: 'Seluruh Penegak',
     anggaran: 'Rp 80.000',
     penanggungJawab: 'Pemangku Adat Putra & Putri',
@@ -336,14 +129,14 @@ export const DEFAULT_PROGRAM_KERJA_ITEMS: ProgramKerjaItem[] = [
     seragam: 'Seragam Pramuka Harian'
   },
 
-  // 11. Mei (Urutan 11)
+  // 5. Mei (Urutan 5)
   {
-    id: 'proker_21_mei_laksana',
+    id: 'proker_09_mei_laksana',
     tipe: 'Kegiatan',
     nama: 'Pengembaraan Akbar Penegak Laksana (Survival Hutan Karst 3H2M)',
     waktuPelaksanaan: '21 - 23 Mei 2027',
     bulan: 'Mei',
-    bulanUrutan: 11,
+    bulanUrutan: 5,
     sasaran: 'Calon Penegak Laksana',
     anggaran: 'Rp 5.000.000',
     penanggungJawab: 'Pembina Gudep & Tim Teknis',
@@ -353,12 +146,12 @@ export const DEFAULT_PROGRAM_KERJA_ITEMS: ProgramKerjaItem[] = [
     seragam: 'PDL Rimba Pramuka'
   },
   {
-    id: 'proker_22_mei_rutin',
+    id: 'proker_10_mei_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Pioneer Bivak Rimba, Simpul Nelayan & Navigasi Bintang',
     waktuPelaksanaan: 'Jumat, 28 Mei 2027',
     bulan: 'Mei',
-    bulanUrutan: 11,
+    bulanUrutan: 5,
     sasaran: 'Seluruh Anggota',
     anggaran: 'Rp 150.000',
     penanggungJawab: 'Sie Lapangan',
@@ -368,34 +161,226 @@ export const DEFAULT_PROGRAM_KERJA_ITEMS: ProgramKerjaItem[] = [
     seragam: 'Kaos Lapangan & Scarf'
   },
 
-  // 12. Juni (Urutan 12)
+  // 6. Juni (Urutan 6)
   {
-    id: 'proker_23_juni_musalap',
+    id: 'proker_11_juni_musalap',
     tipe: 'Kegiatan',
     nama: 'Musyawarah Penegak (Musalap) & Suksesi Kepengurusan Ambalan',
     waktuPelaksanaan: '19 - 20 Juni 2027',
     bulan: 'Juni',
-    bulanUrutan: 12,
+    bulanUrutan: 6,
     sasaran: 'Seluruh Anggota Ambalan La Surullah',
     anggaran: 'Rp 3.800.000',
     penanggungJawab: 'Pradana & Presidium Musalap',
     status: 'Direncanakan',
-    deskripsi: 'Laporan pertanggungjawaban kepengurusan 2026/2027, pemilihan Pradana Putra & Putri masa bakti baru, serta serah terima pusaka adat.',
+    deskripsi: 'Laporan pertanggungjawaban kepengurusan, pemilihan Pradana Putra & Putri masa bakti baru, serta serah terima pusaka adat.',
     tempat: 'Gedung Pertemuan Pangkalan',
     seragam: 'Seragam Pramuka Lengkap Kebesaran'
   },
   {
-    id: 'proker_24_juni_rutin',
+    id: 'proker_12_juni_rutin',
     tipe: 'Latihan Rutin',
     nama: 'Latihan Rutin: Sidang Dewan Kehormatan & Inventarisasi Logistik',
     waktuPelaksanaan: 'Jumat, 25 Juni 2027',
     bulan: 'Juni',
-    bulanUrutan: 12,
+    bulanUrutan: 6,
     sasaran: 'Dewan Ambalan & Pengurus Baru',
     anggaran: 'Rp 100.000',
     penanggungJawab: 'Hartaka & Juru Adat',
     status: 'Direncanakan',
     deskripsi: 'Pengecekan perlengkapan ambalan (tenda, badik pusaka, bendera ambalan, kompas) dan persiapan tahun ajaran baru.',
+    tempat: 'Sanggar Ambalan',
+    seragam: 'Seragam Pramuka Lengkap'
+  },
+
+  // 7. Juli (Urutan 7)
+  {
+    id: 'proker_13_juli_pta',
+    tipe: 'Kegiatan',
+    nama: 'Penerimaan Tamu Ambalan (PTA) & Masa Orientasi Penegak',
+    waktuPelaksanaan: '18 - 20 Juli 2026',
+    bulan: 'Juli',
+    bulanUrutan: 7,
+    sasaran: 'Peserta Didik Baru Kelas X',
+    anggaran: 'Rp 2.500.000',
+    penanggungJawab: 'Pradana & Sangga Kerja PTA',
+    status: 'Terlaksana',
+    deskripsi: 'Penyambutan dan orientasi calon penegak baru ke dalam adat istiadat dan tradisi Ambalan La Surullah Petta Lopo.',
+    tempat: 'Bumi Perkemahan Pangkalan',
+    seragam: 'Seragam Pramuka Lengkap'
+  },
+  {
+    id: 'proker_14_juli_rutin',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: Dinamika Sangga & Pengenalan Adat Ambalan',
+    waktuPelaksanaan: 'Jumat, 25 Juli 2026',
+    bulan: 'Juli',
+    bulanUrutan: 7,
+    sasaran: 'Seluruh Penegak Calon Bantara',
+    anggaran: 'Rp 150.000',
+    penanggungJawab: 'Kerani & Pinsang',
+    status: 'Terlaksana',
+    deskripsi: 'Pembentukan dan pemantapan sangga (Perintis, Penegas, Pendobrak, Pencoba, Pelaksana) serta pembacaan Sandi Ambalan.',
+    tempat: 'Aula Sanggar Pramuka',
+    seragam: 'Seragam Pramuka / Kaos Lapangan'
+  },
+
+  // 8. Agustus (Urutan 8)
+  {
+    id: 'proker_15_agustus_harpram',
+    tipe: 'Kegiatan',
+    nama: 'Peringatan Hari Pramuka Ke-65 & Renungan Ulang Janji',
+    waktuPelaksanaan: '13 - 14 Agustus 2026',
+    bulan: 'Agustus',
+    bulanUrutan: 8,
+    sasaran: 'Seluruh Ambalan & Pembina Gudep',
+    anggaran: 'Rp 1.800.000',
+    penanggungJawab: 'Pemangku Adat & Dewan Ambalan',
+    status: 'Terlaksana',
+    deskripsi: 'Upacara peringatan Hari Pramuka, malam renungan ulang janji Tri Satya, dan api unggun keakraban.',
+    tempat: 'Lapangan Utama Pangkalan',
+    seragam: 'Seragam Pramuka Lengkap Upacara'
+  },
+  {
+    id: 'proker_16_agustus_rutin',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: PBB Tongkat & Kolone Senapan/Tongkat',
+    waktuPelaksanaan: 'Jumat, 22 Agustus 2026',
+    bulan: 'Agustus',
+    bulanUrutan: 8,
+    sasaran: 'Seluruh Anggota Sangga',
+    anggaran: 'Rp 100.000',
+    penanggungJawab: 'Sie Latihan & Ketangkasan',
+    status: 'Terlaksana',
+    deskripsi: 'Latihan baris-berbaris menggunakan tongkat pramuka, formasi aba-aba pluit, dan kekompakan barisan.',
+    tempat: 'Lapangan Olahraga Pangkalan',
+    seragam: 'Kaos Sangga & Topi Rimba'
+  },
+
+  // 9. September (Urutan 9)
+  {
+    id: 'proker_17_september_ldk',
+    tipe: 'Kegiatan',
+    nama: 'Latihan Dasar Kepemimpinan (LDK) Penegak & Manajemen Sangga',
+    waktuPelaksanaan: '12 - 13 September 2026',
+    bulan: 'September',
+    bulanUrutan: 9,
+    sasaran: 'Calon Dewan Ambalan & Pimpinan Sangga',
+    anggaran: 'Rp 3.000.000',
+    penanggungJawab: 'Pembina Satuan & Pradana',
+    status: 'Terlaksana',
+    deskripsi: 'Pelatihan kepemimpinan, teknik persidangan, manajemen risiko kegiatan alam bebas, dan public speaking.',
+    tempat: 'Pusdiklatcab Maros',
+    seragam: 'Baju Batik Pangkalan / PDL'
+  },
+  {
+    id: 'proker_18_september_rutin',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: Pionering Menara Kaki Tiga & Jembatan Tali',
+    waktuPelaksanaan: 'Jumat, 19 September 2026',
+    bulan: 'September',
+    bulanUrutan: 9,
+    sasaran: 'Seluruh Anggota Sangga',
+    anggaran: 'Rp 250.000',
+    penanggungJawab: 'Sie Perlengkapan & Pionering',
+    status: 'Terlaksana',
+    deskripsi: 'Praktik ikatan silang, ikatan canggah, dan pembuatan prototipe menara pandang kaki tiga.',
+    tempat: 'Halaman Pangkalan Belakang',
+    seragam: 'Kaos Lapangan Ambalan'
+  },
+
+  // 10. Oktober (Urutan 10)
+  {
+    id: 'proker_19_oktober_baksos',
+    tipe: 'Kegiatan',
+    nama: 'Bakti Sosial Lingkungan & Pembersihan Situs Sejarah Maros',
+    waktuPelaksanaan: '17 Oktober 2026',
+    bulan: 'Oktober',
+    bulanUrutan: 10,
+    sasaran: 'Masyarakat Sekitar & Warga Sekolah',
+    anggaran: 'Rp 1.500.000',
+    penanggungJawab: 'OSIS & Ambalan',
+    status: 'Terlaksana',
+    deskripsi: 'Aksi kepedulian bakti sosial masyarakat, pembersihan situs sejarah Leang-Leang, dan bakti pangkalan.',
+    tempat: 'Lingkungan Sekitar Sekolah & Leang-Leang',
+    seragam: 'Kaos Pramuka Peduli'
+  },
+  {
+    id: 'proker_20_oktober_jenazah',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: Tata Cara Penyelenggaraan Jenazah Sesuai Syariat Islam',
+    waktuPelaksanaan: 'Jumat, 24 Oktober 2026',
+    bulan: 'Oktober',
+    bulanUrutan: 10,
+    sasaran: 'Seluruh Anggota Ambalan & Penegak',
+    anggaran: 'Rp 350.000',
+    penanggungJawab: 'Dewan Ambalan & Sie Kerohanian',
+    status: 'Terlaksana',
+    deskripsi: 'Melatih anggota ambalan dalam tata cara memandikan, mengafani, menyalatkan, dan memakamkan jenazah sesuai syariat Islam.',
+    tempat: 'Aula Sanggar Pangkalan',
+    seragam: 'Seragam Pramuka / Muslim'
+  },
+
+  // 11. November (Urutan 11)
+  {
+    id: 'proker_21_november_pohon',
+    tipe: 'Kegiatan',
+    nama: 'Penanaman 1000 Pohon Pramuka Peduli & Konservasi Sumber Air',
+    waktuPelaksanaan: '15 November 2026',
+    bulan: 'November',
+    bulanUrutan: 11,
+    sasaran: 'Masyarakat Sekitar Gugus Depan',
+    anggaran: 'Rp 2.000.000',
+    penanggungJawab: 'Sie Pengabdian Masyarakat',
+    status: 'Direncanakan',
+    deskripsi: 'Aksi peduli lingkungan hidup, penghijauan mata air karst, dan pembagian bibit pohon buah produktif.',
+    tempat: 'Desa Binaan Pangkalan Maros',
+    seragam: 'Kaos Bakti Pramuka Peduli'
+  },
+  {
+    id: 'proker_22_november_rutin',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: Survival Lapangan & P3K / PPGD Tanggap Darurat',
+    waktuPelaksanaan: 'Jumat, 21 November 2026',
+    bulan: 'November',
+    bulanUrutan: 11,
+    sasaran: 'Seluruh Penegak',
+    anggaran: 'Rp 200.000',
+    penanggungJawab: 'Sie Kesehatan & Survival',
+    status: 'Direncanakan',
+    deskripsi: 'Teknik pembuatan bivak darurat, mencari air bersih dan tumbuhan hutan yang aman dikonsumsi, serta pembidaian patah tulang.',
+    tempat: 'Hutan Kota Maros',
+    seragam: 'Kaos Lapangan Ambalan'
+  },
+
+  // 12. Desember (Urutan 12)
+  {
+    id: 'proker_23_desember_pelantikan',
+    tipe: 'Kegiatan',
+    nama: 'Pelantikan Penegak Bantara & Musyawarah Ambalan (MUSAM)',
+    waktuPelaksanaan: '19 - 20 Desember 2026',
+    bulan: 'Desember',
+    bulanUrutan: 12,
+    sasaran: 'Calon Bantara & Seluruh Dewan Ambalan',
+    anggaran: 'Rp 3.500.000',
+    penanggungJawab: 'Ketua Musam & Pembina Satuan',
+    status: 'Direncanakan',
+    deskripsi: 'Penyematan tanda pangkat Bantara, sidang adat pencucian pusaka badik La Surullah, dan laporan pertanggungjawaban semester.',
+    tempat: 'Puncak Pangkalan & Aula Utama',
+    seragam: 'Seragam Pramuka Lengkap Kebesaran'
+  },
+  {
+    id: 'proker_24_desember_rutin',
+    tipe: 'Latihan Rutin',
+    nama: 'Latihan Rutin: Evaluasi Portofolio SKU & Bedah Adat Ambalan',
+    waktuPelaksanaan: 'Jumat, 12 Desember 2026',
+    bulan: 'Desember',
+    bulanUrutan: 12,
+    sasaran: 'Seluruh Anggota',
+    anggaran: 'Rp 100.000',
+    penanggungJawab: 'Dewan Kehormatan Ambalan',
+    status: 'Direncanakan',
+    deskripsi: 'Verifikasi buku catatan SKU semester ganjil dan pendalaman 4 pilar filosofi Bugis (Siri\', Pacce, Getteng, Lempu\').',
     tempat: 'Sanggar Ambalan',
     seragam: 'Seragam Pramuka Lengkap'
   }

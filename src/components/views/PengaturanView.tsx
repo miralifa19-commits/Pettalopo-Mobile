@@ -62,12 +62,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
               <span className="font-bold text-slate-800 block">Pengingat Kegiatan & Latihan</span>
               <span className="text-[10px] text-slate-500">Pemberitahuan sebelum agenda dimulai</span>
             </div>
-            <input
-              type="checkbox"
-              checked={notifKegiatan}
-              onChange={(e) => setNotifKegiatan(e.target.checked)}
-              className="w-4 h-4 accent-[#e51c24] rounded cursor-pointer"
-            />
+            <button type="button" role="switch" aria-checked={notifKegiatan} onClick={() => setNotifKegiatan(!notifKegiatan)} className={`settings-toggle ${notifKegiatan ? 'is-on' : ''}`} aria-label="Ubah notifKegiatan"><span /></button>
           </div>
 
           <div className="py-2.5 flex items-center justify-between">
@@ -75,12 +70,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
               <span className="font-bold text-slate-800 block">Pemberitahuan Obrolan Grup</span>
               <span className="text-[10px] text-slate-500">Notifikasi pesan dan update list nama</span>
             </div>
-            <input
-              type="checkbox"
-              checked={notifChat}
-              onChange={(e) => setNotifChat(e.target.checked)}
-              className="w-4 h-4 accent-[#e51c24] rounded cursor-pointer"
-            />
+            <button type="button" role="switch" aria-checked={notifChat} onClick={() => setNotifChat(!notifChat)} className={`settings-toggle ${notifChat ? 'is-on' : ''}`} aria-label="Ubah notifChat"><span /></button>
           </div>
 
           <div className="py-2.5 flex items-center justify-between">
@@ -88,34 +78,8 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
               <span className="font-bold text-slate-800 block">Suara & Nada Dering</span>
               <span className="text-[10px] text-slate-500">Bunyi lonceng peluit saat ada pengumuman</span>
             </div>
-            <input
-              type="checkbox"
-              checked={suaraNotif}
-              onChange={(e) => setSuaraNotif(e.target.checked)}
-              className="w-4 h-4 accent-[#e51c24] rounded cursor-pointer"
-            />
+            <button type="button" role="switch" aria-checked={suaraNotif} onClick={() => setSuaraNotif(!suaraNotif)} className={`settings-toggle ${suaraNotif ? 'is-on' : ''}`} aria-label="Ubah suaraNotif"><span /></button>
           </div>
-        </div>
-      </div>
-
-      {/* 2. Tema & Tampilan */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider font-mono flex items-center gap-2">
-          <Palette className="w-4 h-4 text-amber-600" />
-          <span>Tema & Nuansa Visual</span>
-        </h2>
-
-        <div className="p-3 bg-red-50/70 rounded-xl border border-red-200 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-[#e51c24] border-2 border-amber-400" />
-            <div>
-              <strong className="text-slate-900 block font-bold">Merah Putih Pramuka Ambalan</strong>
-              <span className="text-[10px] text-slate-500">Kombinasi Merah Berani, Putih Suci, & Aksen Kuning Emas</span>
-            </div>
-          </div>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-300">
-            Aktif
-          </span>
         </div>
       </div>
 

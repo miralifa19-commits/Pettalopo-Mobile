@@ -52,6 +52,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Option to show only this month vs all activities
   const [showAllActivities, setShowAllActivities] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Kegiatan' | 'Latihan Rutin'>('Kegiatan');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Selected item for Detailed Modal
   const [selectedItem, setSelectedItem] = useState<ProgramKerjaItem | null>(null);
@@ -61,8 +63,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Sort all activities grouped by Indonesia months (Januari .. Desember)
   const groupedMonths = INDONESIA_MONTHS.map((month) => {
-    const items = programKerjaList.filter(
-      (item) => (item.bulan || '').toLowerCase() === month.toLowerCase()
+    const items = programKerjaList.filter((item) =>
+      (item.bulan || '').toLowerCase() === month.toLowerCase() &&
+      (item.tipe || 'Kegiatan') === activeTab &&
+      (item.nama || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
     return {
       month,
@@ -90,6 +94,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           ) : undefined
         }
       />
+
+      <section className="agenda-controls">
+        <label className="agenda-search"><span className="sr-only">Cari agenda</span><input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari kegiatan atau latihan..." /></label>
+        <div className="agenda-tabs" role="tablist" aria-label="Jenis agenda">
+          <button type="button" role="tab" aria-selected={activeTab === 'Kegiatan'} className={activeTab === 'Kegiatan' ? 'active' : ''} onClick={() => setActiveTab('Kegiatan')}>Kegiatan</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'Latihan Rutin'} className={activeTab === 'Latihan Rutin' ? 'active' : ''} onClick={() => setActiveTab('Latihan Rutin')}>Latihan Rutin</button>
+        </div>
+      </section>
 
       {/* KARTU KEGIATAN SEDANG DILAKSANAKAN (LIVE SESSION) */}
       {activeKegiatan && activeKegiatan.isRunning && (

@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
   Award, 
-  Sparkles, 
   Brain, 
   ChevronRight, 
   X, 
@@ -13,8 +12,7 @@ import {
   Users,
   GraduationCap,
   Settings,
-  UserCheck,
-  Home
+  UserCheck
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from '../../data/defaultProgramKerja';

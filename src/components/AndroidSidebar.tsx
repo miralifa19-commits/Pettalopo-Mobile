@@ -76,61 +76,12 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
   // 8. Pengaturan (Dibawah ruang belajar/chat)
   // 9. Akun (Dibawah pengaturan)
   const sidebarMenus = [
-    {
-      id: 'home' as ActiveMenu,
-      label: 'Home',
-      icon: Home
-    },
-    {
-      id: 'profil_ambalan' as ActiveMenu,
-      label: 'Profil Ambalan',
-      icon: Shield
-    },
-    {
-      id: 'dewan_ambalan' as ActiveMenu,
-      label: 'Dewan Ambalan',
-      icon: Crown
-    },
-    {
-      id: 'dashboard' as ActiveMenu,
-      label: 'Kegiatan dan Latihan',
-      icon: CalendarCheck
-    },
-    {
-      id: 'laporan' as ActiveMenu,
-      label: 'Laporan Kegiatan',
-      icon: FileText
-    },
-    {
-      id: 'sangga' as ActiveMenu,
-      label: 'Sangga',
-      icon: Users
-    },
-    {
-      id: 'sku_skk' as ActiveMenu,
-      label: 'SKU dan SKK',
-      icon: Award
-    },
-    {
-      id: 'ruang_belajar' as ActiveMenu,
-      label: 'Ruang Belajar',
-      icon: GraduationCap
-    },
-    {
-      id: 'quiz' as ActiveMenu,
-      label: 'Quiz Pramuka',
-      icon: Brain
-    },
-    {
-      id: 'pengaturan' as ActiveMenu,
-      label: 'Pengaturan',
-      icon: Settings
-    },
-    {
-      id: 'akun' as ActiveMenu,
-      label: 'Akun',
-      icon: UserCheck
-    }
+    { id: 'home' as ActiveMenu, label: 'Beranda', icon: Home },
+    { id: 'dashboard' as ActiveMenu, label: 'Agenda & Latihan', icon: CalendarCheck },
+    { id: 'sku_skk' as ActiveMenu, label: 'SKU/SKK', icon: Award },
+    { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: Users },
+    { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan Ambalan', icon: Crown },
+    { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings }
   ];
 
   return (
@@ -142,7 +93,7 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
       />
 
       {/* Sidebar Panel */}
-      <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white shadow-2xl flex flex-col z-10 border-r border-slate-200 animate-in slide-in-from-left duration-200">
+      <div className="fixed inset-y-0 left-0 max-w-[310px] w-full bg-white shadow-xl flex flex-col z-10 border-r border-slate-200 animate-in slide-in-from-left duration-200">
         
         {/* BAGIAN WARNA MERAH: DIPERKECIL & HANYA FOTO, NAMA BOLD, GOLONGAN */}
         <div className="relative bg-white text-slate-900 px-4 py-3.5 border-b border-slate-200">
@@ -215,14 +166,14 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all text-left group ${
                   isActive
-                    ? 'bg-red-50 text-[#e51c24] border-l-4 border-l-[#e51c24] font-black shadow-xs'
+                    ? 'bg-white text-[#C41E2A] border-l-[3px] border-l-[#C41E2A] font-extrabold'
                     : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 font-semibold'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`p-1.5 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-[#e51c24] text-white shadow-xs'
+                      ? 'bg-[#fff3f4] text-[#C41E2A]'
                       : 'bg-slate-100 text-slate-600 group-hover:bg-red-100 group-hover:text-[#e51c24]'
                   }`}>
                     <Icon className="w-4 h-4" />

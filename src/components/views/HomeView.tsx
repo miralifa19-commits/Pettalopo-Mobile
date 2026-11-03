@@ -42,7 +42,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 1,
     bulan: 'Januari',
     singkatan: 'JAN',
-    bgHex: '#C5192D', // Merah Tua
+    bgHex: '#8f1118', // Merah Tua
     iconSymbol: '🚩',
     kegiatanUtama: 'Pelantikan Penggalang & Penegak',
     deskripsi: 'Upacara kenaikan tingkat Penegak Bantara, pindah golongan, dan penerimaan tamu ambalan baru.'
@@ -51,7 +51,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 2,
     bulan: 'Februari',
     singkatan: 'FEB',
-    bgHex: '#EA580C', // Oranye
+    bgHex: '#a9151d', // Oranye
     iconSymbol: '🌱',
     kegiatanUtama: 'Bakti Sosial Peduli Lingkungan',
     deskripsi: 'Aksi penghijauan pangkalan, penanaman pohon, dan bakti pembersihan lingkungan hidup.'
@@ -60,7 +60,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 3,
     bulan: 'Maret',
     singkatan: 'MAR',
-    bgHex: '#D97706', // Kuning Emas
+    bgHex: '#bd1e26', // Kuning Emas
     iconSymbol: '🪢',
     kegiatanUtama: 'Pelatihan Tali Temali dan Simpul',
     deskripsi: 'Pendalaman simpul mati, pangkal, jangkar, kembar, dan ikatan pionering tiang bendera.'
@@ -69,7 +69,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 4,
     bulan: 'April',
     singkatan: 'APR',
-    bgHex: '#65A30D', // Hijau Muda
+    bgHex: '#d12a32', // Hijau Muda
     iconSymbol: '🎒',
     kegiatanUtama: 'Menjelajah Alam dan Hiking',
     deskripsi: 'Lintas alam pedesaan/hutan, penjelajahan rute jejak kompas, dan survival dasar penegak.'
@@ -78,7 +78,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 5,
     bulan: 'Mei',
     singkatan: 'MEI',
-    bgHex: '#15803D', // Hijau Tua
+    bgHex: '#e51c24', // Hijau Tua
     iconSymbol: '🧗',
     kegiatanUtama: 'Lomba Ketangkasan & Pionering',
     deskripsi: 'Kompetisi pembuatan jembatan darurat, menara pandang cepat, dan ketangkasan fisik sangga.'
@@ -87,7 +87,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 6,
     bulan: 'Juni',
     singkatan: 'JUN',
-    bgHex: '#0891B2', // Cyan / Biru Muda
+    bgHex: '#f0444b', // Cyan / Biru Muda
     iconSymbol: '🏕️',
     kegiatanUtama: 'Perkemahan dan Api Unggun',
     deskripsi: 'Perkemahan akbar penutupan tahun ajaran, upacara malam api unggun, dan malam apresiasi budaya.'
@@ -96,7 +96,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 7,
     bulan: 'Juli',
     singkatan: 'JUL',
-    bgHex: '#0F766E', // Teal / Hijau Laut
+    bgHex: '#b91c1c', // Teal / Hijau Laut
     iconSymbol: '🩹',
     kegiatanUtama: 'Simulasi Pertolongan Pertama (PMR)',
     deskripsi: 'Pelatihan P3K darurat, pembalutan mitela luka, pembuatan tandu darurat, dan evakuasi korban.'
@@ -105,7 +105,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 8,
     bulan: 'Agustus',
     singkatan: 'AGU',
-    bgHex: '#1D4ED8', // Biru
+    bgHex: '#c91f28', // Biru
     iconSymbol: '🔥',
     kegiatanUtama: 'Pesta Pramuka & Syukur HUT',
     deskripsi: 'Peringatan Hari Pramuka ke-65, karnaval ambalan, dan renungan suci Trisatya & Dasa Darma.'
@@ -114,7 +114,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 9,
     bulan: 'September',
     singkatan: 'SEP',
-    bgHex: '#1E293B', // Navy Gelap
+    bgHex: '#7f1016', // Navy Gelap
     iconSymbol: '🧭',
     kegiatanUtama: 'Orientering & Baca Peta Kompas',
     deskripsi: 'Navigasi darat, membaca peta topografi kontur, penentuan posisi resection, dan orientering.'
@@ -123,7 +123,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 10,
     bulan: 'Oktober',
     singkatan: 'OKT',
-    bgHex: '#6B21A8', // Ungu
+    bgHex: '#a91620', // Ungu
     iconSymbol: '🎭',
     kegiatanUtama: 'Pengembangan Bakat Seni Budaya',
     deskripsi: 'Pentas seni ambalan, teater kearifan lokal Siri\' na Pacce, musik bambu, dan pameran sangga.'
@@ -132,7 +132,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 11,
     bulan: 'November',
     singkatan: 'NOV',
-    bgHex: '#9D174D', // Magenta / Plum
+    bgHex: '#d32f38', // Magenta / Plum
     iconSymbol: '🎖️',
     kegiatanUtama: 'Kegiatan Baris Berbaris (PBB)',
     deskripsi: 'Latihan baris berbaris tongkat resmi, variasi formasi lapangan, dan penanaman disiplin diri.'
@@ -141,7 +141,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 12,
     bulan: 'Desember',
     singkatan: 'DES',
-    bgHex: '#BE185D', // Rose Pink
+    bgHex: '#ef5350', // Rose Pink
     iconSymbol: '📜',
     kegiatanUtama: 'Evaluasi Tahunan & Lencana',
     deskripsi: 'Musyawarah ambalan tahunan, penganugerahan bintang tahunan, dan penghargaan lencana teladan.'
@@ -238,7 +238,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="relative z-10 flex min-h-[190px] items-center">
           <div className="w-[57%] p-4 pr-0">
             <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-red-50">SATU AMBALAN · SATU SEMANGAT</span>
-            <h2 className="mt-3 text-xl font-black leading-tight">Bergerak.<br/>Berkarya.<br/><span className="text-[#F4C66A]">Mengabdi.</span></h2>
+            <h2 className="mt-3 text-xl font-black leading-tight">Bergerak.<br/>Berkarya.<br/><span className="text-[#ffffff]">Mengabdi.</span></h2>
             <p className="mt-2 text-[10px] leading-relaxed text-red-50/90">Ruang informasi dan aktivitas Pramuka kita.</p>
           </div>
           <div className="absolute right-0 bottom-0 w-[52%] h-full flex items-end justify-center">
@@ -246,10 +246,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <circle cx="164" cy="42" r="21" fill="#F4C66A" opacity=".95"/>
               <path d="M0 145 L54 72 L100 133 L145 65 L220 151 V190 H0Z" fill="#9f1118"/>
               <path d="M0 160 L65 105 L111 151 L163 105 L220 157 V190 H0Z" fill="#c9161d"/>
-              <path d="M22 174 L54 124 L86 174Z" fill="#E9D7B5"/>
+              <path d="M22 174 L54 124 L86 174Z" fill="#ffffff"/>
               <path d="M54 124 L86 174 H54Z" fill="#C69B61"/>
               <path d="M39 174 L54 148 L69 174Z" fill="#650b10"/>
-              <path d="M117 176 L145 119 L173 176Z" fill="#D9C49B"/>
+              <path d="M117 176 L145 119 L173 176Z" fill="#ffffff"/>
               <path d="M145 119 L173 176 H145Z" fill="#B88951"/>
               <path d="M135 176 L145 153 L156 176Z" fill="#650b10"/>
               <path d="M185 153 L199 111 L213 153Z" fill="#7f1016"/>

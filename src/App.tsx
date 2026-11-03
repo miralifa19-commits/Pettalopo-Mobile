@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SplashScreen } from './components/SplashScreen';
-import { CleanTopAppBar } from './components/CleanTopAppBar';
 import { AndroidSidebar } from './components/AndroidSidebar';
-import { FloatingBottomNav } from './components/FloatingBottomNav';
 
 // Views
 import { HomeView } from './components/views/HomeView';
@@ -158,18 +156,8 @@ export default function App() {
         
         <UpdateChecker />
 
-        {/* Top App Bar with Role Badge */}
-        <CleanTopAppBar
-          title={getHeaderTitle()}
-          subtitle={`Gudep ${user.gudep}`}
-          userRole={user.role}
-          onNavigateToAkun={() => setActiveMenu('akun')}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        />
-
         {/* Dynamic Main Body Scroll View */}
-        <main className="flex-1 p-3.5 sm:p-4 overflow-y-auto bg-slate-50/70">
+        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-slate-50/70">
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -270,11 +258,15 @@ export default function App() {
           )}
         </main>
 
-        {/* Floating Bottom Navigation Bar */}
-        <FloatingBottomNav
-          activeMenu={activeMenu === 'kegiatan_latihan' ? 'dashboard' : activeMenu}
-          onSelectMenu={(m) => setActiveMenu(m)}
-        />
+        {/* Floating Menu Handle: pengganti tombol menu pada Top App Bar */}
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          aria-label="Buka menu navigasi"
+          title="Menu navigasi"
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 w-7 h-11 rounded-r-xl bg-white border border-l-0 border-slate-200 text-slate-600 shadow-sm flex items-center justify-center active:scale-95"
+        >
+          <span className="text-base leading-none">☰</span>
+        </button>
 
         {/* Sidebar Navigation Drawer */}
         <AndroidSidebar

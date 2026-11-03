@@ -162,7 +162,6 @@ export default function App() {
             <HomeView
               user={user}
               onNavigateMenu={(m) => setActiveMenu(m)}
-              onOpenSidebar={() => setIsSidebarOpen(true)}
               programKerjaList={programKerjaList}
             />
           )}

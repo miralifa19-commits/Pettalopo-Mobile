@@ -37,3 +37,52 @@ html, body, #root {
     animation-duration: 1.8s;
   }
 }
+
+/* PETTALOPO: unified clean red-and-white visual system */
+:root { --app-red: #e51c24; --app-red-dark: #c9161d; --app-line: #e5e7eb; }
+html, body, #root { background: #ffffff; }
+body { color: #1f2937; }
+main { background: #ffffff !important; padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
+main > * { scroll-margin-bottom: 104px; }
+
+/* Red-filled content panels become clean white sections. */
+main div[class*="bg-red-"]:not([data-keep-red]),
+main section[class*="bg-red-"]:not([data-keep-red]),
+main article[class*="bg-red-"]:not([data-keep-red]) {
+  background-color: #ffffff !important;
+  border-color: var(--app-line) !important;
+}
+/* All red action buttons share exactly one red tone. */
+main button[class*="bg-red-"],
+main button[class*="bg-[#e51c24]"],
+main button[class*="bg-[#E51C24]"] {
+  background-color: var(--app-red) !important;
+  border-color: var(--app-red) !important;
+  color: #ffffff !important;
+}
+main button[class*="bg-red-"]:hover,
+main button[class*="bg-[#e51c24]"]:hover { background-color: var(--app-red-dark) !important; }
+
+/* Neutralize green decorative surfaces and use red for green accent text. */
+main [class*="bg-emerald-"], main [class*="bg-green-"], main [class*="bg-teal-"] {
+  background-color: #ffffff !important; border-color: var(--app-line) !important;
+}
+main [class*="text-emerald-"], main [class*="text-green-"], main [class*="text-teal-"] { color: var(--app-red) !important; }
+main [class*="border-emerald-"], main [class*="border-green-"], main [class*="border-teal-"] { border-color: var(--app-line) !important; }
+
+/* Fixed five-item bottom menu */
+.pettalopo-bottom-nav {
+  position: fixed; z-index: 45; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(100%, 28rem); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center; gap: 4px; padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+  background: rgba(255,255,255,.98); border-top: 1px solid #e5e7eb;
+}
+.pettalopo-bottom-nav button {
+  display: flex; align-items: center; justify-content: center; min-width: 0; height: 48px;
+  border: 0; border-radius: 9999px; background: #ffffff; color: var(--app-red);
+  transition: background-color .15s ease, transform .15s ease;
+}
+.pettalopo-bottom-nav button[aria-current="page"] { background: var(--app-red); color: #ffffff; }
+.pettalopo-bottom-nav button:active { transform: scale(.96); }
+.pettalopo-bottom-nav button.home-nav { height: 54px; }
+.pettalopo-bottom-nav button:focus-visible { outline: 2px solid var(--app-red); outline-offset: 2px; }

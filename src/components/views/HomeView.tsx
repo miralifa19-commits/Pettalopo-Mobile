@@ -22,7 +22,6 @@ interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
   user?: UserAccount;
   programKerjaList?: ProgramKerjaItem[];
-  onOpenSidebar?: () => void;
 }
 
 interface KalenderBulanItem {
@@ -184,7 +183,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigateMenu,
   user,
   programKerjaList = DEFAULT_PROGRAM_KERJA_ITEMS,
-  onOpenSidebar
 }) => {
 
   // Current calendar month (0 = Januari, 9 = Oktober)

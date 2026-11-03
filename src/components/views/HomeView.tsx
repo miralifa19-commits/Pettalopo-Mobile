@@ -217,7 +217,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     <div className="space-y-4 pb-24 font-sans">
       
       {/* MENU UTAMA: KARTU RINGKAS DENGAN IKON LINGKARAN */}
-      <div className="grid grid-cols-2 gap-2.5 pl-7">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
         {[
           { id: 'profil_ambalan' as ActiveMenu, label: 'Profil Ambalan', icon: Shield, color: 'bg-blue-50 text-blue-600' },
           { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan Ambalan', icon: Crown, color: 'bg-amber-50 text-amber-600' },
@@ -245,16 +245,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           );
         })}
       </div>
-
-      {/* Tombol kecil untuk membuka sidebar di sisi kiri tengah layar */}
-      <button
-        onClick={onOpenSidebar}
-        aria-label="Buka sidebar"
-        title="Menu sidebar"
-        className="fixed left-1 top-1/2 -translate-y-1/2 z-30 w-7 h-10 rounded-r-xl bg-white/95 border border-l-0 border-slate-200 text-slate-500 shadow-sm flex items-center justify-center active:scale-95"
-      >
-        <span className="text-base leading-none">☰</span>
-      </button>
 
       {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">

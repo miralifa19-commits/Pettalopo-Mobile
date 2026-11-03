@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UserAccount, ProgramKerjaItem, ActiveKegiatanSession, AmbalanNotificationItem } from '../../types';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { ProgramKerjaView } from './ProgramKerjaView';
+import { CalendarDays, Dumbbell, ChevronRight } from 'lucide-react';
 import { registerAmbalanUser } from '../../services/firebaseService';
 
 interface DewanAmbalanViewProps {
@@ -13,6 +15,7 @@ interface DewanAmbalanViewProps {
   onStartKegiatan?: (item: ProgramKerjaItem) => void;
   onStopKegiatan?: () => void;
   onSharePresensi?: (item: ProgramKerjaItem) => void;
+  onUpdateProgramKerjaList?: (items: ProgramKerjaItem[]) => void;
 }
 
 type DewanMenuId = 'proker' | 'anggota_sangga' | 'persuratan' | 'keuangan' | 'laporan';
@@ -49,10 +52,12 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   activeKegiatan,
   onStartKegiatan,
   onStopKegiatan,
-  onSharePresensi
+  onSharePresensi,
+  onUpdateProgramKerjaList
 }) => {
   // Navigation State: 'menu' (tampilan utama 5 menu dewan) atau salah satu menu terpilih
   const [activeMenu, setActiveMenu] = useState<DewanMenuId | 'menu'>('menu');
+  const [selectedProkerType, setSelectedProkerType] = useState<'Kegiatan' | 'Latihan Rutin' | null>(null);
 
   // ==========================================
   // 1. KELOLA PROGRAM KERJA STATE
@@ -251,29 +256,32 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
     <div className="space-y-4 pb-24 font-sans">
 
       {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
-      <MenuHeaderCard
-        title="Dewan Ambalan"
-        subtitle={
-          activeMenu === 'menu'
-            ? 'Pengelolaan & administrasi masa bakti'
-            : activeMenu === 'proker'
-            ? 'Kelola Program Kerja Ambalan'
-            : activeMenu === 'anggota_sangga'
-            ? 'Kelola Anggota & Sangga Penegak'
-            : activeMenu === 'persuratan'
-            ? 'Kelola Persuratan Resmi Ambalan'
-            : activeMenu === 'keuangan'
-            ? 'Kelola Kas & Iuran Ambalan'
-            : 'Kelola Rekap Laporan Dewan'
-        }
-        onBack={() => {
-          if (activeMenu !== 'menu') {
-            setActiveMenu('menu');
-          } else if (onBack) {
-            onBack();
+      {!selectedProkerType && (
+        <MenuHeaderCard
+          title={activeMenu === 'proker' ? 'Kelola Program Kerja' : 'Dewan Ambalan'}
+          subtitle={
+            activeMenu === 'menu'
+              ? 'Pengelolaan & administrasi masa bakti'
+              : activeMenu === 'proker'
+              ? 'Pilih kategori program kerja yang akan dikelola'
+              : activeMenu === 'anggota_sangga'
+              ? 'Kelola Anggota & Sangga Penegak'
+              : activeMenu === 'persuratan'
+              ? 'Kelola Persuratan Resmi Ambalan'
+              : activeMenu === 'keuangan'
+              ? 'Kelola Kas & Iuran Ambalan'
+              : 'Kelola Rekap Laporan Dewan'
           }
-        }}
-      />
+          onBack={() => {
+            if (activeMenu !== 'menu') {
+              setActiveMenu('menu');
+              setSelectedProkerType(null);
+            } else if (onBack) {
+              onBack();
+            }
+          }}
+        />
+      )}
 
       {/* ========================================================
           TAMPILAN MENU UTAMA (5 MENU DEWAN AMBALAN)
@@ -283,7 +291,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
           
           {/* 1. Kelola Program Kerja */}
           <div
-            onClick={() => setActiveMenu('proker')}
+            onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
             className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
           >
             <div className="flex items-center justify-between">
@@ -459,371 +467,72 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
       )}
 
       {/* ========================================================
-          1. HALAMAN KELOLA PROGRAM KERJA
+          HALAMAN KELOLA PROGRAM KERJA
           ======================================================== */}
-      {activeMenu === 'proker' && (
+      {activeMenu === 'proker' && !selectedProkerType && (
         <div className="space-y-3">
-          
-          {/* Sub-tab: Merencanakan, Menjalankan, Mengevaluasi */}
-          <div className="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-xs flex text-xs font-bold">
-            <button
-              onClick={() => setProkerTab('rencana')}
-              className={`flex-1 py-2 rounded-xl transition-all ${
-                prokerTab === 'rencana' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Merencanakan
-            </button>
-            <button
-              onClick={() => setProkerTab('jalankan')}
-              className={`flex-1 py-2 rounded-xl transition-all ${
-                prokerTab === 'jalankan' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Menjalankan
-            </button>
-            <button
-              onClick={() => setProkerTab('evaluasi')}
-              className={`flex-1 py-2 rounded-xl transition-all ${
-                prokerTab === 'evaluasi' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Mengevaluasi
-            </button>
-          </div>
-
-          {/* TAB: MERENCANAKAN */}
-          {prokerTab === 'rencana' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Daftar Rencana Agenda</span>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingProker(!isAddingProker)}
-                  className="px-3 py-1.5 rounded-xl bg-[#e51c24] text-white text-xs font-bold shadow-xs transition-all"
-                >
-                  {isAddingProker ? 'Tutup Form' : '+ Tambah Rencana'}
-                </button>
+          <button
+            type="button"
+            onClick={() => setSelectedProkerType('Kegiatan')}
+            className="w-full min-h-[116px] bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#e51c24] active:scale-[0.99] transition-all text-left flex items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e51c24] flex items-center justify-center shrink-0">
+                <CalendarDays className="w-6 h-6" />
               </div>
-
-              {/* Form Tambah Program Kerja */}
-              {isAddingProker && (
-                <form onSubmit={handleAddProker} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5">
-                  <h3 className="text-xs font-bold text-slate-900">Rencanakan Agenda Baru</h3>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Nama Kegiatan / Agenda:</label>
-                    <input
-                      type="text"
-                      required
-                      value={newProkerNama}
-                      onChange={(e) => setNewProkerNama(e.target.value)}
-                      placeholder="Contoh: Gladi Tanggap Bencana Penegak"
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Tipe:</label>
-                      <select
-                        value={newProkerTipe}
-                        onChange={(e) => setNewProkerTipe(e.target.value as 'Kegiatan' | 'Latihan Rutin')}
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                      >
-                        <option value="Kegiatan">Kegiatan</option>
-                        <option value="Latihan Rutin">Latihan Rutin</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Bulan:</label>
-                      <input
-                        type="text"
-                        value={newProkerBulan}
-                        onChange={(e) => setNewProkerBulan(e.target.value)}
-                        placeholder="Contoh: Oktober"
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Waktu Pelaksanaan:</label>
-                      <input
-                        type="text"
-                        value={newProkerWaktu}
-                        onChange={(e) => setNewProkerWaktu(e.target.value)}
-                        placeholder="Contoh: 24 Oktober 2026"
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Estimasi Anggaran:</label>
-                      <input
-                        type="text"
-                        value={newProkerAnggaran}
-                        onChange={(e) => setNewProkerAnggaran(e.target.value)}
-                        placeholder="Rp 500.000"
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold transition-all shadow-xs"
-                  >
-                    Simpan Rencana Kegiatan
-                  </button>
-                </form>
-              )}
-
-              {/* List Rencana Proker */}
-              <div className="space-y-1.5">
-                {prokers.map((item) => (
-                  <div key={item.id} className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs flex items-center justify-between">
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 block truncate">{item.nama}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">{item.waktuPelaksanaan} • {item.tipe}</span>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      item.status === 'Terlaksana' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold text-slate-900">Kegiatan</h2>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Kelola daftar program kegiatan ambalan.</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-2">{prokers.filter((item) => (item.tipe || 'Kegiatan') === 'Kegiatan').length} program terdaftar</p>
               </div>
             </div>
-          )}
+            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+          </button>
 
-          {/* TAB: MENJALANKAN */}
-          {prokerTab === 'jalankan' && (
-            <div className="space-y-3">
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900">Pusat Pengaktifan Kegiatan & Latihan Ambalan</h3>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Hanya Dewan Ambalan yang berwenang mengaktifkan sesi kegiatan atau latihan rutin. Saat diaktifkan, sesi presensi digital akan dibuka untuk seluruh anggota.
-                  </p>
-                </div>
-
-                {/* Sesi Live yang sedang berjalan */}
-                {activeKegiatan && activeKegiatan.isRunning && (
-                  <div className="p-3.5 rounded-2xl bg-red-50 border-2 border-[#e51c24] space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-                        <span className="text-xs font-black uppercase text-[#e51c24] tracking-wide">
-                          Sesi Sedang Berjalan (LIVE)
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#e51c24] text-white">
-                        AKTIF
-                      </span>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-extrabold text-slate-900">{activeKegiatan.kegiatanNama}</h4>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        {activeKegiatan.waktuPelaksanaan} • {activeKegiatan.tipe} {activeKegiatan.tempat ? `• ${activeKegiatan.tempat}` : ''}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      {onSharePresensi && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = prokers.find((x) => x.id === activeKegiatan.kegiatanId);
-                            if (p) onSharePresensi(p);
-                            else {
-                              onSharePresensi({
-                                id: activeKegiatan.kegiatanId,
-                                nama: activeKegiatan.kegiatanNama,
-                                tipe: activeKegiatan.tipe,
-                                waktuPelaksanaan: activeKegiatan.waktuPelaksanaan,
-                                bulan: 'Aktif',
-                                bulanUrutan: 1,
-                                sasaran: 'Seluruh Anggota',
-                                penanggungJawab: 'Dewan Ambalan',
-                                status: 'Berjalan',
-                                deskripsi: 'Kegiatan sedang berlangsung'
-                              });
-                            }
-                          }}
-                          className="flex-1 min-w-[130px] py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5"
-                        >
-                          <span>📢</span>
-                          <span>Bagikan Presensi</span>
-                        </button>
-                      )}
-
-                      {onStopKegiatan && (
-                        <button
-                          type="button"
-                          onClick={onStopKegiatan}
-                          className="py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1"
-                        >
-                          <span>⏹️</span>
-                          <span>Hentikan Sesi</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Filter Tipe & Bulan */}
-                <div className="pt-1 space-y-2">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-[11px] font-bold text-slate-700">Pilih Kegiatan / Latihan untuk Dijalankan:</span>
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[10px] font-bold">
-                      {(['Semua', 'Kegiatan', 'Latihan Rutin'] as const).map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setJalankanFilterTipe(t)}
-                          className={`px-2 py-1 rounded-lg transition-all ${
-                            jalankanFilterTipe === t ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Filter Bulan Cepat */}
-                  <div className="flex items-center gap-1 overflow-x-auto py-1 text-[10px] font-bold scrollbar-none">
-                    {['Semua', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((bln) => (
-                      <button
-                        key={bln}
-                        type="button"
-                        onClick={() => setJalankanFilterBulan(bln)}
-                        className={`px-2.5 py-1 rounded-lg shrink-0 transition-all ${
-                          jalankanFilterBulan === bln
-                            ? 'bg-[#e51c24] text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {bln}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Daftar Semua Kegiatan & Latihan */}
-                <div className="space-y-2 pt-1 max-h-[380px] overflow-y-auto pr-0.5">
-                  {prokers
-                    .filter((p) => {
-                      const matchTipe = jalankanFilterTipe === 'Semua' || p.tipe === jalankanFilterTipe;
-                      const matchBulan = jalankanFilterBulan === 'Semua' || (p.bulan || '').toLowerCase() === jalankanFilterBulan.toLowerCase();
-                      return matchTipe && matchBulan;
-                    })
-                    .map((p) => {
-                      const isItemRunning = activeKegiatan?.kegiatanId === p.id && activeKegiatan.isRunning;
-
-                      return (
-                        <div
-                          key={p.id}
-                          className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                            isItemRunning
-                              ? 'bg-red-50/80 border-[#e51c24]'
-                              : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-bold text-slate-900 block truncate">
-                                {p.nama}
-                              </span>
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-                                p.tipe === 'Latihan Rutin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {p.tipe}
-                              </span>
-                              {p.bulan && (
-                                <span className="text-[9px] font-mono text-slate-500">
-                                  {p.bulan}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-slate-500 block mt-0.5">
-                              {p.waktuPelaksanaan} • Sasaran: {p.sasaran || 'Semua Penegak'}
-                            </span>
-                          </div>
-
-                          <div className="shrink-0">
-                            {isItemRunning ? (
-                              <span className="px-2.5 py-1 rounded-xl bg-red-600 text-white font-black text-[10px] inline-flex items-center gap-1 animate-pulse">
-                                <span>🔴</span>
-                                <span>Berjalan</span>
-                              </span>
-                            ) : (
-                              onStartKegiatan && (
-                                <button
-                                  type="button"
-                                  onClick={() => onStartKegiatan(p)}
-                                  className="px-3 py-1.5 rounded-xl bg-[#e51c24] hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1"
-                                  title={`Jalankan ${p.tipe}: ${p.nama}`}
-                                >
-                                  <span>▶️</span>
-                                  <span>Jalankan</span>
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                  {prokers.filter((p) => {
-                    const matchTipe = jalankanFilterTipe === 'Semua' || p.tipe === jalankanFilterTipe;
-                    const matchBulan = jalankanFilterBulan === 'Semua' || (p.bulan || '').toLowerCase() === jalankanFilterBulan.toLowerCase();
-                    return matchTipe && matchBulan;
-                  }).length === 0 && (
-                    <div className="py-6 text-center text-slate-400 text-xs">
-                      Tidak ada kegiatan atau latihan yang sesuai filter.
-                    </div>
-                  )}
-                </div>
+          <button
+            type="button"
+            onClick={() => setSelectedProkerType('Latihan Rutin')}
+            className="w-full min-h-[116px] bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#e51c24] active:scale-[0.99] transition-all text-left flex items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                <Dumbbell className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold text-slate-900">Latihan Rutin</h2>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Kelola daftar program latihan rutin ambalan.</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-2">{prokers.filter((item) => item.tipe === 'Latihan Rutin').length} program terdaftar</p>
               </div>
             </div>
-          )}
-
-          {/* TAB: MENGEVALUASI */}
-          {prokerTab === 'evaluasi' && (
-            <div className="space-y-3">
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2">
-                <h3 className="text-xs font-bold text-slate-900">Evaluasi & Keterlaksanaan Program Kerja</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Menilai efektivitas setiap kegiatan berdasarkan kehadiran anggota, skor rating kepuasan, masukan kelebihan, serta catatan kendala untuk penyempurnaan di kegiatan berikutnya.
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 pt-2 text-center text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span className="text-[10px] text-slate-500 block">Ketercapaian Program</span>
-                    <strong className="text-sm font-bold text-slate-900">
-                      {prokers.length > 0 ? Math.round((prokers.filter((p) => p.status === 'Terlaksana').length / prokers.length) * 100) : 0}%
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span className="text-[10px] text-slate-500 block">Indeks Kepuasan Rata-rata</span>
-                    <strong className="text-sm font-bold text-emerald-800">4.8 / 5.0</strong>
-                  </div>
-                </div>
-
-                {onNavigateMenu && (
-                  <button
-                    type="button"
-                    onClick={() => onNavigateMenu('laporan')}
-                    className="w-full mt-2 py-2 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold"
-                  >
-                    Buka Rekap Evaluasi Lengkap
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
+            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+          </button>
         </div>
+      )}
+
+      {activeMenu === 'proker' && selectedProkerType && (
+        <ProgramKerjaView
+          programKerjaList={prokers.filter((item) =>
+            selectedProkerType === 'Kegiatan'
+              ? (item.tipe || 'Kegiatan') === 'Kegiatan'
+              : item.tipe === 'Latihan Rutin'
+          )}
+          onUpdateList={(updatedItems) => {
+            const mergedItems = [
+              ...prokers.filter((item) =>
+                selectedProkerType === 'Kegiatan'
+                  ? (item.tipe || 'Kegiatan') !== 'Kegiatan'
+                  : item.tipe !== 'Latihan Rutin'
+              ),
+              ...updatedItems
+            ];
+            setProkers(mergedItems);
+            onUpdateProgramKerjaList?.(mergedItems);
+          }}
+          isAdmin={currentUser?.role === 'admin' || currentUser?.role === 'dewan' || !!currentUser?.isDewan}
+          fixedTipe={selectedProkerType}
+          headerTitle={selectedProkerType}
+          onBack={() => setSelectedProkerType(null)}
+        />
       )}
 
       {/* ========================================================

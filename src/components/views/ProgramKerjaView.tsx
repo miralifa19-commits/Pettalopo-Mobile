@@ -26,24 +26,28 @@ interface ProgramKerjaViewProps {
   onUpdateList: (list: ProgramKerjaItem[]) => void;
   isAdmin?: boolean;
   onBack?: () => void;
+  fixedTipe?: 'Kegiatan' | 'Latihan Rutin';
+  headerTitle?: string;
 }
 
 export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
   programKerjaList,
   onUpdateList,
   isAdmin = true,
-  onBack
+  onBack,
+  fixedTipe,
+  headerTitle
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<ProgramKerjaItem | null>(null);
-  const [filterTipe, setFilterTipe] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>('Semua');
+  const [filterTipe, setFilterTipe] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>(fixedTipe || 'Semua');
   const [showSusunModal, setShowSusunModal] = useState(false);
   
   // FITUR URUTKAN: 'bulan' vs 'tanggal_diubah'
   const [sortBy, setSortBy] = useState<'bulan' | 'tanggal_diubah'>('bulan');
 
   // Form State (Shared for Add & Edit)
-  const [tipe, setTipe] = useState<'Kegiatan' | 'Latihan Rutin'>('Kegiatan');
+  const [tipe, setTipe] = useState<'Kegiatan' | 'Latihan Rutin'>(fixedTipe || 'Kegiatan');
   const [nama, setNama] = useState('');
   const [selectedBulan, setSelectedBulan] = useState('Juli');
   const [waktu, setWaktu] = useState('');
@@ -64,7 +68,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
     setAnggaran('');
     setTempat('');
     setSeragam('');
-    setTipe('Kegiatan');
+    setTipe(fixedTipe || 'Kegiatan');
     setSelectedBulan('Juli');
     setStatus('Direncanakan');
     setIsAdding(false);
@@ -78,7 +82,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
 
   const handleStartEdit = (item: ProgramKerjaItem) => {
     setEditingItem(item);
-    setTipe(item.tipe || 'Kegiatan');
+    setTipe(fixedTipe || item.tipe || 'Kegiatan');
     setNama(item.nama);
     setSelectedBulan(item.bulan || 'Juli');
     setWaktu(item.waktuPelaksanaan);
@@ -95,6 +99,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
     e.preventDefault();
     if (!nama.trim()) return;
 
+    const effectiveTipe = fixedTipe || tipe;
     const bulanData = BULAN_LIST.find(b => b.nama === selectedBulan) || BULAN_LIST[0];
 
     if (editingItem) {
@@ -103,7 +108,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
         if (item.id === editingItem.id) {
           return {
             ...item,
-            tipe,
+            tipe: effectiveTipe,
             nama: nama.trim(),
             bulan: selectedBulan,
             bulanUrutan: bulanData.urutan,
@@ -112,9 +117,9 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
             penanggungJawab: penanggungJawab.trim(),
             anggaran: anggaran.trim() || undefined,
             status,
-            deskripsi: deskripsi.trim() || (tipe === 'Kegiatan' ? 'Agenda kegiatan ambalan.' : 'Materi latihan rutin mingguan.'),
-            tempat: tempat.trim() || (tipe === 'Latihan Rutin' ? 'Sanggar Pramuka / Lapangan' : undefined),
-            seragam: seragam.trim() || (tipe === 'Latihan Rutin' ? 'Seragam Pramuka Lengkap' : undefined),
+            deskripsi: deskripsi.trim() || (effectiveTipe === 'Kegiatan' ? 'Agenda kegiatan ambalan.' : 'Materi latihan rutin mingguan.'),
+            tempat: tempat.trim() || (effectiveTipe === 'Latihan Rutin' ? 'Sanggar Pramuka / Lapangan' : undefined),
+            seragam: seragam.trim() || (effectiveTipe === 'Latihan Rutin' ? 'Seragam Pramuka Lengkap' : undefined),
             updatedAt: Date.now()
           };
         }
@@ -127,7 +132,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
       // ADD MODE
       const newItem: ProgramKerjaItem = {
         id: `proker-${now}`,
-        tipe,
+        tipe: effectiveTipe,
         nama: nama.trim(),
         bulan: selectedBulan,
         bulanUrutan: bulanData.urutan,
@@ -136,9 +141,9 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
         penanggungJawab: penanggungJawab.trim(),
         anggaran: anggaran.trim() || undefined,
         status,
-        deskripsi: deskripsi.trim() || (tipe === 'Kegiatan' ? 'Agenda kegiatan ambalan.' : 'Materi latihan rutin mingguan.'),
-        tempat: tempat.trim() || (tipe === 'Latihan Rutin' ? 'Sanggar Pramuka / Lapangan' : undefined),
-        seragam: seragam.trim() || (tipe === 'Latihan Rutin' ? 'Seragam Pramuka Lengkap' : undefined),
+        deskripsi: deskripsi.trim() || (effectiveTipe === 'Kegiatan' ? 'Agenda kegiatan ambalan.' : 'Materi latihan rutin mingguan.'),
+        tempat: tempat.trim() || (effectiveTipe === 'Latihan Rutin' ? 'Sanggar Pramuka / Lapangan' : undefined),
+        seragam: seragam.trim() || (effectiveTipe === 'Latihan Rutin' ? 'Seragam Pramuka Lengkap' : undefined),
         createdAt: now,
         updatedAt: now
       };
@@ -170,8 +175,9 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
 
   // 1. Filter Kategori
   const filteredItems = programKerjaList.filter(item => {
-    if (filterTipe === 'Semua') return true;
-    return (item.tipe || 'Kegiatan') === filterTipe;
+    const activeFilter = fixedTipe || filterTipe;
+    if (activeFilter === 'Semua') return true;
+    return (item.tipe || 'Kegiatan') === activeFilter;
   });
 
   // 2. Terapkan Urutan: Berdasarkan Bulan (Juli ke Juni) atau Berdasarkan Tanggal Diubah (Terbaru)
@@ -190,7 +196,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
       
       {/* Header Card Program Kerja dengan Tombol Kembali Melingkar */}
       <MenuHeaderCard
-        title="Program Kerja"
+        title={headerTitle || "Program Kerja"}
         subtitle="Jadwal & perencanaan agenda masa bakti"
         onBack={onBack || (() => {})}
         actionRight={
@@ -251,24 +257,26 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
           </div>
         </div>
 
-        {/* Filter Kategori: Semua / Kegiatan / Latihan Rutin */}
-        <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-          {(['Semua', 'Kegiatan', 'Latihan Rutin'] as const).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterTipe(cat)}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                filterTipe === cat
-                  ? cat === 'Latihan Rutin'
-                    ? 'bg-amber-400 text-slate-950 shadow-xs'
-                    : 'bg-[#e51c24] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {!fixedTipe && (
+          {/* Filter Kategori: Semua / Kegiatan / Latihan Rutin */}
+          <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+            {(['Semua', 'Kegiatan', 'Latihan Rutin'] as const).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterTipe(cat)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filterTipe === cat
+                    ? cat === 'Latihan Rutin'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'bg-[#e51c24] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Program List */}
@@ -480,19 +488,21 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
             <form onSubmit={handleSaveSubmit} className="mt-3 space-y-3">
               
               {/* KATEGORI */}
-              <div>
-                <label className="text-[11px] font-bold text-slate-800 block mb-1">
-                  Kategori: *
-                </label>
-                <select
-                  value={tipe}
-                  onChange={(e) => setTipe(e.target.value as 'Kegiatan' | 'Latihan Rutin')}
-                  className="w-full px-3 py-2.5 border-2 border-amber-400 bg-amber-50/50 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-300"
-                >
-                  <option value="Kegiatan">📅 Kegiatan (Perkemahan, Bakti, Lomba, Pelantikan)</option>
-                  <option value="Latihan Rutin">🔥 Latihan Rutin (Materi Mingguan, Sandi, Pionering)</option>
-                </select>
-              </div>
+              {!fixedTipe && (
+                <div>
+                  <label className="text-[11px] font-bold text-slate-800 block mb-1">
+                    Kategori: *
+                  </label>
+                  <select
+                    value={tipe}
+                    onChange={(e) => setTipe(e.target.value as 'Kegiatan' | 'Latihan Rutin')}
+                    className="w-full px-3 py-2.5 border-2 border-amber-400 bg-amber-50/50 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  >
+                    <option value="Kegiatan">📅 Kegiatan (Perkemahan, Bakti, Lomba, Pelantikan)</option>
+                    <option value="Latihan Rutin">🔥 Latihan Rutin (Materi Mingguan, Sandi, Pionering)</option>
+                  </select>
+                </div>
+              )}
 
               {/* PILIHAN BULAN (Dimulai dari Juli) */}
               <div className="grid grid-cols-2 gap-2">

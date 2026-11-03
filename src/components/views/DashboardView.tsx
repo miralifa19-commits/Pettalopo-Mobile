@@ -32,11 +32,6 @@ interface DashboardViewProps {
   onAgendaDetailOpened?: () => void;
 }
 
-const INDONESIA_MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
-
 export const DashboardView: React.FC<DashboardViewProps> = ({
   programKerjaList,
   onNavigateToProgramKerja,
@@ -54,7 +49,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   now.setHours(0, 0, 0, 0);
   const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
 
-  const [showAllActivities, setShowAllActivities] = useState(false);
   const [activeTab, setActiveTab] = useState<'Kegiatan' | 'Latihan Rutin'>('Kegiatan');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ProgramKerjaItem | null>(null);
@@ -107,7 +101,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           isAdmin && onAddProgramKerja ? (
             <button
               onClick={() => setShowSusunModal(true)}
-              className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold border border-white/30 transition-all shrink-0 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-[#c8202b] hover:bg-[#a91b24] active:scale-95 text-white text-[11px] font-bold border border-[#c8202b] transition-all shrink-0 cursor-pointer"
               title="Susun kegiatan dari contoh katalog"
             >
               Susun Kegiatan

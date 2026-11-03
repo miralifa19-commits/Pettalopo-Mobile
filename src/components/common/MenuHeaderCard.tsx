@@ -21,11 +21,11 @@ export const MenuHeaderCard: React.FC<MenuHeaderCardProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="w-9 h-9 rounded-full bg-[#e51c24] hover:bg-[#c9161d] active:scale-95 text-white flex items-center justify-center transition-all border border-[#e51c24] shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-full bg-[#fcebed] hover:bg-[#f7dadd] active:scale-95 text-[#c8202b] flex items-center justify-center transition-all border border-transparent shrink-0 cursor-pointer"
             title="Kembali"
             aria-label="Kembali"
           >
-            <ArrowLeft className="w-4 h-4 text-white stroke-[2.5]" />
+            <ArrowLeft className="w-4 h-4 text-[#c8202b] stroke-[2.5]" />
           </button>
           <div className="min-w-0">
             <h1 className="text-base sm:text-lg font-black text-slate-900 leading-tight truncate">

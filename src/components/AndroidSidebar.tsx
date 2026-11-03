@@ -145,10 +145,10 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
       <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white shadow-2xl flex flex-col z-10 border-r border-slate-200 animate-in slide-in-from-left duration-200">
         
         {/* BAGIAN WARNA MERAH: DIPERKECIL & HANYA FOTO, NAMA BOLD, GOLONGAN */}
-        <div className="relative bg-[#e51c24] text-white px-4 py-3.5 border-b border-red-700">
+        <div className="relative bg-white text-slate-900 px-4 py-3.5 border-b border-slate-200">
           <button
             onClick={onClose}
-            className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors"
+            className="absolute top-2.5 right-2.5 p-1 rounded-full bg-red-50 hover:bg-red-100 text-[#e51c24] transition-colors"
             aria-label="Tutup"
           >
             <X className="w-4 h-4" />
@@ -168,7 +168,7 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
                   className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-red-700 text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-sm">
+                <div className="w-11 h-11 rounded-full bg-[#e51c24] text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-sm">
                   {user.nama.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -190,10 +190,10 @@ export const AndroidSidebar: React.FC<AndroidSidebarProps> = ({
 
             {/* Nama dengan bold, dibawahnya kecil golongan */}
             <div className="min-w-0">
-              <strong className="block text-sm font-bold text-white truncate leading-tight">
+              <strong className="block text-sm font-bold text-slate-900 truncate leading-tight">
                 {user.nama}
               </strong>
-              <span className="block text-[11px] text-white/90 font-medium truncate leading-tight mt-0.5">
+              <span className="block text-[11px] text-slate-500 font-medium truncate leading-tight mt-0.5">
                 {getGolongan(user)}
               </span>
             </div>

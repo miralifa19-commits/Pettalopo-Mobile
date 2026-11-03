@@ -11,8 +11,6 @@ import {
   FileText,
   Users,
   GraduationCap,
-  Home,
-  MessageCircle,
   Settings,
   UserCheck
 } from 'lucide-react';
@@ -297,6 +295,36 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
         <ArrowRight className="h-5 w-5 shrink-0 text-[#e51c24] transition-transform group-hover:translate-x-1"/>
       </button>
+
+      {/* JELAJAHI AMBALAN */}
+      <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Kenali dan manfaatkan</p>
+          <h2 className="mt-1 text-base font-black text-slate-900">Jelajahi Ambalan</h2>
+        </div>
+        <div className="grid grid-cols-4 gap-x-2 gap-y-4">
+          {[
+            { id: 'profil_ambalan' as ActiveMenu, label: 'Profil', icon: Shield, color: 'bg-blue-50 text-blue-700' },
+            { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan', icon: Crown, color: 'bg-amber-50 text-amber-700' },
+            { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-orange-50 text-orange-700' },
+            { id: 'sku_skk' as ActiveMenu, label: 'SKU/SKK', icon: Award, color: 'bg-rose-50 text-rose-700' },
+            { id: 'quiz' as ActiveMenu, label: 'Quiz', icon: Brain, color: 'bg-violet-50 text-violet-700' },
+            { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: FileText, color: 'bg-cyan-50 text-cyan-700' },
+            { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-pink-50 text-pink-700' },
+            { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-slate-100 text-slate-700' }
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <button key={item.id} onClick={() => onNavigateMenu?.(item.id)} className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1 text-center transition active:scale-95">
+                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.color}`}>
+                  <Icon className="h-5 w-5"/>
+                </span>
+                <span className="text-[10px] font-semibold leading-tight text-slate-600">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
@@ -644,36 +672,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
       </div>
-
-      {/* JELAJAHI AMBALAN - MENU UTAMA DI BAGIAN PALING BAWAH */}
-      <section className="relative overflow-hidden rounded-[28px] border border-red-200 bg-gradient-to-br from-white via-red-50 to-white p-4 shadow-[0_8px_30px_rgba(225,28,36,0.12)]">
-        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-red-200/40 blur-3xl"/>
-        <div className="relative mb-4">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#e51c24]">Menu Ambalan</p>
-          <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">Jelajahi Ambalan</h2>
-        </div>
-        <div className="relative grid grid-cols-5 items-end gap-1">
-          {[
-            { id: 'dashboard' as ActiveMenu, label: 'Kegiatan & Latihan', icon: CalendarCheck, size: 'h-12 w-12', tone: 'from-red-500 to-rose-700' },
-            { id: 'sku_skk' as ActiveMenu, label: 'SKU / SKK', icon: Award, size: 'h-12 w-12', tone: 'from-rose-500 to-red-700' },
-            { id: 'home' as ActiveMenu, label: 'Home', icon: Home, size: 'h-[62px] w-[62px]', tone: 'from-[#ff343b] to-[#b90012]' },
-            { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: MessageCircle, size: 'h-12 w-12', tone: 'from-red-500 to-orange-600' },
-            { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, size: 'h-12 w-12', tone: 'from-red-600 to-rose-800' }
-          ].map((item) => {
-            const Icon = item.icon;
-            const isHome = item.id === 'home';
-            return (
-              <button key={item.id} onClick={() => onNavigateMenu?.(item.id)} className={`group flex min-w-0 flex-col items-center justify-end gap-2 rounded-2xl px-0.5 py-2 transition-all duration-200 active:scale-90 ${isHome ? '-translate-y-1' : ''}`}>
-                <span className={`relative flex ${item.size} items-center justify-center rounded-full bg-gradient-to-br ${item.tone} text-white ring-4 ring-white shadow-[0_5px_16px_rgba(225,28,36,0.28)] transition-all duration-200 group-hover:scale-110 group-hover:shadow-[0_0_22px_rgba(225,28,36,0.55)]`}>
-                  <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 blur-md transition-opacity group-hover:opacity-100"/>
-                  <Icon className={`relative ${isHome ? 'h-7 w-7' : 'h-5 w-5'} drop-shadow-sm`}/>
-                </span>
-                <span className={`text-center font-bold leading-tight text-slate-700 ${isHome ? 'text-[11px] text-[#c91520]' : 'text-[9px]'}`}>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
 
       {/* MODAL POPUP DETAIL AGENDA BULAN */}
       {isDetailModalOpen && (

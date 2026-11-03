@@ -258,7 +258,6 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
         </div>
 
         {!fixedTipe && (
-          {/* Filter Kategori: Semua / Kegiatan / Latihan Rutin */}
           <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
             {(['Semua', 'Kegiatan', 'Latihan Rutin'] as const).map((cat) => (
               <button

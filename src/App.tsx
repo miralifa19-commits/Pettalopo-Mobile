@@ -260,11 +260,11 @@ export default function App() {
 
         {/* Navigasi bawah permanen: lima pintasan menu utama */}
         <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
-          <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kegiatan dan Latihan" aria-current={activeMenu === 'dashboard' || activeMenu === 'kegiatan_latihan' ? 'page' : undefined} title="Kegiatan dan Latihan"><CalendarDays size={22} strokeWidth={2.2} /></button>
-          <button type="button" onClick={() => setActiveMenu('sku_skk')} aria-label="SKU" aria-current={activeMenu === 'sku_skk' ? 'page' : undefined} title="SKU"><Award size={22} strokeWidth={2.2} /></button>
-          <button type="button" className="home-nav" onClick={() => setActiveMenu('home')} aria-label="Home" aria-current={activeMenu === 'home' ? 'page' : undefined} title="Home"><Home size={27} strokeWidth={2.4} /></button>
-          <button type="button" onClick={() => setActiveMenu('chat')} aria-label="Obrolan" aria-current={activeMenu === 'chat' ? 'page' : undefined} title="Obrolan"><MessageCircle size={22} strokeWidth={2.2} /></button>
-          <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-label="Pengaturan" aria-current={activeMenu === 'pengaturan' ? 'page' : undefined} title="Pengaturan"><Settings size={22} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kegiatan dan Latihan" aria-current={activeMenu === 'dashboard' || activeMenu === 'kegiatan_latihan' ? 'page' : undefined} title="Kegiatan dan Latihan"><CalendarDays size={22} strokeWidth={2} /></button>
+          <button type="button" onClick={() => setActiveMenu('sku_skk')} aria-label="SKU" aria-current={activeMenu === 'sku_skk' ? 'page' : undefined} title="SKU"><Award size={22} strokeWidth={2} /></button>
+          <button type="button" className="home-nav" onClick={() => setActiveMenu('home')} aria-label="Home" aria-current={activeMenu === 'home' ? 'page' : undefined} title="Home"><Home size={28} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => setActiveMenu('chat')} aria-label="Obrolan" aria-current={activeMenu === 'chat' ? 'page' : undefined} title="Obrolan"><MessageCircle size={22} strokeWidth={2} /></button>
+          <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-label="Pengaturan" aria-current={activeMenu === 'pengaturan' ? 'page' : undefined} title="Pengaturan"><Settings size={22} strokeWidth={2} /></button>
         </nav>
 
         {/* Floating Menu Handle: pengganti tombol menu pada Top App Bar */}

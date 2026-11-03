@@ -6,6 +6,14 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https'
+  },
+  plugins: {
+    SystemBars: {
+      // Gunakan edge-to-edge modern, tetapi biarkan jam dan ikon sistem terlihat.
+      insetsHandling: 'css',
+      style: 'DARK',
+      hidden: false
+    }
   }
 };
 

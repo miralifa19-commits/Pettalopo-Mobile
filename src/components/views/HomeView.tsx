@@ -40,7 +40,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 1,
     bulan: 'Januari',
     singkatan: 'JAN',
-    bgHex: '#8f1118', // Merah Tua
+    bgHex: '#c8202b', // Merah Tua
     iconSymbol: '🚩',
     kegiatanUtama: 'Pelantikan Penggalang & Penegak',
     deskripsi: 'Upacara kenaikan tingkat Penegak Bantara, pindah golongan, dan penerimaan tamu ambalan baru.'
@@ -49,7 +49,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 2,
     bulan: 'Februari',
     singkatan: 'FEB',
-    bgHex: '#a9151d', // Oranye
+    bgHex: '#d0444d', // Oranye
     iconSymbol: '🌱',
     kegiatanUtama: 'Bakti Sosial Peduli Lingkungan',
     deskripsi: 'Aksi penghijauan pangkalan, penanaman pohon, dan bakti pembersihan lingkungan hidup.'
@@ -58,7 +58,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 3,
     bulan: 'Maret',
     singkatan: 'MAR',
-    bgHex: '#bd1e26', // Kuning Emas
+    bgHex: '#b51d27', // Kuning Emas
     iconSymbol: '🪢',
     kegiatanUtama: 'Pelatihan Tali Temali dan Simpul',
     deskripsi: 'Pendalaman simpul mati, pangkal, jangkar, kembar, dan ikatan pionering tiang bendera.'
@@ -67,7 +67,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 4,
     bulan: 'April',
     singkatan: 'APR',
-    bgHex: '#d12a32', // Hijau Muda
+    bgHex: '#dc6269', // Hijau Muda
     iconSymbol: '🎒',
     kegiatanUtama: 'Menjelajah Alam dan Hiking',
     deskripsi: 'Lintas alam pedesaan/hutan, penjelajahan rute jejak kompas, dan survival dasar penegak.'
@@ -76,7 +76,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 5,
     bulan: 'Mei',
     singkatan: 'MEI',
-    bgHex: '#e51c24', // Hijau Tua
+    bgHex: '#c8202b', // Hijau Tua
     iconSymbol: '🧗',
     kegiatanUtama: 'Lomba Ketangkasan & Pionering',
     deskripsi: 'Kompetisi pembuatan jembatan darurat, menara pandang cepat, dan ketangkasan fisik sangga.'
@@ -85,7 +85,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 6,
     bulan: 'Juni',
     singkatan: 'JUN',
-    bgHex: '#f0444b', // Cyan / Biru Muda
+    bgHex: '#e17b81', // Cyan / Biru Muda
     iconSymbol: '🏕️',
     kegiatanUtama: 'Perkemahan dan Api Unggun',
     deskripsi: 'Perkemahan akbar penutupan tahun ajaran, upacara malam api unggun, dan malam apresiasi budaya.'
@@ -94,7 +94,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 7,
     bulan: 'Juli',
     singkatan: 'JUL',
-    bgHex: '#b91c1c', // Teal / Hijau Laut
+    bgHex: '#a91b24', // Teal / Hijau Laut
     iconSymbol: '🩹',
     kegiatanUtama: 'Simulasi Pertolongan Pertama (PMR)',
     deskripsi: 'Pelatihan P3K darurat, pembalutan mitela luka, pembuatan tandu darurat, dan evakuasi korban.'
@@ -103,7 +103,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 8,
     bulan: 'Agustus',
     singkatan: 'AGU',
-    bgHex: '#c91f28', // Biru
+    bgHex: '#ce333d', // Biru
     iconSymbol: '🔥',
     kegiatanUtama: 'Pesta Pramuka & Syukur HUT',
     deskripsi: 'Peringatan Hari Pramuka ke-65, karnaval ambalan, dan renungan suci Trisatya & Dasa Darma.'
@@ -112,7 +112,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 9,
     bulan: 'September',
     singkatan: 'SEP',
-    bgHex: '#7f1016', // Navy Gelap
+    bgHex: '#941720', // Navy Gelap
     iconSymbol: '🧭',
     kegiatanUtama: 'Orientering & Baca Peta Kompas',
     deskripsi: 'Navigasi darat, membaca peta topografi kontur, penentuan posisi resection, dan orientering.'
@@ -121,7 +121,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 10,
     bulan: 'Oktober',
     singkatan: 'OKT',
-    bgHex: '#a91620', // Ungu
+    bgHex: '#b92731', // Ungu
     iconSymbol: '🎭',
     kegiatanUtama: 'Pengembangan Bakat Seni Budaya',
     deskripsi: 'Pentas seni ambalan, teater kearifan lokal Siri\' na Pacce, musik bambu, dan pameran sangga.'
@@ -130,7 +130,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 11,
     bulan: 'November',
     singkatan: 'NOV',
-    bgHex: '#d32f38', // Magenta / Plum
+    bgHex: '#d95760', // Magenta / Plum
     iconSymbol: '🎖️',
     kegiatanUtama: 'Kegiatan Baris Berbaris (PBB)',
     deskripsi: 'Latihan baris berbaris tongkat resmi, variasi formasi lapangan, dan penanaman disiplin diri.'
@@ -139,7 +139,7 @@ const BULAN_LINGKARAN_SDG: KalenderBulanItem[] = [
     id: 12,
     bulan: 'Desember',
     singkatan: 'DES',
-    bgHex: '#ef5350', // Rose Pink
+    bgHex: '#e98f94', // Rose Pink
     iconSymbol: '📜',
     kegiatanUtama: 'Evaluasi Tahunan & Lencana',
     deskripsi: 'Musyawarah ambalan tahunan, penganugerahan bintang tahunan, dan penghargaan lencana teladan.'
@@ -225,13 +225,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
         <div className="mt-4">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#e51c24]">Portal Informasi Ambalan</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#c8202b]">Portal Informasi Ambalan</p>
           <p className="mt-1 text-sm font-semibold text-slate-700">Satu tempat untuk seluruh informasi dan aktivitas ambalan.</p>
         </div>
       </section>
 
       {/* ILUSTRASI VECTOR PRAMUKA */}
-      <section data-keep-color="true" className="relative overflow-hidden rounded-[28px] bg-[#e51c24] text-white min-h-[190px] shadow-md">
+      <section data-keep-color="true" className="relative overflow-hidden rounded-[28px] bg-[#c8202b] text-white min-h-[190px] shadow-md">
         <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 85% 15%, #ffb8bb 0, transparent 34%), radial-gradient(circle at 10% 100%, #9f1118 0, transparent 38%)'}} />
         <div className="relative z-10 flex min-h-[190px] items-center">
           <div className="w-[57%] p-4 pr-0">
@@ -270,13 +270,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#e51c24]">Agenda Utama</p>
             <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">Kegiatan Ambalan</h2>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fcebed] text-[#c8202b]">
             <CalendarCheck className="h-5 w-5"/>
           </div>
         </div>
         <div className="px-4 pb-4 pt-2">
           <p className="text-xs leading-relaxed text-slate-500">Pantau agenda kegiatan, jadwal, dan latihan rutin Ambalan La Surullah.</p>
-          <button onClick={() => onNavigateMenu?.('dashboard')} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#e51c24] px-3.5 py-3 text-left text-xs font-bold text-white transition active:scale-[0.99]">
+          <button onClick={() => onNavigateMenu?.('dashboard')} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#c8202b] px-3.5 py-3 text-left text-xs font-bold text-white transition active:scale-[0.99]">
             <span>Lihat semua kegiatan dan latihan rutin</span>
             <ArrowRight className="h-4 w-4"/>
           </button>
@@ -285,7 +285,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* RUANG BELAJAR */}
       <button onClick={() => onNavigateMenu?.('ruang_belajar')} className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[26px] bg-white p-4 text-left border border-slate-200 transition active:scale-[0.99]">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e51c24] text-white shadow-sm">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fcebed] text-[#c8202b]">
           <GraduationCap className="h-6 w-6"/>
         </div>
         <div className="min-w-0 flex-1">
@@ -304,14 +304,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
         <div className="grid grid-cols-4 gap-x-2 gap-y-4">
           {[
-            { id: 'profil_ambalan' as ActiveMenu, label: 'Profil', icon: Shield, color: 'bg-blue-50 text-blue-700' },
-            { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan', icon: Crown, color: 'bg-amber-50 text-amber-700' },
-            { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-orange-50 text-orange-700' },
-            { id: 'sku_skk' as ActiveMenu, label: 'SKU/SKK', icon: Award, color: 'bg-rose-50 text-rose-700' },
-            { id: 'quiz' as ActiveMenu, label: 'Quiz', icon: Brain, color: 'bg-violet-50 text-violet-700' },
-            { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: FileText, color: 'bg-cyan-50 text-cyan-700' },
-            { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-pink-50 text-pink-700' },
-            { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-slate-100 text-slate-700' }
+            { id: 'profil_ambalan' as ActiveMenu, label: 'Profil', icon: Shield, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan', icon: Crown, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'sku_skk' as ActiveMenu, label: 'SKU/SKK', icon: Award, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'quiz' as ActiveMenu, label: 'Quiz', icon: Brain, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: FileText, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-[#fcebed] text-[#c8202b]' },
+            { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-[#fcebed] text-[#c8202b]' }
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -756,7 +756,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   setIsDetailModalOpen(false);
                   onNavigateMenu?.('dashboard');
                 }}
-                className="px-4 py-2 rounded-xl bg-[#e51c24] text-white text-xs font-bold hover:bg-[#c9141b] transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#c8202b] text-white text-xs font-bold hover:bg-[#c9141b] transition-colors"
               >
                 Buka Kegiatan & Latihan
               </button>

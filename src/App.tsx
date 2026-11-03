@@ -8,6 +8,7 @@ import { FloatingBottomNav } from './components/FloatingBottomNav';
 import { HomeView } from './components/views/HomeView';
 import { DashboardView } from './components/views/DashboardView';
 import { ProgramKerjaView } from './components/views/ProgramKerjaView';
+import { DewanAmbalanView } from './components/views/DewanAmbalanView';
 import { SkuSkkView } from './components/views/SkuSkkView';
 import { RuangBelajarView } from './components/views/RuangBelajarView';
 import { LatihanRutinView } from './components/views/LatihanRutinView';
@@ -131,6 +132,7 @@ export default function App() {
       case 'kegiatan_latihan':
         return 'Kegiatan dan Latihan';
       case 'profil_ambalan': return 'Profil Ambalan';
+      case 'dewan_ambalan': return 'Dewan Ambalan';
       case 'sangga': return 'Sangga Ambalan';
       case 'sku_skk': return 'SKU dan SKK Penegak';
       case 'ruang_belajar': return 'Ruang Belajar Digital';
@@ -185,6 +187,16 @@ export default function App() {
 
           {activeMenu === 'profil_ambalan' && (
             <ProfilAmbalanView />
+          )}
+
+          {activeMenu === 'dewan_ambalan' && (
+            <DewanAmbalanView
+              currentUser={user}
+              allMembers={allMembers}
+              programKerjaList={programKerjaList}
+              onUpdateProgramKerjaList={setProgramKerjaList}
+              onBack={() => setActiveMenu('home')}
+            />
           )}
 
           {activeMenu === 'sangga' && (

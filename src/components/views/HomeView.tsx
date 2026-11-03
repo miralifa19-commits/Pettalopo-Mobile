@@ -5,7 +5,16 @@ import {
   Brain, 
   ChevronRight, 
   X, 
-  ArrowRight
+  ArrowRight,
+  Shield,
+  Crown,
+  CalendarCheck,
+  FileText,
+  Users,
+  GraduationCap,
+  Settings,
+  UserCheck,
+  Home
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from '../../data/defaultProgramKerja';
@@ -14,6 +23,7 @@ interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
   user?: UserAccount;
   programKerjaList?: ProgramKerjaItem[];
+  onOpenSidebar?: () => void;
 }
 
 interface KalenderBulanItem {
@@ -174,11 +184,9 @@ function describeArcSegment(
 export const HomeView: React.FC<HomeViewProps> = ({
   onNavigateMenu,
   user,
-  programKerjaList = DEFAULT_PROGRAM_KERJA_ITEMS
+  programKerjaList = DEFAULT_PROGRAM_KERJA_ITEMS,
+  onOpenSidebar
 }) => {
-  const activeName = user?.nama || 'Kakak Penegak';
-  const activeGudep = user?.gudep || '10-035';
-  const activeJabatan = user?.jabatan || user?.tingkat || 'Penegak Bantara';
 
   // Current calendar month (0 = Januari, 9 = Oktober)
   const currentMonthIdx = new Date().getMonth();
@@ -210,20 +218,45 @@ export const HomeView: React.FC<HomeViewProps> = ({
   return (
     <div className="space-y-4 pb-24 font-sans">
       
-      {/* 1. BANNER BERANDA WARNA MERAH: UCAPAN SELAMAT DATANG (NAMA PENGGUNA) */}
-      <div className="bg-[#e51c24] text-white rounded-3xl p-5 shadow-md relative overflow-hidden border border-red-700">
-        <div className="space-y-1 relative z-10">
-          <span className="inline-block text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-white/20 text-white font-mono tracking-wider border border-white/30 backdrop-blur-xs">
-            Pangkalan Gudep {activeGudep}
-          </span>
-          <h2 className="text-base sm:text-lg font-black text-white leading-tight truncate">
-            Selamat datang, {activeName}
-          </h2>
-          <p className="text-xs text-red-100 font-medium truncate">
-            {activeJabatan} • Ambalan La Surullah Petta Lopo
-          </p>
-        </div>
+      {/* MENU UTAMA: KARTU RINGKAS DENGAN IKON LINGKARAN */}
+      <div className="grid grid-cols-2 gap-2.5 pl-7">
+        {[
+          { id: 'profil_ambalan' as ActiveMenu, label: 'Profil Ambalan', icon: Shield, color: 'bg-blue-50 text-blue-600' },
+          { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan Ambalan', icon: Crown, color: 'bg-amber-50 text-amber-600' },
+          { id: 'dashboard' as ActiveMenu, label: 'Kegiatan dan Latihan', icon: CalendarCheck, color: 'bg-emerald-50 text-emerald-600' },
+          { id: 'laporan' as ActiveMenu, label: 'Laporan Kegiatan', icon: FileText, color: 'bg-violet-50 text-violet-600' },
+          { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-orange-50 text-orange-600' },
+          { id: 'sku_skk' as ActiveMenu, label: 'SKU dan SKK', icon: Award, color: 'bg-rose-50 text-rose-600' },
+          { id: 'ruang_belajar' as ActiveMenu, label: 'Ruang Belajar', icon: GraduationCap, color: 'bg-cyan-50 text-cyan-600' },
+          { id: 'quiz' as ActiveMenu, label: 'Quiz Pramuka', icon: Brain, color: 'bg-purple-50 text-purple-600' },
+          { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-slate-100 text-slate-600' },
+          { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-pink-50 text-pink-600' }
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigateMenu?.(item.id)}
+              className="min-h-[76px] rounded-2xl border border-slate-200 bg-white px-2.5 py-2 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+            >
+              <span className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center ${item.color}`}>
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="text-[11px] leading-tight font-bold text-slate-800">{item.label}</span>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Tombol kecil untuk membuka sidebar di sisi kiri tengah layar */}
+      <button
+        onClick={onOpenSidebar}
+        aria-label="Buka sidebar"
+        title="Menu sidebar"
+        className="fixed left-1 top-1/2 -translate-y-1/2 z-30 w-7 h-10 rounded-r-xl bg-white/95 border border-l-0 border-slate-200 text-slate-500 shadow-sm flex items-center justify-center active:scale-95"
+      >
+        <span className="text-base leading-none">☰</span>
+      </button>
 
       {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
@@ -572,79 +605,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       </div>
 
-      {/* 3. MENU CEPAT: PENCAPAIAN SKU, PENCAPAIAN SKK, QUIZ PRAMUKA */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider font-mono px-1">
-          Menu Cepat
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {/* Pencapaian SKU */}
-          <button
-            onClick={() => onNavigateMenu?.('sku_skk')}
-            className="bg-white rounded-2xl p-3.5 border border-slate-200 hover:border-red-300 shadow-xs flex items-center justify-between text-left group transition-all"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-[#e51c24] flex items-center justify-center font-black shrink-0 border border-red-100">
-                <Award className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <strong className="block text-xs font-black text-slate-900 group-hover:text-[#e51c24] transition-colors truncate">
-                  Pencapaian SKU
-                </strong>
-                <span className="block text-[10px] text-slate-500 truncate">
-                  Syarat Bantara & Laksana
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#e51c24] transition-colors shrink-0" />
-          </button>
-
-          {/* Pencapaian SKK */}
-          <button
-            onClick={() => onNavigateMenu?.('sku_skk')}
-            className="bg-white rounded-2xl p-3.5 border border-slate-200 hover:border-red-300 shadow-xs flex items-center justify-between text-left group transition-all"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0 border border-amber-200">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <strong className="block text-xs font-black text-slate-900 group-hover:text-[#e51c24] transition-colors truncate">
-                  Pencapaian SKK
-                </strong>
-                <span className="block text-[10px] text-slate-500 truncate">
-                  Tanda Kecakapan Khusus
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#e51c24] transition-colors shrink-0" />
-          </button>
-
-          {/* Quiz Pramuka */}
-          <button
-            onClick={() => onNavigateMenu?.('quiz')}
-            className="bg-white rounded-2xl p-3.5 border border-slate-200 hover:border-red-300 shadow-xs flex items-center justify-between text-left group transition-all"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-black shrink-0 border border-purple-200">
-                <Brain className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <strong className="block text-xs font-black text-slate-900 group-hover:text-[#e51c24] transition-colors truncate">
-                  Quiz Pramuka
-                </strong>
-                <span className="block text-[10px] text-slate-500 truncate">
-                  Uji Wawasan Penegak
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#e51c24] transition-colors shrink-0" />
-          </button>
-        </div>
-      </div>
-
-      {/* 4. MODAL POPUP DETAIL AGENDA BULAN */}
+      {/* MODAL POPUP DETAIL AGENDA BULAN */}
       {isDetailModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-150 overflow-hidden">

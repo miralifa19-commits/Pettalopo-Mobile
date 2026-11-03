@@ -256,7 +256,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
     <div className="space-y-4 pb-24 font-sans">
 
       {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
-      {!(activeMenu === 'proker' && selectedProkerType) && (
+      {activeMenu !== 'proker' && (
         <MenuHeaderCard
           title={activeMenu === 'proker' ? 'Kelola Program Kerja' : 'Dewan Ambalan'}
           subtitle={

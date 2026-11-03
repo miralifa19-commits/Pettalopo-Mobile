@@ -24,7 +24,7 @@ export const CleanTopAppBar: React.FC<CleanTopAppBarProps> = ({
   onOpenPresensi
 }) => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const isBeranda = title.toLowerCase().includes('beranda');
+  const isBeranda = !title || title.toLowerCase().includes('beranda');
 
   const hasActiveKegiatan = activeKegiatan && activeKegiatan.isRunning;
 

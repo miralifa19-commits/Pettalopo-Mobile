@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CalendarDays, Award, Home, MessageCircle, Settings } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { AndroidSidebar } from './components/AndroidSidebar';
 
@@ -146,18 +147,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans antialiased text-slate-800">
+    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
         <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
       )}
       
       {/* Main Native App Container */}
-      <div className="w-full max-w-lg mx-auto min-h-screen bg-white shadow-xl flex flex-col relative">
+      <div className="w-full max-w-lg mx-auto min-h-screen bg-white flex flex-col relative">
         
         <UpdateChecker />
 
         {/* Dynamic Main Body Scroll View */}
-        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-slate-50/70">
+        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -256,6 +257,15 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Navigasi bawah permanen: lima pintasan menu utama */}
+        <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
+          <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kegiatan dan Latihan" aria-current={activeMenu === 'dashboard' || activeMenu === 'kegiatan_latihan' ? 'page' : undefined} title="Kegiatan dan Latihan"><CalendarDays size={22} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => setActiveMenu('sku_skk')} aria-label="SKU" aria-current={activeMenu === 'sku_skk' ? 'page' : undefined} title="SKU"><Award size={22} strokeWidth={2.2} /></button>
+          <button type="button" className="home-nav" onClick={() => setActiveMenu('home')} aria-label="Home" aria-current={activeMenu === 'home' ? 'page' : undefined} title="Home"><Home size={27} strokeWidth={2.4} /></button>
+          <button type="button" onClick={() => setActiveMenu('chat')} aria-label="Obrolan" aria-current={activeMenu === 'chat' ? 'page' : undefined} title="Obrolan"><MessageCircle size={22} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-label="Pengaturan" aria-current={activeMenu === 'pengaturan' ? 'page' : undefined} title="Pengaturan"><Settings size={22} strokeWidth={2.2} /></button>
+        </nav>
 
         {/* Floating Menu Handle: pengganti tombol menu pada Top App Bar */}
         <button

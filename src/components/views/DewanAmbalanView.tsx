@@ -290,179 +290,55 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
         <div className="space-y-3">
           
           {/* 1. Kelola Program Kerja */}
-          <div
+          <button
+            type="button"
             onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
+            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                1. Kelola Program Kerja
-              </h2>
-              <span className="text-xs font-bold text-slate-400">Buka →</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Merencanakan program kerja, menjalankan program kerja secara langsung, dan mengevaluasi hasil keterlaksanaan program kerja.
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 font-medium">
-              <span>{prokers.length} Agenda Terdaftar</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-bold">{prokers.filter((p) => p.status === 'Terlaksana').length} Terlaksana</span>
-            </div>
-          </div>
-
+            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">1.</span>
+            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Program Kerja</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rencana, pelaksanaan, dan evaluasi program</span>
+          </button>
           {/* 2. Kelola Anggota dan Sangga */}
-          <div
+          <button
+            type="button"
             onClick={() => setActiveMenu('anggota_sangga')}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
+            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                2. Kelola Anggota dan Sangga
-              </h2>
-              <span className="text-xs font-bold text-slate-400">Buka →</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Menampilkan data semua anggota ambalan beserta rincian lengkap ketika diklik (nama lengkap, nama panggilan, TTL, motto, tingkatan, progres SKU, dan keaktifan).
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 font-medium">
-              <span>{allMembers.length} Anggota</span>
-              <span>•</span>
-              <span>5 Sangga Putra & Putri</span>
-            </div>
-          </div>
-
+            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">2.</span>
+            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Anggota dan Sangga</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Data anggota, tingkatan, SKU, dan sangga</span>
+          </button>
           {/* 3. Kelola Persuratan */}
-          <div
+          <button
+            type="button"
             onClick={() => setActiveMenu('persuratan')}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
+            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                3. Kelola Persuratan
-              </h2>
-              <span className="text-xs font-bold text-slate-400">Buka →</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Membuat surat otomatis resmi ambalan (undangan, tugas, dispensasi, peminjaman, keterangan aktif) dengan kop resmi Gugus Depan 10-035 & 10-036.
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 font-medium">
-              <span>{suratList.length} Arsip Surat Keluar</span>
-              <span>•</span>
-              <span>Format Standar Kwarnas</span>
-            </div>
-          </div>
-
+            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">3.</span>
+            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Persuratan</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Surat resmi dan arsip ambalan</span>
+          </button>
           {/* 4. Kelola Keuangan */}
-          <div
+          <button
+            type="button"
             onClick={() => setActiveMenu('keuangan')}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
+            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                4. Kelola Keuangan
-              </h2>
-              <span className="text-xs font-bold text-slate-400">Buka →</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Keuangan kas ambalan, data iuran anggota, dan mengupdate status anggota yang telah membayar iuran.
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 font-medium">
-              <span>Kas: Rp {totalKasTerkumpul.toLocaleString('id-ID')}</span>
-              <span>•</span>
-              <span>{totalAnggotaLunas} / {iuranData.length} Lunas</span>
-            </div>
-          </div>
-
+            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">4.</span>
+            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Keuangan</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Kas dan iuran anggota</span>
+          </button>
           {/* 5. Kelola Laporan */}
-          <div
+          <button
+            type="button"
             onClick={() => setActiveMenu('laporan')}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-[#e51c24] cursor-pointer transition-all space-y-1.5"
+            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                5. Kelola Laporan
-              </h2>
-              <span className="text-xs font-bold text-slate-400">Buka →</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Merekap laporan terpadu dari keempat menu dewan. Tersedia pilihan perkegiatan, pertriwulan, ataupun satu masa bakti (LPJ) dalam format PDF.
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 font-medium">
-              <span>Rekap 4 Pilar Dewan</span>
-              <span>•</span>
-              <span>Siap Cetak PDF</span>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================
-          BAR NAVIGASI SUB-MENU KETIKA DI DALAM SALAH SATU MENU
-          ======================================================== */}
-      {activeMenu !== 'menu' && !(activeMenu === 'proker' && selectedProkerType) && (
-        <div className="space-y-2">
-          {/* Tombol Kembali ke Daftar 5 Menu */}
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setActiveMenu('menu')}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs"
-            >
-              ← Kembali ke Menu Dewan
-            </button>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-              {activeMenu === 'proker' && 'Kelola Program Kerja'}
-              {activeMenu === 'anggota_sangga' && 'Kelola Anggota & Sangga'}
-              {activeMenu === 'persuratan' && 'Kelola Persuratan'}
-              {activeMenu === 'keuangan' && 'Kelola Keuangan'}
-              {activeMenu === 'laporan' && 'Kelola Laporan'}
-            </span>
-          </div>
-
-          {/* Tab Bar Cepat 5 Menu */}
-          <div className="bg-white rounded-xl p-1 border border-slate-200 shadow-xs flex items-center justify-between text-[11px] font-bold overflow-x-auto">
-            <button
-              onClick={() => setActiveMenu('proker')}
-              className={`py-1.5 px-2 rounded-lg transition-all shrink-0 ${
-                activeMenu === 'proker' ? 'bg-[#e51c24] text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Proker
-            </button>
-            <button
-              onClick={() => setActiveMenu('anggota_sangga')}
-              className={`py-1.5 px-2 rounded-lg transition-all shrink-0 ${
-                activeMenu === 'anggota_sangga' ? 'bg-[#e51c24] text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Anggota & Sangga
-            </button>
-            <button
-              onClick={() => setActiveMenu('persuratan')}
-              className={`py-1.5 px-2 rounded-lg transition-all shrink-0 ${
-                activeMenu === 'persuratan' ? 'bg-[#e51c24] text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Persuratan
-            </button>
-            <button
-              onClick={() => setActiveMenu('keuangan')}
-              className={`py-1.5 px-2 rounded-lg transition-all shrink-0 ${
-                activeMenu === 'keuangan' ? 'bg-[#e51c24] text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Keuangan
-            </button>
-            <button
-              onClick={() => setActiveMenu('laporan')}
-              className={`py-1.5 px-2 rounded-lg transition-all shrink-0 ${
-                activeMenu === 'laporan' ? 'bg-[#e51c24] text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Laporan
-            </button>
-          </div>
+            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">5.</span>
+            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Laporan</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rekap kegiatan dan laporan masa bakti</span>
+          </button>
         </div>
       )}
 

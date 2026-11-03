@@ -181,3 +181,9 @@ main [class*="text-amber-"],main [class*="text-yellow-"]{color:var(--app-red)!im
 main button,main a{max-width:100%}
 main *{min-width:0}
 main p,main h1,main h2,main h3,main strong,main span{overflow-wrap:break-word}
+
+
+.settings-toggle{width:44px;height:26px;padding:3px;border:0;border-radius:99px;background:#d9dde1;display:flex;align-items:center;flex-shrink:0;transition:background .18s ease}
+.settings-toggle span{display:block;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);transition:transform .18s ease}
+.settings-toggle.is-on{background:var(--app-red)}
+.settings-toggle.is-on span{transform:translateX(18px)}

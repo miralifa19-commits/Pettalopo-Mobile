@@ -180,15 +180,15 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser, o
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-125px)] sm:h-[calc(100vh-135px)] bg-slate-100 rounded-3xl overflow-hidden border border-slate-200 shadow-md font-sans">
+    <div className="flex flex-col h-[calc(100vh-125px)] sm:h-[calc(100vh-135px)] bg-white rounded-3xl overflow-hidden border border-slate-200 font-sans">
       
       {/* WA STYLE GROUP HEADER (Tema Merah Ambalan) */}
-      <div className="bg-[#e51c24] text-white px-3.5 py-3 flex items-center justify-between shadow-xs border-b border-red-700 shrink-0">
+      <div className="bg-white text-slate-900 px-3.5 py-3 flex items-center justify-between border-b border-slate-200 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={onBack || (() => {})}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 text-white flex items-center justify-center transition-all border border-white/30 shrink-0 cursor-pointer shadow-2xs"
+            className="w-8 h-8 rounded-full bg-[#e51c24] hover:bg-[#c9161d] active:scale-95 text-white flex items-center justify-center transition-all border border-[#e51c24] shrink-0 cursor-pointer shadow-2xs"
             title="Kembali"
             aria-label="Kembali"
           >
@@ -198,7 +198,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser, o
             <h2 className="text-xs sm:text-sm font-black truncate leading-tight">
               Ruang Obrolan
             </h2>
-            <p className="text-[10px] text-red-100 truncate flex items-center gap-1.5 mt-0.5 font-medium">
+            <p className="text-[10px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Grup Koordinasi Gudep 10-035/036</span>
             </p>
@@ -208,7 +208,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({ currentUser, o
         {/* Action: Buat List Baru */}
         <button
           onClick={() => setIsCreateListModalOpen(true)}
-          className="px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-xs transition-all active:scale-95 shrink-0"
+          className="px-2.5 py-1 rounded-xl bg-[#e51c24] hover:bg-[#c9161d] text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all active:scale-95 shrink-0"
           title="Buat List Nama Baru Tanpa Spam"
         >
           <ListPlus className="w-3.5 h-3.5 stroke-[2.5]" />

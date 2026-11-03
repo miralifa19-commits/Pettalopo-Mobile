@@ -86,3 +86,17 @@ main [class*="border-emerald-"], main [class*="border-green-"], main [class*="bo
 .pettalopo-bottom-nav button:active { transform: scale(.96); }
 .pettalopo-bottom-nav button.home-nav { height: 54px; }
 .pettalopo-bottom-nav button:focus-visible { outline: 2px solid var(--app-red); outline-offset: 2px; }
+
+/* Any remaining custom-colour content card is rendered as a white landing-style section. */
+main div[class*="bg-[#"]:not([data-keep-color]),
+main section[class*="bg-[#"]:not([data-keep-color]),
+main article[class*="bg-[#"]:not([data-keep-color]) {
+  background-color: #ffffff !important;
+  border-color: var(--app-line) !important;
+}
+/* Menu/action buttons use the same brand red instead of unrelated accent colours. */
+main button[class*="bg-"]:not(.pettalopo-neutral-button) {
+  background-color: var(--app-red) !important;
+  border-color: var(--app-red) !important;
+  color: #ffffff !important;
+}

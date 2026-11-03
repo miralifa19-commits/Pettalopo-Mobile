@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from '../../data/defaultProgramKerja';
+import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
 
 interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
@@ -216,35 +217,116 @@ export const HomeView: React.FC<HomeViewProps> = ({
   return (
     <div className="space-y-4 pb-24 font-sans">
       
-      {/* MENU UTAMA: KARTU RINGKAS DENGAN IKON LINGKARAN */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-        {[
-          { id: 'profil_ambalan' as ActiveMenu, label: 'Profil Ambalan', icon: Shield, color: 'bg-blue-50 text-blue-600' },
-          { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan Ambalan', icon: Crown, color: 'bg-amber-50 text-amber-600' },
-          { id: 'dashboard' as ActiveMenu, label: 'Kegiatan dan Latihan', icon: CalendarCheck, color: 'bg-emerald-50 text-emerald-600' },
-          { id: 'laporan' as ActiveMenu, label: 'Laporan Kegiatan', icon: FileText, color: 'bg-violet-50 text-violet-600' },
-          { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-orange-50 text-orange-600' },
-          { id: 'sku_skk' as ActiveMenu, label: 'SKU dan SKK', icon: Award, color: 'bg-rose-50 text-rose-600' },
-          { id: 'ruang_belajar' as ActiveMenu, label: 'Ruang Belajar', icon: GraduationCap, color: 'bg-cyan-50 text-cyan-600' },
-          { id: 'quiz' as ActiveMenu, label: 'Quiz Pramuka', icon: Brain, color: 'bg-purple-50 text-purple-600' },
-          { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-slate-100 text-slate-600' },
-          { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-pink-50 text-pink-600' }
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigateMenu?.(item.id)}
-              className="min-h-[76px] rounded-2xl border border-slate-200 bg-white px-2.5 py-2 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
-            >
-              <span className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center ${item.color}`}>
-                <Icon className="w-4 h-4" />
-              </span>
-              <span className="text-[11px] leading-tight font-bold text-slate-800">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* IDENTITAS PORTAL AMBALAN */}
+      <section className="rounded-[26px] bg-white border border-slate-200/80 p-3.5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <ShiningAmbalanLogo className="w-12 h-12" />
+          <div className="min-w-0 leading-tight">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Ambalan La Surullah</p>
+            <h1 className="text-[23px] font-black tracking-tight text-slate-900">Petta Lopo</h1>
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#e51c24]">Portal Informasi Ambalan</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">Satu tempat untuk seluruh informasi dan aktivitas ambalan.</p>
+        </div>
+      </section>
+
+      {/* ILUSTRASI VECTOR PRAMUKA */}
+      <section className="relative overflow-hidden rounded-[28px] bg-[#142D25] text-white min-h-[190px] shadow-md">
+        <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 85% 15%, #B8D8A8 0, transparent 34%), radial-gradient(circle at 10% 100%, #5C9275 0, transparent 38%)'}} />
+        <div className="relative z-10 flex min-h-[190px] items-center">
+          <div className="w-[57%] p-4 pr-0">
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-emerald-100">SATU AMBALAN · SATU SEMANGAT</span>
+            <h2 className="mt-3 text-xl font-black leading-tight">Bergerak.<br/>Berkarya.<br/><span className="text-[#F4C66A]">Mengabdi.</span></h2>
+            <p className="mt-2 text-[10px] leading-relaxed text-emerald-50/80">Ruang informasi dan aktivitas Pramuka kita.</p>
+          </div>
+          <div className="absolute right-0 bottom-0 w-[52%] h-full flex items-end justify-center">
+            <svg viewBox="0 0 220 190" className="w-full h-full" role="img" aria-label="Ilustrasi vektor perkemahan Pramuka di alam terbuka">
+              <circle cx="164" cy="42" r="21" fill="#F4C66A" opacity=".95"/>
+              <path d="M0 145 L54 72 L100 133 L145 65 L220 151 V190 H0Z" fill="#315C49"/>
+              <path d="M0 160 L65 105 L111 151 L163 105 L220 157 V190 H0Z" fill="#47775B"/>
+              <path d="M22 174 L54 124 L86 174Z" fill="#E9D7B5"/>
+              <path d="M54 124 L86 174 H54Z" fill="#C69B61"/>
+              <path d="M39 174 L54 148 L69 174Z" fill="#263D32"/>
+              <path d="M117 176 L145 119 L173 176Z" fill="#D9C49B"/>
+              <path d="M145 119 L173 176 H145Z" fill="#B88951"/>
+              <path d="M135 176 L145 153 L156 176Z" fill="#263D32"/>
+              <path d="M185 153 L199 111 L213 153Z" fill="#173D2E"/>
+              <path d="M199 111 V169" stroke="#E8E2D2" strokeWidth="2"/>
+              <path d="M200 112 L220 119 L200 127Z" fill="#E51C24"/>
+              <path d="M8 158 L21 121 L34 158Z" fill="#173D2E"/>
+              <path d="M21 121 V171" stroke="#173D2E" strokeWidth="3"/>
+              <path d="M8 143 L21 105 L34 143Z" fill="#24523C"/>
+              <path d="M21 105 V171" stroke="#173D2E" strokeWidth="3"/>
+              <path d="M0 180 Q65 166 115 180 T220 178 V190 H0Z" fill="#10251E"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* AGENDA UTAMA */}
+      <section className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 pt-4">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#e51c24]">Agenda Utama</p>
+            <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">Kegiatan Ambalan</h2>
+          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <CalendarCheck className="h-5 w-5"/>
+          </div>
+        </div>
+        <div className="px-4 pb-4 pt-2">
+          <p className="text-xs leading-relaxed text-slate-500">Pantau agenda kegiatan, jadwal, dan latihan rutin Ambalan La Surullah.</p>
+          <button onClick={() => onNavigateMenu?.('dashboard')} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#173D30] px-3.5 py-3 text-left text-xs font-bold text-white transition active:scale-[0.99]">
+            <span>Lihat semua kegiatan dan latihan rutin</span>
+            <ArrowRight className="h-4 w-4"/>
+          </button>
+        </div>
+      </section>
+
+      {/* RUANG BELAJAR */}
+      <button onClick={() => onNavigateMenu?.('ruang_belajar')} className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[26px] bg-[#EAF4EF] p-4 text-left border border-emerald-100 transition active:scale-[0.99]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#147D64] text-white shadow-sm">
+          <GraduationCap className="h-6 w-6"/>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#147D64]">Ruang Belajar Ambalan</p>
+          <h2 className="mt-1 text-sm font-black text-slate-900">Asah pengetahuanmu</h2>
+          <p className="mt-0.5 text-[11px] leading-snug text-slate-600">di ruang belajar ambalan</p>
+        </div>
+        <ArrowRight className="h-5 w-5 shrink-0 text-[#147D64] transition-transform group-hover:translate-x-1"/>
+      </button>
+
+      {/* JELAJAHI AMBALAN */}
+      <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Kenali dan manfaatkan</p>
+          <h2 className="mt-1 text-base font-black text-slate-900">Jelajahi Ambalan</h2>
+        </div>
+        <div className="grid grid-cols-4 gap-x-2 gap-y-4">
+          {[
+            { id: 'profil_ambalan' as ActiveMenu, label: 'Profil', icon: Shield, color: 'bg-blue-50 text-blue-700' },
+            { id: 'dewan_ambalan' as ActiveMenu, label: 'Dewan', icon: Crown, color: 'bg-amber-50 text-amber-700' },
+            { id: 'sangga' as ActiveMenu, label: 'Sangga', icon: Users, color: 'bg-orange-50 text-orange-700' },
+            { id: 'sku_skk' as ActiveMenu, label: 'SKU/SKK', icon: Award, color: 'bg-rose-50 text-rose-700' },
+            { id: 'quiz' as ActiveMenu, label: 'Quiz', icon: Brain, color: 'bg-violet-50 text-violet-700' },
+            { id: 'chat' as ActiveMenu, label: 'Obrolan', icon: FileText, color: 'bg-cyan-50 text-cyan-700' },
+            { id: 'akun' as ActiveMenu, label: 'Akun', icon: UserCheck, color: 'bg-pink-50 text-pink-700' },
+            { id: 'pengaturan' as ActiveMenu, label: 'Pengaturan', icon: Settings, color: 'bg-slate-100 text-slate-700' }
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <button key={item.id} onClick={() => onNavigateMenu?.(item.id)} className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1 text-center transition active:scale-95">
+                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.color}`}>
+                  <Icon className="h-5 w-5"/>
+                </span>
+                <span className="text-[10px] font-semibold leading-tight text-slate-600">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">

@@ -233,7 +233,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* ILUSTRASI VECTOR PRAMUKA */}
-      <section className="relative overflow-hidden rounded-[28px] bg-[#e51c24] text-white min-h-[190px] shadow-md">
+      <section data-keep-color="true" className="relative overflow-hidden rounded-[28px] bg-[#e51c24] text-white min-h-[190px] shadow-md">
         <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 85% 15%, #ffb8bb 0, transparent 34%), radial-gradient(circle at 10% 100%, #9f1118 0, transparent 38%)'}} />
         <div className="relative z-10 flex min-h-[190px] items-center">
           <div className="w-[57%] p-4 pr-0">

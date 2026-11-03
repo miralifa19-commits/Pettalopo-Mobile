@@ -233,33 +233,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* ILUSTRASI VECTOR PRAMUKA */}
-      <section className="relative overflow-hidden rounded-[28px] bg-[#142D25] text-white min-h-[190px] shadow-md">
-        <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 85% 15%, #B8D8A8 0, transparent 34%), radial-gradient(circle at 10% 100%, #5C9275 0, transparent 38%)'}} />
+      <section className="relative overflow-hidden rounded-[28px] bg-[#e51c24] text-white min-h-[190px] shadow-md">
+        <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 85% 15%, #ffb8bb 0, transparent 34%), radial-gradient(circle at 10% 100%, #9f1118 0, transparent 38%)'}} />
         <div className="relative z-10 flex min-h-[190px] items-center">
           <div className="w-[57%] p-4 pr-0">
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-emerald-100">SATU AMBALAN · SATU SEMANGAT</span>
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-red-50">SATU AMBALAN · SATU SEMANGAT</span>
             <h2 className="mt-3 text-xl font-black leading-tight">Bergerak.<br/>Berkarya.<br/><span className="text-[#F4C66A]">Mengabdi.</span></h2>
-            <p className="mt-2 text-[10px] leading-relaxed text-emerald-50/80">Ruang informasi dan aktivitas Pramuka kita.</p>
+            <p className="mt-2 text-[10px] leading-relaxed text-red-50/90">Ruang informasi dan aktivitas Pramuka kita.</p>
           </div>
           <div className="absolute right-0 bottom-0 w-[52%] h-full flex items-end justify-center">
             <svg viewBox="0 0 220 190" className="w-full h-full" role="img" aria-label="Ilustrasi vektor perkemahan Pramuka di alam terbuka">
               <circle cx="164" cy="42" r="21" fill="#F4C66A" opacity=".95"/>
-              <path d="M0 145 L54 72 L100 133 L145 65 L220 151 V190 H0Z" fill="#315C49"/>
-              <path d="M0 160 L65 105 L111 151 L163 105 L220 157 V190 H0Z" fill="#47775B"/>
+              <path d="M0 145 L54 72 L100 133 L145 65 L220 151 V190 H0Z" fill="#9f1118"/>
+              <path d="M0 160 L65 105 L111 151 L163 105 L220 157 V190 H0Z" fill="#c9161d"/>
               <path d="M22 174 L54 124 L86 174Z" fill="#E9D7B5"/>
               <path d="M54 124 L86 174 H54Z" fill="#C69B61"/>
-              <path d="M39 174 L54 148 L69 174Z" fill="#263D32"/>
+              <path d="M39 174 L54 148 L69 174Z" fill="#650b10"/>
               <path d="M117 176 L145 119 L173 176Z" fill="#D9C49B"/>
               <path d="M145 119 L173 176 H145Z" fill="#B88951"/>
-              <path d="M135 176 L145 153 L156 176Z" fill="#263D32"/>
-              <path d="M185 153 L199 111 L213 153Z" fill="#173D2E"/>
+              <path d="M135 176 L145 153 L156 176Z" fill="#650b10"/>
+              <path d="M185 153 L199 111 L213 153Z" fill="#7f1016"/>
               <path d="M199 111 V169" stroke="#E8E2D2" strokeWidth="2"/>
               <path d="M200 112 L220 119 L200 127Z" fill="#E51C24"/>
-              <path d="M8 158 L21 121 L34 158Z" fill="#173D2E"/>
-              <path d="M21 121 V171" stroke="#173D2E" strokeWidth="3"/>
-              <path d="M8 143 L21 105 L34 143Z" fill="#24523C"/>
-              <path d="M21 105 V171" stroke="#173D2E" strokeWidth="3"/>
-              <path d="M0 180 Q65 166 115 180 T220 178 V190 H0Z" fill="#10251E"/>
+              <path d="M8 158 L21 121 L34 158Z" fill="#7f1016"/>
+              <path d="M21 121 V171" stroke="#7f1016" strokeWidth="3"/>
+              <path d="M8 143 L21 105 L34 143Z" fill="#a3151b"/>
+              <path d="M21 105 V171" stroke="#7f1016" strokeWidth="3"/>
+              <path d="M0 180 Q65 166 115 180 T220 178 V190 H0Z" fill="#650b10"/>
             </svg>
           </div>
         </div>
@@ -278,7 +278,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
         <div className="px-4 pb-4 pt-2">
           <p className="text-xs leading-relaxed text-slate-500">Pantau agenda kegiatan, jadwal, dan latihan rutin Ambalan La Surullah.</p>
-          <button onClick={() => onNavigateMenu?.('dashboard')} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#173D30] px-3.5 py-3 text-left text-xs font-bold text-white transition active:scale-[0.99]">
+          <button onClick={() => onNavigateMenu?.('dashboard')} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#e51c24] px-3.5 py-3 text-left text-xs font-bold text-white transition active:scale-[0.99]">
             <span>Lihat semua kegiatan dan latihan rutin</span>
             <ArrowRight className="h-4 w-4"/>
           </button>
@@ -286,16 +286,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* RUANG BELAJAR */}
-      <button onClick={() => onNavigateMenu?.('ruang_belajar')} className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[26px] bg-[#EAF4EF] p-4 text-left border border-emerald-100 transition active:scale-[0.99]">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#147D64] text-white shadow-sm">
+      <button onClick={() => onNavigateMenu?.('ruang_belajar')} className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[26px] bg-white p-4 text-left border border-slate-200 transition active:scale-[0.99]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e51c24] text-white shadow-sm">
           <GraduationCap className="h-6 w-6"/>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#147D64]">Ruang Belajar Ambalan</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#e51c24]">Ruang Belajar Ambalan</p>
           <h2 className="mt-1 text-sm font-black text-slate-900">Asah pengetahuanmu</h2>
           <p className="mt-0.5 text-[11px] leading-snug text-slate-600">di ruang belajar ambalan</p>
         </div>
-        <ArrowRight className="h-5 w-5 shrink-0 text-[#147D64] transition-transform group-hover:translate-x-1"/>
+        <ArrowRight className="h-5 w-5 shrink-0 text-[#e51c24] transition-transform group-hover:translate-x-1"/>
       </button>
 
       {/* 2. RODA 12 BULAN: SEKARANG BERNAMA "Kegiatan dan Latihan Rutin" */}

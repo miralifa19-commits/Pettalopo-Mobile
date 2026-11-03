@@ -38,13 +38,15 @@ export const CleanTopAppBar: React.FC<CleanTopAppBarProps> = ({
           
           {/* Left: Menu & Shining Logo Ambalan (1s sweep, 15s recurring interval) */}
           <div className="flex items-center space-x-2">
-            <button
-              onClick={onOpenSidebar}
-              aria-label="Buka Sidebar Menu"
-              className="p-1.5 -ml-1 text-slate-700 hover:text-[#e51c24] active:scale-95 transition-transform rounded-xl hover:bg-red-50 focus:outline-none"
-            >
-              <Menu className="w-5 h-5 stroke-[2.2]" />
-            </button>
+            {!isBeranda && (
+              <button
+                onClick={onOpenSidebar}
+                aria-label="Buka Sidebar Menu"
+                className="p-1.5 -ml-1 text-slate-700 hover:text-[#e51c24] active:scale-95 transition-transform rounded-xl hover:bg-red-50 focus:outline-none"
+              >
+                <Menu className="w-5 h-5 stroke-[2.2]" />
+              </button>
+            )}
 
             {/* Reusable Shining Logo Ambalan */}
             <ShiningAmbalanLogo
@@ -54,9 +56,11 @@ export const CleanTopAppBar: React.FC<CleanTopAppBarProps> = ({
             />
 
             {/* Judul Halaman */}
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
-              {isBeranda ? 'Beranda' : title}
-            </h1>
+            {!isBeranda && (
+              <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                {title}
+              </h1>
+            )}
           </div>
 
           {/* Right: Notifikasi Bell (Desain Vector Putih Bersih) */}

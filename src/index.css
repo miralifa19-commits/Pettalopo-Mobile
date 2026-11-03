@@ -15,3 +15,25 @@ html, body, #root {
   min-height: 100%;
   background-color: #E51C24;
 }
+
+/* One smooth light sweep across the original logo without altering the image. */
+.splash-shimmer-smooth {
+  transform: translateX(-160%) skewX(-22deg);
+  animation: splash-shimmer-sweep 1.8s ease-in-out forwards;
+  will-change: transform;
+}
+
+@keyframes splash-shimmer-sweep {
+  0% {
+    transform: translateX(-160%) skewX(-22deg);
+  }
+  100% {
+    transform: translateX(240%) skewX(-22deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-shimmer-smooth {
+    animation-duration: 1.8s;
+  }
+}

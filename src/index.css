@@ -488,3 +488,34 @@ main button,main a{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){
   .home-hero-logo::after{animation:none;opacity:0}
 }
+
+
+/* Home agenda bulan ini, pintasan Ruang Belajar, dan navigasi utama lima item. */
+.agenda-month-list{display:flex;flex-direction:column;gap:8px}
+.agenda-month-item{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:1px solid var(--app-line);border-radius:15px;background:#fff;text-align:left;color:#25282c}
+.agenda-month-date{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 43px;min-height:45px;border-radius:12px;background:#fff0f1;color:var(--app-red)}
+.agenda-month-date strong{font-size:18px;line-height:1.05;font-weight:850}
+.agenda-month-date small{font-size:9px;font-weight:750;text-transform:uppercase}
+.agenda-month-copy{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.agenda-month-copy strong{font-size:12px;font-weight:800;line-height:1.35}
+.agenda-month-copy small{font-size:10px;line-height:1.35;color:#747b82}
+.agenda-month-empty{display:flex;align-items:center;gap:11px;padding:15px;border:1px dashed #e5e7eb;border-radius:15px;background:#fff}
+.agenda-month-empty>span:last-child{display:flex;flex-direction:column;gap:3px}
+.agenda-month-empty strong{font-size:12px;color:#30343a}
+.agenda-month-empty small{font-size:10px;color:#7b838c}
+.all-program-works-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin-top:3px;padding:0 14px;border:1px solid #f1c9cd;border-radius:13px;background:#fff7f7;color:var(--app-red);font-size:12px;font-weight:800}
+.ruang-belajar-wide{display:flex;align-items:center;gap:13px;width:100%;min-height:76px;padding:14px;border:1px solid var(--app-line);border-radius:18px;background:#fff;text-align:left;color:#25282c}
+.ruang-belajar-wide-icon{display:grid;place-items:center;width:45px;height:45px;flex:0 0 45px;border-radius:14px;background:#fff0f1;color:var(--app-red)}
+.ruang-belajar-wide-copy{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.ruang-belajar-wide-copy strong{font-size:14px;font-weight:850}
+.ruang-belajar-wide-copy small{font-size:10px;line-height:1.35;color:#747b82}
+.ruang-belajar-wide>svg:last-child{color:#9aa0a6}
+.pettalopo-overflow-wrap{position:relative;flex:0 0 auto}
+.pettalopo-overflow-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:170px;padding:6px;border:1px solid var(--app-line);border-radius:14px;background:#fff;box-shadow:0 8px 28px rgba(20,24,28,.12)}
+.pettalopo-overflow-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:0;border-radius:10px;background:#fff;color:#30343a;text-align:left;font-size:12px;font-weight:700}
+.pettalopo-overflow-menu button:active{background:#fff0f1;color:var(--app-red)}
+.pettalopo-bottom-nav button.pettalopo-nav-dewan{height:58px;align-self:center;margin-top:-15px;border:1px solid #f1c9cd!important;border-radius:18px!important;background:#fff!important;color:var(--app-red)!important;box-shadow:0 5px 14px rgba(196,30,42,.12)}
+.pettalopo-bottom-nav button.pettalopo-nav-dewan[aria-current="page"]{background:var(--app-red)!important;color:#fff!important;border-color:var(--app-red)!important}
+.pettalopo-bottom-nav button.pettalopo-nav-dewan:before{display:none}
+.pettalopo-bottom-nav button span{font-size:9px}
+@media(max-width:380px){.pettalopo-bottom-nav{padding-left:4px;padding-right:4px}.pettalopo-bottom-nav button span{font-size:8px}.agenda-month-copy small{font-size:9px}}

@@ -14,6 +14,7 @@ export type ActiveMenu =
   | 'sku_skk'
   | 'ruang_belajar'
   | 'quiz'
+  | 'misi_pramuka'
   | 'chat'
   | 'pengaturan'
   | 'latihan_rutin'

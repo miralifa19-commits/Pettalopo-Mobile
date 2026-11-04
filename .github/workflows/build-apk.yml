@@ -241,7 +241,13 @@ jobs:
               ("windowSplashScreenAnimatedIcon", "@drawable/pettalopo_splash_icon"),
               ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
-              ("android:windowBackground", "@color/pettalopo_splash_background")
+              ("android:windowBackground", "@color/pettalopo_splash_background"),
+              ("android:statusBarColor", "#FFFFFF"),
+              ("android:windowLightStatusBar", "true"),
+              ("android:navigationBarColor", "#FFFFFF"),
+              ("android:windowLightNavigationBar", "true"),
+              ("android:windowDrawsSystemBarBackgrounds", "true"),
+              ("android:enforceNavigationBarContrast", "false")
           ]
           for name, value in entries:
               body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
@@ -250,7 +256,7 @@ jobs:
 
           v31 = resources / "values-v31"
           v31.mkdir(parents=True, exist_ok=True)
-          v31_body = "\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if not name.startswith("android:"))
+          v31_body = "\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if name != "android:windowBackground")
           (v31 / "styles.xml").write_text(
               '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
               '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\n'

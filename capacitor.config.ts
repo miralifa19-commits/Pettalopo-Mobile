@@ -8,11 +8,10 @@ const config: CapacitorConfig = {
     androidScheme: 'https'
   },
   plugins: {
-    SystemBars: {
-      // Gunakan edge-to-edge modern, tetapi biarkan jam dan ikon sistem terlihat.
-      insetsHandling: 'css',
+    StatusBar: {
       style: 'DARK',
-      hidden: false
+      backgroundColor: '#FFFFFF',
+      overlaysWebView: false
     }
   }
 };

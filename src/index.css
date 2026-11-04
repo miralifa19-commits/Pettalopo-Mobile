@@ -519,3 +519,18 @@ main button,main a{overflow-wrap:anywhere}
 .pettalopo-bottom-nav button.pettalopo-nav-dewan:before{display:none}
 .pettalopo-bottom-nav button span{font-size:9px}
 @media(max-width:380px){.pettalopo-bottom-nav{padding-left:4px;padding-right:4px}.pettalopo-bottom-nav button span{font-size:8px}.agenda-month-copy small{font-size:9px}}
+
+
+/* Agenda bulanan: banner 12 bulan dengan geser horizontal. */
+.month-agenda-strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;gap:0;border-radius:20px;margin:12px 0 8px}
+.month-agenda-strip::-webkit-scrollbar{display:none}
+.month-agenda-banner{flex:0 0 100%;min-width:100%;box-sizing:border-box;scroll-snap-align:start;display:flex;align-items:center;justify-content:space-between;min-height:118px;padding:20px 22px;background:linear-gradient(125deg,#b71922,#e51c24 68%,#f06a70);color:#fff}
+.month-agenda-banner div{display:flex;flex-direction:column;gap:4px}
+.month-agenda-banner strong{font-size:26px;line-height:1.1;font-weight:850;letter-spacing:-.04em}
+.month-agenda-banner small{font-size:11px;color:rgba(255,255,255,.86)}
+.month-agenda-kicker{font-size:9px;font-weight:800;letter-spacing:.14em;color:rgba(255,255,255,.8)}
+.month-agenda-banner>svg{opacity:.9;flex:0 0 auto}
+.month-agenda-controls{display:flex;align-items:center;justify-content:center;gap:20px;margin:6px 0 12px}
+.month-agenda-controls button{width:30px;height:30px;border:1px solid var(--app-line);border-radius:50%;background:#fff;color:var(--app-text);font-size:20px;line-height:1}
+.month-agenda-controls span{min-width:100px;text-align:center;font-size:11px;font-weight:800;color:var(--app-text)}
+.pettalopo-menu-button{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:50%!important}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, MessageCircle, Settings, MoreVertical, Cog, Megaphone, ClipboardList } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Cog, Megaphone, ClipboardList, UserRound } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -14,6 +14,9 @@ import { LatihanRutinView } from './components/views/LatihanRutinView';
 import { AkunView } from './components/views/AkunView';
 import { DatabaseAnggotaView } from './components/views/DatabaseAnggotaView';
 import { ProfilAmbalanView } from './components/views/ProfilAmbalanView';
+import { MabigusView } from './components/views/MabigusView';
+import { AnggotaAmbalanView } from './components/views/AnggotaAmbalanView';
+import { DewanAmbalanRosterView } from './components/views/DewanAmbalanRosterView';
 import { SanggaView } from './components/views/SanggaView';
 import { QuizPramukaView } from './components/views/QuizPramukaView';
 import { ChatAmbalanView } from './components/views/ChatAmbalanView';
@@ -160,6 +163,9 @@ export default function App() {
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
                   <Settings size={17} /><span>Pengaturan</span>
                 </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
+                  <UserRound size={17} /><span>Akun</span>
+                </button>
               </div>
             )}
           </div>
@@ -190,14 +196,11 @@ export default function App() {
             <ProfilAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />
           )}
 
-          {activeMenu === 'dewan_ambalan' && (
-            <DewanAmbalanView
-              currentUser={user}
-              allMembers={allMembers}
-              programKerjaList={programKerjaList}
-              onUpdateProgramKerjaList={setProgramKerjaList}
-              onBack={() => setActiveMenu('home')}
-            />
+          {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'mabigus' && <MabigusView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'ruang_kerja_dewan' && (
+            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'sangga' && (
@@ -212,7 +215,7 @@ export default function App() {
           )}
 
           {activeMenu === 'ruang_belajar' && (
-            <RuangBelajarView isAdmin={isAdmin} />
+            <RuangBelajarView isAdmin={isAdmin} onOpenQuiz={() => setActiveMenu('quiz')} />
           )}
 
           {activeMenu === 'quiz' && (
@@ -291,7 +294,7 @@ export default function App() {
         <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
           <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
           <button type="button" onClick={() => setActiveMenu('program_kerja')} aria-current={activeMenu === 'program_kerja' ? 'page' : undefined}><ClipboardList size={19}/><span>Program Kerja</span></button>
-          <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('dewan_ambalan')} aria-current={activeMenu === 'dewan_ambalan' ? 'page' : undefined}><Cog size={27}/><span>Dewan</span></button>
+          <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}><Cog size={27}/><span>Dewan</span></button>
           <button type="button" onClick={() => setActiveMenu('chat')} aria-current={activeMenu === 'chat' ? 'page' : undefined}><MessageCircle size={19}/><span>Chat</span></button>
           <button type="button" onClick={() => setIsNotificationsOpen(true)}><Megaphone size={19}/><span>Pengumuman</span></button>
         </nav>

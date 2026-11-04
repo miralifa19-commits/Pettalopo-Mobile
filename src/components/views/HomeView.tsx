@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight, CalendarDays, MapPin, BookOpen, Users, Award, ChevronRight,
-  Crown, UserRound, Settings, Shield, ClipboardList, MessageCircle, GraduationCap
+  Crown, UserRound, Shield
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
@@ -15,31 +15,29 @@ interface HomeViewProps {
 }
 
 const exploreLinks: { title: string; description: string; icon: React.ReactNode; menu: ActiveMenu }[] = [
-  { title: 'Dewan Ambalan', description: 'Struktur dan pengurus', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
-  { title: 'Akun Saya', description: 'Profil dan identitas anggota', icon: <UserRound size={20} />, menu: 'akun' },
-  { title: 'Ruang Belajar', description: 'Materi kepramukaan', icon: <BookOpen size={20} />, menu: 'ruang_belajar' },
-  { title: 'Sangga', description: 'Kelompok dan anggota sangga', icon: <Users size={20} />, menu: 'sangga' },
-  { title: 'Program Kerja', description: 'Kegiatan dan latihan rutin ambalan', icon: <ClipboardList size={20} />, menu: 'program_kerja' },
-  { title: 'Data Anggota', description: 'Daftar anggota ambalan', icon: <UserRound size={20} />, menu: 'database' },
-  { title: 'Profil Ambalan', description: 'Sejarah, lambang dan adat', icon: <Shield size={20} />, menu: 'profil_ambalan' },
-  { title: 'SKU & SKK', description: 'Kecakapan Pramuka Penegak', icon: <Award size={20} />, menu: 'sku_skk' },
-  { title: 'Kuis Pramuka', description: 'Uji pengetahuan kepramukaan', icon: <GraduationCap size={20} />, menu: 'quiz' },
-  { title: 'Obrolan Ambalan', description: 'Komunikasi anggota', icon: <MessageCircle size={20} />, menu: 'chat' },
-  { title: 'Pengaturan', description: 'Pengaturan aplikasi', icon: <Settings size={20} />, menu: 'pengaturan' },
+  { title: 'Mabigus', description: 'Majelis Pembimbing Gugus Depan', icon: <Shield size={20} />, menu: 'mabigus' },
+  { title: 'Anggota', description: 'Daftar anggota putra dan putri', icon: <UserRound size={20} />, menu: 'anggota_ambalan' },
+  { title: 'Sangga', description: 'Daftar lima sangga putra dan putri', icon: <Users size={20} />, menu: 'sangga' },
+  { title: 'Dewan Ambalan', description: 'Pengurus Dewan Ambalan saat ini', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const monthAgendas = programKerjaList
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const monthStripRef = useRef<HTMLDivElement>(null);
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  useEffect(() => {
+    const strip = monthStripRef.current;
+    if (strip) strip.scrollLeft = today.getMonth() * strip.clientWidth;
+  }, []);
+  const monthAgendas = useMemo(() => programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
-    .filter((entry) => entry.date
-      && entry.date.getMonth() === today.getMonth()
-      && entry.date.getFullYear() === today.getFullYear())
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime());
+    .filter((entry) => entry.date && entry.date.getMonth() === selectedMonth && entry.date.getFullYear() === today.getFullYear())
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, selectedMonth, today.getFullYear()]);
   const currentMonthLabel = new Intl.DateTimeFormat('id-ID', {
     month: 'long', year: 'numeric'
-  }).format(today);
+  }).format(new Date(today.getFullYear(), selectedMonth, 1));
 
 
 
@@ -71,6 +69,27 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
         <div className="section-heading">
           <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Agenda Bulan Ini</h2></div>
           <span className="month-count">{currentMonthLabel}</span>
+        </div>
+        <div className="month-agenda-strip" ref={monthStripRef} onScroll={(event) => {
+          const element = event.currentTarget;
+          const index = Math.round(element.scrollLeft / Math.max(element.clientWidth, 1));
+          setSelectedMonth(Math.min(11, Math.max(0, index)));
+        }}>
+          {monthNames.map((name, index) => {
+            const count = programKerjaList.filter((item) => {
+              const date = parseAgendaDate(item.waktuPelaksanaan);
+              return date && date.getMonth() === index && date.getFullYear() === today.getFullYear();
+            }).length;
+            return <article className="month-agenda-banner" key={name}>
+              <div><span className="month-agenda-kicker">AGENDA AMBALAN</span><strong>{name}</strong><small>{today.getFullYear()} • {count} agenda</small></div>
+              <CalendarDays size={34} aria-hidden="true" />
+            </article>;
+          })}
+        </div>
+        <div className="month-agenda-controls" aria-label="Pilih bulan">
+          <button type="button" onClick={() => monthStripRef.current?.scrollTo({ left: Math.max(0, (selectedMonth - 1) * (monthStripRef.current?.clientWidth || 0)), behavior: 'smooth' })} aria-label="Bulan sebelumnya">‹</button>
+          <span>{currentMonthLabel}</span>
+          <button type="button" onClick={() => monthStripRef.current?.scrollTo({ left: Math.min(11, selectedMonth + 1) * (monthStripRef.current?.clientWidth || 0), behavior: 'smooth' })} aria-label="Bulan berikutnya">›</button>
         </div>
         {monthAgendas.length > 0 ? (
           <div className="agenda-month-list">

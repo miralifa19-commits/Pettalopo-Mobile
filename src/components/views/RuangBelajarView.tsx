@@ -16,16 +16,18 @@ import {
   Eye,
   Info,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  GraduationCap
 } from 'lucide-react';
 import { MateriBelajar } from '../../types';
 import { extractTextFromPdf, formatMateriCantik } from '../../utils/pdfExtractor';
 
 interface RuangBelajarViewProps {
   isAdmin?: boolean;
+  onOpenQuiz?: () => void;
 }
 
-export const RuangBelajarView: React.FC<RuangBelajarViewProps> = ({ isAdmin = true }) => {
+export const RuangBelajarView: React.FC<RuangBelajarViewProps> = ({ isAdmin = true, onOpenQuiz }) => {
   const [materiList, setMateriList] = useState<MateriBelajar[]>(() => {
     const saved = localStorage.getItem('ambalan_ruang_belajar_v3');
     if (saved) {
@@ -353,6 +355,11 @@ Kompas bidik adalah alat navigasi yang digunakan untuk menentukan arah mata angi
 
   return (
     <div className="space-y-4 pb-28">
+      <button type="button" onClick={onOpenQuiz} className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-left">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700"><GraduationCap size={21} /></span>
+        <span className="min-w-0 flex-1"><strong className="block text-sm font-bold text-slate-900">Kuis Pramuka</strong><small className="block text-xs text-slate-500">Uji pengetahuan kepramukaan</small></span>
+        <span className="text-slate-400">›</span>
+      </button>
       
       {/* Header Utama Ruang Belajar */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-amber-400 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">

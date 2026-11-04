@@ -398,115 +398,24 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">
-                3 Grup
-              </span>
-            </div>
           </header>
 
-          {/* User Age & Status Info Strip */}
-          <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between text-xs">
-            <div className="min-w-0">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Status Keanggotaan Anda:</span>
-              <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                <ShieldCheck size={14} className="text-[#c81e28]" />
-                <span className="truncate">{userAgeInfo.displayLabel}</span>
-              </span>
-            </div>
-
-            {/* Selector Simulasi Usia untuk Pembuktian Fitur Otomatis */}
-            <div className="flex items-center gap-1 text-[10px] font-bold shrink-0">
-              <button
-                type="button"
-                onClick={() => setSimulatedAgeMode('penegak_aktif')}
-                className={`px-2 py-1 rounded-md transition-all ${
-                  !userAgeInfo.isPurna ? 'bg-[#c81e28] text-white shadow-xs' : 'bg-slate-100 text-slate-600'
-                }`}
-                title="Simulasi anggota berusia di bawah 21 tahun"
-              >
-                &lt; 21 Thn
-              </button>
-              <button
-                type="button"
-                onClick={() => setSimulatedAgeMode('purna_21')}
-                className={`px-2 py-1 rounded-md transition-all ${
-                  userAgeInfo.isPurna ? 'bg-[#c81e28] text-white shadow-xs' : 'bg-slate-100 text-slate-600'
-                }`}
-                title="Simulasi anggota mencapai usia 21 tahun 1 hari"
-              >
-                21 Thn 1 Hari
-              </button>
-            </div>
-          </div>
-
-          {/* Banner Aturan Otomatis 21 Tahun 1 Hari */}
-          <div className="px-4 pt-3 pb-1">
-            <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-[11px] text-slate-700 leading-relaxed flex items-start gap-2.5">
-              <AlertTriangle size={16} className="text-[#c81e28] shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-[#b71922] block font-bold">Ketentuan Otomatis Usia Ambalan:</strong>
-                Sistem otomatis mengeluarkan anggota dari Grup Ambalan bila genap berusia <strong>21 tahun 1 hari</strong>, dan dialihkan masuk ke <strong>Purna Ambalan La Surullah Petta Lopo</strong>.
-              </div>
-            </div>
-          </div>
-
-          {/* List Tepat 3 Grup Ambalan (Urutan: Dewan Ambalan -> Ambalan La Surullah Petta Lopo -> Purna Ambalan) */}
-          <div className="p-4 space-y-3 flex-1 overflow-y-auto">
-            {GROUPS.map((grp, idx) => {
-              const isBlocked = grp.id === 'ambalan_aktif' && userAgeInfo.isPurna;
+          {/* List Grup Ambalan Tanpa Banner (Dewan Ambalan, Ambalan La Surullah Petta Lopo, Purna Ambalan) */}
+          <div className="p-4 space-y-2.5 flex-1 overflow-y-auto">
+            {GROUPS.map((grp) => {
               return (
                 <div
                   key={grp.id}
                   onClick={() => handleSelectGroup(grp.id)}
-                  className={`p-4 rounded-3xl border transition-all cursor-pointer bg-white relative shadow-xs flex items-center justify-between gap-3.5 ${
-                    isBlocked
-                      ? 'border-slate-200 opacity-65 hover:opacity-85'
-                      : 'border-slate-200 hover:border-red-300 hover:shadow-md'
-                  }`}
+                  className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-[#c81e28] transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                    {/* Icon bulat tema merah */}
-                    <div className="grid h-13 w-13 place-items-center rounded-2xl bg-red-50 border border-red-100 shrink-0">
-                      {grp.icon}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-[#b71922]">
-                          Grup #{idx + 1}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          {grp.categoryBadge}
-                        </span>
-                      </div>
-
-                      <h3 className="font-extrabold text-sm text-slate-900 leading-snug truncate">
-                        {grp.title}
-                      </h3>
-
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                        {grp.subtitle}
-                      </p>
-
-                      {grp.id === 'dewan_ambalan' && (
-                        <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded ${
-                          isCurrentUserDewan 
-                            ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
-                            : 'text-amber-800 bg-amber-50 border border-amber-200'
-                        }`}>
-                          {isCurrentUserDewan 
-                            ? `👑 Akun Anda: ${userDewanJabatan || 'Fungsionaris Dewan'} (Akses Penuh)` 
-                            : '🔒 Khusus 8 Fungsionaris Dewan & Pembina'}
-                        </span>
-                      )}
-
-                      {isBlocked && (
-                        <span className="inline-block mt-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
-                          🔒 Otomatis dialihkan ke Purna Ambalan (Usia &ge; 21 thn 1 hr)
-                        </span>
-                      )}
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-extrabold text-sm text-slate-900 leading-snug">
+                      {grp.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-normal">
+                      {grp.subtitle}
+                    </p>
                   </div>
 
                   <ChevronRight size={18} className="text-slate-400 shrink-0" />

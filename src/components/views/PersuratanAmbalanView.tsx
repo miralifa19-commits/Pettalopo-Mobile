@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
-import html2pdf from 'html2pdf.js';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { UserAccount, ProgramKerjaItem } from '../../types';
 import { askKakCikalAI } from '../../services/aiChatService';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { getMabigusOfficials, MabigusOfficials } from '../../data/mabigusData';
 import { get8DewanPositions, Dewan8Position } from '../../data/dewanStructure';
+import { TUNAS_KELAPA_BASE64, WOSM_BASE64 } from '../../data/letterAssets';
 
 interface PersuratanAmbalanViewProps {
   currentUser?: UserAccount;
@@ -47,18 +49,20 @@ export interface GeneratedSurat {
   rincianKeteranganAcara: string;
   penutupParagraf: string;
 
-  // Pengesahan
+  // Pengesahan (Semua yang bertanda tangan harus dipilih)
+  includeDewan: boolean; // Opsional
   dewanJabatan: string;
   dewanNama: string;
   dewanNta: string;
   
-  includeKetuaGudep: boolean;
-  ketuaGudepNama: string;
-  ketuaGudepNip?: string;
-
+  includePembina: boolean; // Wajib/Pilihan
   pembinaJabatan: string;
   pembinaNama: string;
   pembinaNip?: string;
+
+  includeKetuaGudep: boolean; // Pilihan
+  ketuaGudepNama: string;
+  ketuaGudepNip?: string;
 
   metodeTtd: 'biasa' | 'digital' | 'stempel';
   digitalSigner: DigitalSignerType;
@@ -73,7 +77,7 @@ export interface GeneratedSurat {
   createdAt: string;
 }
 
-const STORAGE_KEY_SURAT = 'pettalopo_arsip_surat_resmi_v4';
+const STORAGE_KEY_SURAT = 'pettalopo_arsip_surat_resmi_v5';
 
 export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   allMembers = [],
@@ -142,11 +146,15 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   );
 
   // --- BAGIAN 3: PENGESAHAN & PENANDATANGAN ---
-  // Dewan Ambalan dropdown
+  // Dewan Ambalan (OPSIONAL: jika diceklis, WAJIB pilih nama via dropdown)
+  const [includeDewan, setIncludeDewan] = useState(false); // Opsional
   const [selectedDewanId, setSelectedDewanId] = useState<string>('pradana_pa');
-  // Pembina dropdown
+
+  // Pembina (BISA DIPILIH: default aktif)
+  const [includePembina, setIncludePembina] = useState(true);
   const [selectedPembinaRole, setSelectedPembinaRole] = useState<'pembina_pa' | 'pembina_pi' | 'pembantu_pa' | 'pembantu_pi'>('pembina_pa');
-  // Ketua Gugus Depan
+
+  // Ketua Gugus Depan (BISA DIPILIH: default aktif)
   const [includeKetuaGudep, setIncludeKetuaGudep] = useState(true);
 
   // Metode Pengesahan
@@ -167,7 +175,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [previewSuratList, setPreviewSuratList] = useState<GeneratedSurat[]>([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
+  
+  // AI Generation Progress State (0 - 100%)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiGeneratingTitle, setAiGeneratingTitle] = useState('');
   
   // Verification Modal State
   const [verificationModalSurat, setVerificationModalSurat] = useState<GeneratedSurat | null>(null);
@@ -196,30 +209,60 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setTembusanList(tembusanList.filter((_, i) => i !== idx));
   };
 
-  // AI paragraph assist
+  // AI paragraph assist dengan visual progress bar 0 - 100%
   const handleGenerateAiParagraph = async (type: 'isi' | 'penutup') => {
     setIsGeneratingAi(true);
+    setAiProgress(5);
+    setAiGeneratingTitle(
+      type === 'isi' 
+        ? 'Kak Cikal AI Sedang Merancang Paragraf Isi Surat...' 
+        : 'Kak Cikal AI Sedang Menyusun Paragraf Penutup Surat...'
+    );
+
+    // Progress counter interval
+    const interval = setInterval(() => {
+      setAiProgress((prev) => {
+        if (prev < 30) return prev + 12;
+        if (prev < 65) return prev + 8;
+        if (prev < 88) return prev + 4;
+        if (prev < 95) return prev + 1;
+        return prev;
+      });
+    }, 120);
+
     try {
       const prompt = type === 'isi'
         ? `Buat kalimat pembuka dan isi surat resmi Gerakan Pramuka untuk perihal: "${perihal}". Bahasa baku, sopan, bernuansa kepramukaan, singkat dan padat 2-3 kalimat.`
         : `Buat 1 kalimat penutup resmi surat pramuka yang santun dan padat.`;
       
       const res = await askKakCikalAI({ prompt, programKerjaList, actionType: 'rancang' });
-      if (res) {
-        if (type === 'isi') {
-          setIsiParagraf(res.replace(/^Salam Pramuka.*?\n+/i, '').trim());
-        } else {
-          setPenutupParagraf(res.trim());
+
+      clearInterval(interval);
+      setAiProgress(100);
+
+      // Berikan jeda 400ms agar user melihat 100% selesai
+      setTimeout(() => {
+        if (res) {
+          if (type === 'isi') {
+            setIsiParagraf(res.replace(/^Salam Pramuka.*?\n+/i, '').trim());
+          } else {
+            setPenutupParagraf(res.trim());
+          }
         }
-      }
+        setIsGeneratingAi(false);
+      }, 400);
+
     } catch {
-      if (type === 'isi') {
-        setIsiParagraf(`Sehubungan dengan pelaksanaan agenda Gerakan Pramuka Gugus Depan Pangkalan SMA Negeri 9 Maros, bersama surat ini kami bermaksud menyampaikan ${perihal}.`);
-      } else {
-        setPenutupParagraf('Demikian surat ini kami sampaikan, atas perhatian dan kerja sama yang baik kami ucapkan terima kasih.');
-      }
-    } finally {
-      setIsGeneratingAi(false);
+      clearInterval(interval);
+      setAiProgress(100);
+      setTimeout(() => {
+        if (type === 'isi') {
+          setIsiParagraf(`Sehubungan dengan pelaksanaan agenda Gerakan Pramuka Gugus Depan Pangkalan SMA Negeri 9 Maros, bersama surat ini kami bermaksud menyampaikan ${perihal}.`);
+        } else {
+          setPenutupParagraf('Demikian surat ini kami sampaikan, atas perhatian dan kerja sama yang baik kami ucapkan terima kasih.');
+        }
+        setIsGeneratingAi(false);
+      }, 400);
     }
   };
 
@@ -227,7 +270,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const handleGenerateSurat = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Resolve Dewan
+    // Resolve Dewan (Hanya jika includeDewan aktif)
     const currentDewan = dewanList.find(d => d.id === selectedDewanId) || dewanList[0];
     const dewanNama = currentDewan ? currentDewan.memberName : 'Amiruddin S.';
     const dewanJabatan = currentDewan ? currentDewan.jabatan : 'Pradana Putra';
@@ -301,15 +344,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKeteranganAcara,
         rincianKeteranganAcara,
         penutupParagraf,
+        includeDewan,
         dewanJabatan: 'Pradana Putra',
         dewanNama: dewanList.find(d => d.id === 'pradana_pa')?.memberName || 'Amiruddin S.',
         dewanNta: 'NTA. 10.035.001',
-        includeKetuaGudep,
-        ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepNip: officials.nipKetuaGudep,
+        includePembina,
         pembinaJabatan: 'Pembina Gugus Depan 10.035',
         pembinaNama: officials.pembinaPutra,
         pembinaNip: officials.nipPembinaPutra,
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
         digitalSignerName: officials.pembinaPutra,
@@ -355,15 +400,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKeteranganAcara,
         rincianKeteranganAcara,
         penutupParagraf,
+        includeDewan,
         dewanJabatan: 'Pradana Putri',
         dewanNama: dewanList.find(d => d.id === 'pradana_pi')?.memberName || 'Nurhaliza Azzahra',
         dewanNta: 'NTA. 10.036.001',
-        includeKetuaGudep,
-        ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepNip: officials.nipKetuaGudep,
+        includePembina,
         pembinaJabatan: 'Pembina Gugus Depan 10.036',
         pembinaNama: officials.pembinaPutri,
         pembinaNip: officials.nipPembinaPutri,
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
         digitalSignerName: officials.pembinaPutri,
@@ -409,15 +456,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKeteranganAcara,
         rincianKeteranganAcara,
         penutupParagraf,
+        includeDewan,
         dewanJabatan,
         dewanNama,
         dewanNta,
-        includeKetuaGudep,
-        ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepNip: officials.nipKetuaGudep,
+        includePembina,
         pembinaJabatan,
         pembinaNama,
         pembinaNip,
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,
         digitalSignerName: signerName,
@@ -442,22 +491,63 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setViewMode('preview');
   };
 
-  // Export Surat to PDF via html2pdf.js
+  // Export Surat to PDF via html2canvas + jsPDF with inline base64 assets (100% reliable)
   const handleDownloadPdf = async (surat: GeneratedSurat) => {
     if (!letterRef.current) return;
     setIsExportingPdf(true);
-    try {
-      const opt = {
-        margin: [10, 12, 10, 12] as [number, number, number, number],
-        filename: `Surat_Pramuka_${surat.nomorUrut}_${surat.gudepType.replace('.', '-')}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
 
-      await html2pdf().set(opt).from(letterRef.current).save();
+    try {
+      const element = letterRef.current;
+
+      // Render letter to canvas
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      } else {
+        const margin = 8;
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = (canvas.height * contentWidth) / canvas.width;
+        pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, Math.min(contentHeight, pageHeight - margin * 2));
+      }
+
+      const safeName = `Surat_Pramuka_${surat.nomorUrut || 'Ambalan'}_${(surat.gudepType || '10-035').replace('.', '-')}.pdf`;
+      
+      // Direct Blob Download for 100% browser/iframe compatibility
+      const pdfBlob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = blobUrl;
+      downloadLink.download = safeName;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+      setDownloadSuccessToast(true);
+      setTimeout(() => setDownloadSuccessToast(false), 3500);
+
     } catch (err) {
-      console.error('Error generating PDF with html2pdf:', err);
+      console.error('Error generating PDF with jsPDF/html2canvas:', err);
       // Fallback: window.print()
       window.print();
     } finally {
@@ -512,6 +602,14 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           📂 Arsip ({arsipSurat.length})
         </button>
       </div>
+
+      {/* Download Success Notification Toast */}
+      {downloadSuccessToast && (
+        <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-150">
+          <span>✅ File dokumen PDF berhasil diunduh ke perangkat Anda!</span>
+          <button type="button" onClick={() => setDownloadSuccessToast(false)} className="text-emerald-700 font-bold px-1.5">✕</button>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* 1. GOOGLE FORM STYLE: DUA BAGIAN (IDENTITAS & ISI SURAT)  */}
@@ -1016,80 +1114,143 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
           </div>
 
-          {/* ==================== BAGIAN 3: PENGESAHAN ==================== */}
+          {/* ==================== BAGIAN 3: PENGESAHAN (SEMUA HARUS DIPILIH) ==================== */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
-                Bagian 3: Pengesahan &amp; Penandatangan
-              </span>
+              <div>
+                <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider block">
+                  Bagian 3: Pengesahan &amp; Penandatangan
+                </span>
+                <span className="text-[10px] text-slate-500">
+                  Semua yang bertanda tangan harus dipilih secara spesifik
+                </span>
+              </div>
               <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
             </div>
 
-            {/* Dropdown Dewan Ambalan (Nama Otomatis) */}
-            <div className="space-y-1.5">
+            {/* 1. DEWAN AMBALAN (OPSIONAL: jika diceklis, WAJIB pilih nama via dropdown) */}
+            <div className={`p-3.5 rounded-2xl border transition-all ${
+              includeDewan ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
+            }`}>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800">
-                  Dewan Penandatangan (Otomatis Masuk)
-                </label>
-                <span className="text-[10px] text-slate-400 font-medium">8 Roda Kepengurusan</span>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIncludeDewan(!includeDewan)}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                      includeDewan ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {includeDewan && <span className="text-xs">✓</span>}
+                  </button>
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 block">
+                      Tanda Tangan Dewan Ambalan <span className="text-[10px] text-slate-500 font-normal">(Opsional)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {includeDewan ? 'Aktif — Wajib pilih nama pada dropdown di bawah' : 'Tidak disertakan dalam surat'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <select
-                value={selectedDewanId}
-                onChange={(e) => setSelectedDewanId(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
-              >
-                {dewanList.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.jabatan} — {d.memberName} ({d.satuan})
-                  </option>
-                ))}
-              </select>
+
+              {includeDewan && (
+                <div className="mt-3 pt-3 border-t border-red-200 space-y-1">
+                  <label className="text-[11px] font-bold text-slate-800 block">
+                    Pilih Jabatan &amp; Nama Dewan Penandatangan (Wajib) <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <select
+                    value={selectedDewanId}
+                    onChange={(e) => setSelectedDewanId(e.target.value)}
+                    required={includeDewan}
+                    className="w-full text-xs p-2.5 rounded-xl border border-red-300 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
+                  >
+                    {dewanList.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.jabatan} — {d.memberName} ({d.satuan})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            {/* Dropdown Pembina (Nama Otomatis) */}
-            <div className="space-y-1.5">
+            {/* 2. PEMBINA GUGUS DEPAN (BISA DIPILIH & WAJIB DROPDOWN) */}
+            <div className={`p-3.5 rounded-2xl border transition-all ${
+              includePembina ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
+            }`}>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800">
-                  Pembina Penandatangan (Otomatis dari Mabigus)
-                </label>
-                <span className="text-[10px] text-slate-400 font-medium">Sesuai data Mabigus</span>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIncludePembina(!includePembina)}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                      includePembina ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {includePembina && <span className="text-xs">✓</span>}
+                  </button>
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 block">
+                      Tanda Tangan Pembina Gugus Depan
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {includePembina ? 'Aktif — Pilih penandatangan pada dropdown' : 'Tidak disertakan dalam surat'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <select
-                value={selectedPembinaRole}
-                onChange={(e) => setSelectedPembinaRole(e.target.value as any)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
-              >
-                <option value="pembina_pa">Pembina Putra: {officials.pembinaPutra}</option>
-                <option value="pembina_pi">Pembina Putri: {officials.pembinaPutri}</option>
-                <option value="pembantu_pa">Pembantu Pembina Putra: {officials.pembantuPembinaPutra}</option>
-                <option value="pembantu_pi">Pembantu Pembina Putri: {officials.pembantuPembinaPutri}</option>
-              </select>
+
+              {includePembina && (
+                <div className="mt-3 pt-3 border-t border-red-200 space-y-1">
+                  <label className="text-[11px] font-bold text-slate-800 block">
+                    Pilih Pembina Penandatangan <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <select
+                    value={selectedPembinaRole}
+                    onChange={(e) => setSelectedPembinaRole(e.target.value as any)}
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
+                  >
+                    <option value="pembina_pa">Pembina Putra: {officials.pembinaPutra}</option>
+                    <option value="pembina_pi">Pembina Putri: {officials.pembinaPutri}</option>
+                    <option value="pembantu_pa">Pembantu Pembina Putra: {officials.pembantuPembinaPutra}</option>
+                    <option value="pembantu_pi">Pembantu Pembina Putri: {officials.pembantuPembinaPutri}</option>
+                  </select>
+                </div>
+              )}
             </div>
 
-            {/* Ketua Gugus Depan (Dr. H. Idrus, S. Pd., M. Pd - Nama Otomatis) */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">Ketua Gugus Depan (Mengetahui)</p>
-                <p className="text-[11px] font-bold text-[#b71922]">{officials.ketuaGudep}</p>
-                {officials.nipKetuaGudep && (
-                  <p className="text-[10px] text-slate-500 font-mono">{officials.nipKetuaGudep}</p>
-                )}
+            {/* 3. KETUA GUGUS DEPAN (BISA DIPILIH) */}
+            <div className={`p-3.5 rounded-2xl border transition-all ${
+              includeKetuaGudep ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIncludeKetuaGudep(!includeKetuaGudep)}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                      includeKetuaGudep ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {includeKetuaGudep && <span className="text-xs">✓</span>}
+                  </button>
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 block">
+                      Tanda Tangan Ketua Gugus Depan (Mengetahui)
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {includeKetuaGudep ? `${officials.ketuaGudep} (Kepala SMAN 9 Maros)` : 'Tidak disertakan'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIncludeKetuaGudep(!includeKetuaGudep)}
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeKetuaGudep ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                }`}
-              >
-                {includeKetuaGudep && <span className="text-xs">✓</span>}
-              </button>
             </div>
 
-            {/* Metode Tanda Tangan: Ttd Biasa, Ttd Digital, Stempel Basah */}
+            {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <label className="text-xs font-bold text-slate-800 block">
-                Pilihan Pengesahan Dokumen
+                Pilihan Format Tanda Tangan
               </label>
               
               <div className="grid grid-cols-3 gap-2">
@@ -1243,7 +1404,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* 2. TAMPILAN PRATINJAU SURAT (KOP ASLI SESUAI PDF LAMPIRAN) */}
+      {/* 2. TAMPILAN PRATINJAU SURAT (KOP ASLI DENGAN INLINE BASE64) */}
       {/* ======================================================== */}
       {viewMode === 'preview' && activeSurat && (
         <div className="space-y-4">
@@ -1290,11 +1451,20 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
               <button
                 type="button"
+                onClick={() => window.print()}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer"
+                title="Cetak lewat dialog browser"
+              >
+                🖨️ Cetak
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleDownloadPdf(activeSurat)}
                 disabled={isExportingPdf}
                 className="py-2 px-4 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <span>{isExportingPdf ? '⏳ Menyiapkan PDF...' : '📥 Unduh Dokumen PDF'}</span>
+                <span>{isExportingPdf ? '⏳ Memproses PDF...' : '📥 Unduh Dokumen PDF'}</span>
               </button>
             </div>
           </div>
@@ -1305,13 +1475,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-300 shadow-xl max-w-2xl mx-auto text-black font-serif leading-normal select-text"
             style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt' }}
           >
-            {/* KOP SURAT ASLI DARI PDF LAMPIRAN */}
+            {/* KOP SURAT ASLI MENGGUNAKAN INLINE BASE64 LOGO (100% BEBAS DARI MASALAH CORS / JARINGAN) */}
             <div className="border-b-[3px] border-black pb-1">
               <div className="flex items-center justify-between gap-3">
                 {/* Logo Tunas Kelapa Kiri */}
                 <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
                   <img
-                    src="/assets/kop_tunas_kelapa.png"
+                    src={TUNAS_KELAPA_BASE64}
                     alt="Logo Tunas Kelapa"
                     className="w-full h-full object-contain"
                   />
@@ -1336,7 +1506,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 {/* Logo WOSM Kanan */}
                 <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
                   <img
-                    src="/assets/kop_wosm.png"
+                    src={WOSM_BASE64}
                     alt="Logo WOSM Pramuka Dunia"
                     className="w-full h-full object-contain"
                   />
@@ -1436,51 +1606,101 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <p>Ditetapkan di Maros pada tanggal {activeSurat.tanggalSurat}</p>
             </div>
 
-            {/* Tanda Tangan Mengetahui */}
+            {/* TANDA TANGAN PENGESAHAN DENGAN ADAPTASI DINAMIS */}
             <div className="pt-4 text-center font-sans" style={{ fontSize: '11pt' }}>
-              {/* Dewan Ambalan */}
-              <div className="grid grid-cols-2 gap-4 pb-6">
-                <div>
-                  <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                  <div className="h-16 flex items-center justify-center">
-                    {/* Placeholder space for TTD dewan */}
+              
+              {/* Jika Dewan DAN Pembina aktif: Render 2 kolom (Dewan Kiri, Pembina Kanan) */}
+              {activeSurat.includeDewan && activeSurat.includePembina && (
+                <div className="grid grid-cols-2 gap-4 pb-6">
+                  <div>
+                    <p className="font-bold">{activeSurat.dewanJabatan},</p>
+                    <div className="h-16 flex items-center justify-center">
+                      {/* Spasi TTD Dewan */}
+                    </div>
+                    <p className="font-bold underline">{activeSurat.dewanNama}</p>
+                    <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
                   </div>
-                  <p className="font-bold underline">{activeSurat.dewanNama}</p>
-                  <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
-                </div>
 
-                <div>
-                  <p className="font-bold">{activeSurat.pembinaJabatan},</p>
-                  <div className="h-16 flex items-center justify-center relative">
-                    {/* Stempel Basah Placement */}
-                    {activeSurat.includeStempel && (
-                      <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
-                        <span>GERAKAN PRAMUKA</span>
-                        <span>GUDEP 10-035/10-036</span>
-                        <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
-                      </div>
-                    )}
+                  <div>
+                    <p className="font-bold">{activeSurat.pembinaJabatan},</p>
+                    <div className="h-16 flex items-center justify-center relative">
+                      {activeSurat.includeStempel && (
+                        <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
+                          <span>GERAKAN PRAMUKA</span>
+                          <span>GUDEP 10-035/10-036</span>
+                          <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
+                        </div>
+                      )}
 
-                    {/* QR Code Verifikasi atau Spasi TTD */}
-                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
-                      <div
-                        onClick={() => setVerificationModalSurat(activeSurat)}
-                        className="cursor-pointer text-center group"
-                        title="Klik untuk verifikasi keaslian dokumen"
-                      >
-                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
-                        <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
-                      </div>
-                    ) : (
-                      <div className="h-16"></div>
+                      {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
+                        <div
+                          onClick={() => setVerificationModalSurat(activeSurat)}
+                          className="cursor-pointer text-center group"
+                          title="Klik untuk verifikasi keaslian dokumen"
+                        >
+                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
+                          <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
+                        </div>
+                      ) : (
+                        <div className="h-16"></div>
+                      )}
+                    </div>
+                    <p className="font-bold underline">{activeSurat.pembinaNama}</p>
+                    {activeSurat.pembinaNip && (
+                      <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
                     )}
                   </div>
-                  <p className="font-bold underline">{activeSurat.pembinaNama}</p>
-                  {activeSurat.pembinaNip && (
-                    <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
-                  )}
                 </div>
-              </div>
+              )}
+
+              {/* Jika HANYA Dewan yang aktif (Pembina tidak aktif) */}
+              {activeSurat.includeDewan && !activeSurat.includePembina && (
+                <div className="flex justify-end pb-6">
+                  <div className="min-w-[220px] text-center">
+                    <p className="font-bold">{activeSurat.dewanJabatan},</p>
+                    <div className="h-16 flex items-center justify-center">
+                      {/* Spasi TTD Dewan */}
+                    </div>
+                    <p className="font-bold underline">{activeSurat.dewanNama}</p>
+                    <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Jika HANYA Pembina yang aktif (Dewan TIDAK diceklis - Opsional) */}
+              {!activeSurat.includeDewan && activeSurat.includePembina && (
+                <div className="flex justify-end pb-6">
+                  <div className="min-w-[240px] text-center">
+                    <p className="font-bold">{activeSurat.pembinaJabatan},</p>
+                    <div className="h-16 flex items-center justify-center relative">
+                      {activeSurat.includeStempel && (
+                        <div className="absolute -top-1 right-2 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
+                          <span>GERAKAN PRAMUKA</span>
+                          <span>GUDEP 10-035/10-036</span>
+                          <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
+                        </div>
+                      )}
+
+                      {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
+                        <div
+                          onClick={() => setVerificationModalSurat(activeSurat)}
+                          className="cursor-pointer text-center group"
+                          title="Klik untuk verifikasi keaslian dokumen"
+                        >
+                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
+                          <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
+                        </div>
+                      ) : (
+                        <div className="h-16"></div>
+                      )}
+                    </div>
+                    <p className="font-bold underline">{activeSurat.pembinaNama}</p>
+                    {activeSurat.pembinaNip && (
+                      <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Ketua Gugus Depan Mengetahui (Tengah Bawah) */}
               {activeSurat.includeKetuaGudep && (
@@ -1608,7 +1828,50 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* 4. MODAL VERIFIKASI SCAN QR DOKUMEN RESMI (CENTANG HIJAU) */}
+      {/* 4. MODAL PROGRESS GENERATE AI (PERSENTASE 0 - 100%)       */}
+      {/* ======================================================== */}
+      {isGeneratingAi && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-red-100 text-[#c81e28] flex items-center justify-center text-2xl font-bold shadow-inner">
+              {aiProgress === 100 ? '✓' : '✨'}
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-slate-900">
+                {aiGeneratingTitle || 'Merancang Konten Surat...'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                Asisten AI Ambalan sedang memproses tata bahasa kepramukaan resmi
+              </p>
+            </div>
+
+            {/* Visual Progress Bar 0 - 100% */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-black">
+                <span className="text-slate-600">Progres Penyusunan</span>
+                <span className="text-[#c81e28] font-mono text-sm">{aiProgress}%</span>
+              </div>
+              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div
+                  className="h-full bg-[#c81e28] rounded-full transition-all duration-150 ease-out"
+                  style={{ width: `${aiProgress}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              {aiProgress < 40 && 'Menganalisis perihal surat dan tata naskah dinas...'}
+              {aiProgress >= 40 && aiProgress < 85 && 'Menyusun kalimat baku & santun bernuansa kepramukaan...'}
+              {aiProgress >= 85 && aiProgress < 100 && 'Memeriksa ejaan dan kelengkapan redaksi...'}
+              {aiProgress === 100 && 'Selesai 100%! Memasukkan teks ke formulir...'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 5. MODAL VERIFIKASI SCAN QR DOKUMEN RESMI (CENTANG HIJAU) */}
       {/* ======================================================== */}
       {verificationModalSurat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">

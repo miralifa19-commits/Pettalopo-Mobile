@@ -268,8 +268,8 @@ jobs:
               ("android:enforceNavigationBarContrast", "false")
           ]
           for name, value in system_entries:
-              normal_body = re.sub(r'<item\\s+name=["\\']' + re.escape(name) + r'["\\']>.*?</item>', '', normal_body, flags=re.S)
-              normal_body += "\\n        <item name='" + name + "'>" + value + "</item>"
+              normal_body = re.sub(r"<item\s+name=['\"]" + re.escape(name) + r"['\"]>.*?</item>", '', normal_body, flags=re.S)
+              normal_body += "\n        <item name='" + name + "'>" + value + "</item>"
           content = content[:normal.start()] + normal_open + normal_body + normal_close + content[normal.end():]
           styles.write_text(content)
 

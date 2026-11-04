@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Calendar, 
   CalendarDays, 
@@ -16,6 +16,7 @@ import {
 import { ProgramKerjaItem } from '../../types';
 import { SusunKegiatanModal } from '../dashboard/SusunKegiatanModal';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
 
 interface DashboardViewProps {
   programKerjaList: ProgramKerjaItem[];
@@ -27,12 +28,9 @@ interface DashboardViewProps {
   onStopKegiatan?: () => void;
   onSharePresensi?: (item: ProgramKerjaItem) => void;
   onOpenPresensiModal?: (kegiatanId?: string) => void;
+  initialSelectedAgendaId?: string | null;
+  onAgendaDetailOpened?: () => void;
 }
-
-const INDONESIA_MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   programKerjaList,
@@ -43,35 +41,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   activeKegiatan,
   onStopKegiatan,
   onSharePresensi,
-  onOpenPresensiModal
+  onOpenPresensiModal,
+  initialSelectedAgendaId,
+  onAgendaDetailOpened
 }) => {
-  // Current Month calculation
   const now = new Date();
-  const currentMonthName = INDONESIA_MONTHS[now.getMonth()]; // e.g. "Oktober"
-  const currentYear = now.getFullYear();
+  now.setHours(0, 0, 0, 0);
+  const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
 
-  // Option to show only this month vs all activities
-  const [showAllActivities, setShowAllActivities] = useState(false);
   const [activeTab, setActiveTab] = useState<'Kegiatan' | 'Latihan Rutin'>('Kegiatan');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Selected item for Detailed Modal
   const [selectedItem, setSelectedItem] = useState<ProgramKerjaItem | null>(null);
-
-  // Susun Kegiatan dari Contoh Modal State (Admin Only)
   const [showSusunModal, setShowSusunModal] = useState(false);
 
-  // Sort all activities grouped by Indonesia months (Januari .. Desember)
-  const groupedMonths = INDONESIA_MONTHS.map((month) => {
-    const items = programKerjaList.filter((item) =>
-      (item.bulan || '').toLowerCase() === month.toLowerCase() &&
-      (item.tipe || 'Kegiatan') === activeTab &&
-      (item.nama || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    return {
-      month,
-      items
-    };
+  useEffect(() => {
+    if (!initialSelectedAgendaId) return;
+    const agenda = programKerjaList.find((item) => item.id === initialSelectedAgendaId);
+    if (agenda) setSelectedItem(agenda);
+    onAgendaDetailOpened?.();
+  }, [initialSelectedAgendaId, programKerjaList, onAgendaDetailOpened]);
+
+  const upcomingItems = programKerjaList
+    .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
+    .filter((entry) =>
+      entry.date &&
+      entry.date >= now &&
+      (entry.item.tipe || 'Kegiatan') === activeTab &&
+      (entry.item.nama || '').toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime())
+    .map((entry) => entry.item);
+
+  const groupedMonths: { month: string; monthKey: string; items: ProgramKerjaItem[] }[] = [];
+  upcomingItems.forEach((item) => {
+    const date = parseAgendaDate(item.waktuPelaksanaan);
+    if (!date) return;
+    const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+    let group = groupedMonths.find((entry) => entry.monthKey === monthKey);
+    if (!group) {
+      group = {
+        month: new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(date),
+        monthKey,
+        items: []
+      };
+      groupedMonths.push(group);
+    }
+    group.items.push(item);
   });
 
   return (
@@ -86,7 +101,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           isAdmin && onAddProgramKerja ? (
             <button
               onClick={() => setShowSusunModal(true)}
-              className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold border border-white/30 transition-all shrink-0 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-[#c8202b] hover:bg-[#a91b24] active:scale-95 text-white text-[11px] font-bold border border-[#c8202b] transition-all shrink-0 cursor-pointer"
               title="Susun kegiatan dari contoh katalog"
             >
               Susun Kegiatan
@@ -175,63 +190,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Daftar Kegiatan Selama 1 Masa Bakti Terurut per Bulan */}
       <div className="space-y-4">
-        {groupedMonths.map(({ month, items }) => {
-          const isCurrentMonth = month.toLowerCase() === currentMonthName.toLowerCase();
-
+        {groupedMonths.length === 0 ? (
+          <div className="agenda-empty-state">
+            <CalendarDays size={22} />
+            <strong>{searchQuery ? 'Tidak ada agenda yang cocok' : 'Belum ada agenda mendatang'}</strong>
+            <span>{searchQuery ? 'Coba kata kunci lain.' : 'Agenda berikutnya akan muncul di sini.'}</span>
+          </div>
+        ) : groupedMonths.map(({ month, monthKey, items }) => {
+          const isCurrentMonth = monthKey === currentMonthKey;
           return (
-            <div
-              key={month}
-              className={`bg-white rounded-2xl border transition-all overflow-hidden shadow-xs ${
-                isCurrentMonth ? 'border-[#e51c24]/50' : 'border-slate-200'
-              }`}
-            >
-              {/* Header Nama Bulan di Atasnya */}
-              <div
-                className={`px-4 py-3 border-b flex items-center justify-between ${
-                  isCurrentMonth ? 'bg-red-50/70 border-red-200' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900">
-                    Bulan {month}
-                  </span>
-                  {isCurrentMonth && (
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#e51c24] text-white">
-                      Bulan Ini
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] font-mono text-slate-500 font-semibold bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                  {items.length} Agenda
-                </span>
+            <section key={monthKey} className="agenda-month-card">
+              <div className={`agenda-month-heading ${isCurrentMonth ? 'is-current' : ''}`}>
+                <strong>{month}</strong>
+                {isCurrentMonth && <span>BULAN INI</span>}
+                <small>{items.length} agenda</small>
               </div>
-
-              {/* List Nama Kegiatan di Bawahnya (Hanya Nama Kegiatan, Klik Buka Detail) */}
               <div className="divide-y divide-slate-100">
-                {items.length === 0 ? (
-                  <div className="p-3 text-center text-xs text-slate-400 italic">
-                    Belum ada agenda kegiatan di bulan ini
-                  </div>
-                ) : (
-                  items.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => setSelectedItem(item)}
-                      className="px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
-                    >
-                      <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-[#e51c24] transition-colors leading-snug">
-                        {item.nama}
-                      </span>
-                      <span className="text-slate-400 group-hover:text-[#e51c24] group-hover:translate-x-0.5 transition-all text-xs shrink-0">
-                        ›
-                      </span>
-                    </div>
-                  ))
-                )}
+                {items.map((item) => (
+                  <button type="button" key={item.id} onClick={() => setSelectedItem(item)} className="agenda-row">
+                    <span className="agenda-row-copy">
+                      <strong>{item.nama}</strong>
+                      <small>{formatAgendaDate(item.waktuPelaksanaan)}</small>
+                    </span>
+                    <ChevronRight size={17} />
+                  </button>
+                ))}
               </div>
-            </div>
+            </section>
           );
         })}
       </div>

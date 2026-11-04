@@ -13,6 +13,11 @@ jobs:
   build-apk:
     name: Build APK Android
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.PETTALOPO_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.PETTALOPO_KEY_PASSWORD }}
 
     steps:
       - name: Checkout Repository
@@ -279,12 +284,7 @@ jobs:
 
       - name: Configure permanent APK signing
         id: signing
-        if: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 != '' && secrets.PETTALOPO_KEYSTORE_PASSWORD != '' && secrets.PETTALOPO_KEY_ALIAS != '' && secrets.PETTALOPO_KEY_PASSWORD != '' }}
-        env:
-          KEYSTORE_BASE64: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.PETTALOPO_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.PETTALOPO_KEY_PASSWORD }}
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
         run: |
           set -e
           if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then

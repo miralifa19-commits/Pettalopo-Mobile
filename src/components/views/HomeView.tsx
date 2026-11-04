@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  ArrowRight, CalendarDays, MapPin, BookOpen, Users, ChevronLeft, ChevronRight,
+  ArrowRight, CalendarDays, BookOpen, Users, ChevronRight,
   Crown, UserRound, Shield
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
@@ -24,8 +24,7 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
   const today = new Date();
   const currentYear = today.getFullYear();
-  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
-  const touchStartX = useRef<number | null>(null);
+  const selectedMonth = today.getMonth();
 
   const monthGradients = [
     ['#9F1239', '#E11D48'],
@@ -49,19 +48,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
 
   const monthDate = new Date(currentYear, selectedMonth, 1);
   const currentMonthLabel = monthDate.toLocaleString('id-ID', { month: 'long' });
-  const monthYearLabel = monthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-  const changeMonth = (direction: -1 | 1) => {
-    setSelectedMonth((month) => Math.min(11, Math.max(0, month + direction)));
-  };
-  const handleAgendaTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    touchStartX.current = event.changedTouches[0]?.clientX ?? null;
-  };
-  const handleAgendaTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX.current === null) return;
-    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(deltaX) > 45) changeMonth(deltaX < 0 ? 1 : -1);
-    touchStartX.current = null;
-  };
+
   const [gradientStart, gradientEnd] = monthGradients[selectedMonth];
 
 
@@ -121,27 +108,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
             {monthAgendas.length > 0 ? monthAgendas.map(({ item, date }, index) => (
               <button
                 type="button"
-                className="flex w-full min-w-0 items-center gap-2.5 border-b border-white/20 py-2 text-left text-white last:border-b-0 active:bg-white/10"
+                className="flex w-full min-w-0 items-center gap-2.5 border-b border-gray-100 py-2 text-left text-gray-900 last:border-b-0 active:bg-gray-50"
                 key={item.id}
                 onClick={() => onOpenAgenda?.(item.id)}
               >
                 <span className="w-9 shrink-0 text-center leading-tight">
                   <strong className="block text-[16px] font-extrabold">{date!.getDate()}</strong>
-                  <small className="block text-[8px] font-semibold uppercase text-white/80">{date!.toLocaleString('id-ID', { month: 'short' }).replace('.', '')}</small>
+                  
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <strong className="break-words text-[11px] font-bold leading-snug">{item.nama}</strong>
-                  <span className="flex min-w-0 items-start gap-1 text-[9px] leading-snug text-white/80">
-                    <MapPin size={10} className="mt-[1px] shrink-0" />
-                    <span className="break-words">{item.tempat || 'Lokasi menyusul'}</span>
-                  </span>
                 </span>
-                <ChevronRight size={14} className="shrink-0 text-white/75" />
+                <ChevronRight size={14} className="shrink-0 text-gray-400" />
               </button>
             )) : (
               <div className="py-3 text-center">
-                <CalendarDays size={20} className="mx-auto mb-1.5 text-white/85" />
-                <p className="text-[11px] font-semibold text-white">Belum ada agenda bulan ini</p>
+                <CalendarDays size={20} className="mx-auto mb-1.5 text-gray-400" />
+                <p className="text-[11px] font-semibold text-gray-600">Belum ada kegiatan bulan ini</p>
               </div>
             )}
           </div>

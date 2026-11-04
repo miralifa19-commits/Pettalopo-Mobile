@@ -31,10 +31,15 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const nextAgenda = programKerjaList
+  const monthAgendas = programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
-    .filter((entry) => entry.date && entry.date >= today)
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime())[0]?.item;
+    .filter((entry) => entry.date
+      && entry.date.getMonth() === today.getMonth()
+      && entry.date.getFullYear() === today.getFullYear())
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime());
+  const currentMonthLabel = new Intl.DateTimeFormat('id-ID', {
+    month: 'long', year: 'numeric'
+  }).format(today);
 
 
 
@@ -64,29 +69,41 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
       </section>
       <section className="landing-section">
         <div className="section-heading">
-          <div><span className="section-eyebrow">JANGAN LEWATKAN</span><h2>Agenda Terdekat</h2></div>
-          <button type="button" className="text-link" onClick={() => onNavigateMenu?.('dashboard')}>Semua agenda <ArrowRight size={15} /></button>
+          <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Agenda Bulan Ini</h2></div>
+          <span className="month-count">{currentMonthLabel}</span>
         </div>
-        {nextAgenda ? (
-          <button type="button" className="agenda-next-card" onClick={() => onOpenAgenda?.(nextAgenda.id)}>
-            <span className="agenda-next-icon"><CalendarDays size={18} /></span>
-            <span className="agenda-next-content">
-              <span className="agenda-next-label">AGENDA BERIKUTNYA</span>
-              <strong>{nextAgenda.nama}</strong>
-              <span className="agenda-next-meta">
-                <span><CalendarDays size={13} />{formatAgendaDate(nextAgenda.waktuPelaksanaan)}</span>
-                <span><MapPin size={13} />{nextAgenda.tempat || 'Lokasi menyusul'}</span>
-              </span>
-            </span>
-            <ArrowRight className="agenda-next-arrow" size={17} />
-          </button>
+        {monthAgendas.length > 0 ? (
+          <div className="agenda-month-list">
+            {monthAgendas.map(({ item, date }) => (
+              <button type="button" className="agenda-month-item" key={item.id} onClick={() => onOpenAgenda?.(item.id)}>
+                <span className="agenda-month-date">
+                  <strong>{date!.getDate()}</strong>
+                  <small>{new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date!)}</small>
+                </span>
+                <span className="agenda-month-copy">
+                  <strong>{item.nama}</strong>
+                  <small>{formatAgendaDate(item.waktuPelaksanaan)} · {item.tempat || 'Lokasi menyusul'}</small>
+                </span>
+                <ChevronRight size={17} className="agenda-next-arrow" />
+              </button>
+            ))}
+          </div>
         ) : (
-          <div className="agenda-next-card agenda-next-empty">
+          <div className="agenda-month-empty">
             <span className="agenda-next-icon"><CalendarDays size={18} /></span>
-            <span className="agenda-next-content"><strong>Belum ada agenda mendatang</strong></span>
+            <span><strong>Belum ada agenda bulan ini</strong><small>Agenda yang dijadwalkan pada {currentMonthLabel} akan tampil di sini.</small></span>
           </div>
         )}
+        <button type="button" className="all-program-works-button" onClick={() => onNavigateMenu?.('program_kerja')}>
+          Lihat Semua Program Kerja <ArrowRight size={17} />
+        </button>
       </section>
+
+      <button type="button" className="ruang-belajar-wide" onClick={() => onNavigateMenu?.('ruang_belajar')}>
+        <span className="ruang-belajar-wide-icon"><BookOpen size={22} /></span>
+        <span className="ruang-belajar-wide-copy"><strong>Ruang Belajar</strong><small>Materi, panduan, dan pengetahuan kepramukaan</small></span>
+        <ChevronRight size={19} />
+      </button>
 
 
 

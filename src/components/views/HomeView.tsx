@@ -13,23 +13,7 @@ interface HomeViewProps {
   programKerjaList?: ProgramKerjaItem[];
 }
 
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const MONTH_COLORS = ['#c7192d','#f0520b','#df7900','#64a70b','#13834a','#0794b2','#087d73','#2452d5','#202b3d','#6524a1','#a20e50','#c01663'];
-
-function polarPoint(radius: number, angle: number) {
-  const rad = (angle - 90) * Math.PI / 180;
-  return { x: 160 + radius * Math.cos(rad), y: 160 + radius * Math.sin(rad) };
-}
-
-function monthSegment(index: number) {
-  const centerAngle = index * 30 + 15;
-  const start = polarPoint(151, centerAngle - 13.2);
-  const end = polarPoint(151, centerAngle + 13.2);
-  const innerEnd = polarPoint(87, centerAngle + 13.2);
-  const innerStart = polarPoint(87, centerAngle - 13.2);
-  return `M ${start.x} ${start.y} A 151 151 0 0 1 ${end.x} ${end.y} L ${innerEnd.x} ${innerEnd.y} A 87 87 0 0 0 ${innerStart.x} ${innerStart.y} Z`;
-}
 
 const exploreLinks: { title: string; description: string; icon: React.ReactNode; menu: ActiveMenu }[] = [
   { title: 'Mabigus', description: 'Majelis Pembimbing Gugus Depan', icon: <Shield size={20} />, menu: 'mabigus' },
@@ -47,11 +31,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
     const strip = monthStripRef.current;
     if (strip) strip.scrollLeft = today.getMonth() * strip.clientWidth;
   }, []);
-  const nextAgenda = programKerjaList
-    .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
-    .filter((entry) => entry.date && entry.date >= today)
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime())[0]?.item;
-
   const monthActivities = useMemo(() => programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
     .filter((entry) => entry.date && entry.date.getFullYear() === today.getFullYear() && entry.date.getMonth() === selectedMonth)

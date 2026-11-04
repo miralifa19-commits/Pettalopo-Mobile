@@ -15,7 +15,7 @@ export const MenuHeaderCard: React.FC<MenuHeaderCardProps> = ({
   actionRight
 }) => {
   return (
-    <div className="bg-white text-slate-900 rounded-[26px] p-4 sm:p-5 relative overflow-hidden border border-slate-200">
+    <div className="bg-white text-slate-900 rounded-[20px] p-4 sm:p-5 relative overflow-hidden border border-slate-200">
       <div className="flex items-center justify-between gap-3 relative z-10">
         <div className="flex items-center gap-3 min-w-0">
           <button

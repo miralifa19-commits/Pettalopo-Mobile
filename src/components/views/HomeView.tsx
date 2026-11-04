@@ -22,6 +22,8 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
   { title: 'Dewan Ambalan', description: 'Pengurus Dewan Ambalan saat ini', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
   { title: 'Misi Pramuka', description: 'Selesaikan misi dan tantangan kepramukaan', icon: <Target size={20} />, menu: 'misi_pramuka' },
   { title: 'Games', description: 'Mainkan kuis dan permainan Pramuka', icon: <Gamepad2 size={20} />, menu: 'quiz' },
+  { title: 'Misi Pramuka', description: 'Selesaikan misi dan tantangan kepramukaan', icon: <Target size={20} />, menu: 'misi_pramuka' },
+  { title: 'Games', description: 'Mainkan kuis dan permainan Pramuka', icon: <Gamepad2 size={20} />, menu: 'quiz' },
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {

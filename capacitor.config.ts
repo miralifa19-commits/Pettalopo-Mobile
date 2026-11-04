@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     StatusBar: {
-      style: 'LIGHT',
+      // DARK is the Capacitor setting for dark (black) system icons on a light background.
+      style: 'DARK',
       backgroundColor: '#FFFFFF',
       overlaysWebView: false
     }

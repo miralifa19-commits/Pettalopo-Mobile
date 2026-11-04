@@ -499,7 +499,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIsExportingPdf(true);
 
     try {
-      const templatePath = '/assets/aistudio/Gerakan_Pramuka_Gugus_Depan_10-035__10-036_Pangkalan_SMA_Negeri_9_Maros_20261104_213457_0000_6f4fe1a9.pdf';
+      const templatePath = `${import.meta.env.BASE_URL}assets/aistudio/Gerakan_Pramuka_Gugus_Depan_10-035__10-036_Pangkalan_SMA_Negeri_9_Maros_20261104_213457_0000_6f4fe1a9.pdf`;
       const templateResponse = await fetch(templatePath);
       if (!templateResponse.ok) throw new Error('PDF kop surat asli tidak dapat dibaca.');
       const templateBytes = new Uint8Array(await templateResponse.arrayBuffer());

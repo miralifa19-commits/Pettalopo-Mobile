@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, Award, Home, MessageCircle, Settings, Bell } from 'lucide-react';
-import { LOGO_IMAGE_PATH } from './data/scoutData';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 

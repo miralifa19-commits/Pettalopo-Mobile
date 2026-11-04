@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, CalendarDays, MapPin, BookOpen, Users, MessageCircle, Compass, ChevronRight } from 'lucide-react';
+import { ArrowRight, CalendarDays, MapPin, BookOpen, Users, Award, ChevronRight } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
 

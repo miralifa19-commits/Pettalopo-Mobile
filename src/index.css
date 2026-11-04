@@ -446,3 +446,45 @@ main button,main a{overflow-wrap:anywhere}
  .home-hero-main>.home-hero-copy h1{font-size:29px!important}
  .home-hero-brandline span{font-size:9px}
 }
+
+
+/* Larger ambalan crest with a polished splash-screen light sweep. */
+.home-hero-main{grid-template-columns:minmax(0,1fr) 144px!important;gap:10px!important}
+.home-hero-logo{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  width:144px!important;
+  height:156px!important;
+  padding:0!important;
+  border-radius:18px;
+  background:radial-gradient(ellipse at center,rgba(255,255,255,.96) 35%,rgba(255,255,255,0) 76%);
+}
+.home-hero-logo img{position:relative;z-index:0;width:100%!important;height:100%!important;object-fit:contain;filter:drop-shadow(0 5px 9px rgba(28,32,38,.13))}
+.home-hero-logo::after{
+  content:"";
+  position:absolute;
+  z-index:1;
+  top:-28%;
+  left:-75%;
+  width:42%;
+  height:160%;
+  pointer-events:none;
+  transform:skewX(-24deg);
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.08) 28%,rgba(255,255,255,.88) 50%,rgba(255,255,255,.16) 72%,transparent 100%);
+  filter:blur(2px);
+  animation:ambalan-logo-flash 3.4s ease-in-out infinite;
+}
+@keyframes ambalan-logo-flash{
+  0%,48%{left:-75%;opacity:0}
+  56%{opacity:.95}
+  78%{left:145%;opacity:.72}
+  100%{left:145%;opacity:0}
+}
+@media(max-width:380px){
+  .home-hero-main{grid-template-columns:minmax(0,1fr) 124px!important;gap:6px!important}
+  .home-hero-logo{width:124px!important;height:138px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-hero-logo::after{animation:none;opacity:0}
+}

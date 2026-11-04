@@ -358,3 +358,29 @@ main button,main a{overflow-wrap:anywhere}
  .home-hero-compact .month-wheel-wrap{width:min(100%,238px)!important;max-width:238px!important}
  .home-hero-compact .home-hero-copy h1{font-size:29px!important}
 }
+
+
+/* Agenda bulanan: satu banner per bulan, dapat digeser horizontal. */
+.month-agenda-section{display:flex;flex-direction:column;gap:10px}
+.month-agenda-heading{display:flex;align-items:end;justify-content:space-between;gap:8px}
+.month-agenda-heading h2{font-size:21px;font-weight:800;letter-spacing:-.04em;margin:4px 0 0}
+.month-agenda-strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;gap:0;border-radius:20px}
+.month-agenda-strip::-webkit-scrollbar{display:none}
+.month-agenda-banner{flex:0 0 100%;min-width:100%;box-sizing:border-box;scroll-snap-align:start;display:flex;align-items:center;justify-content:space-between;min-height:118px;padding:20px 22px;background:linear-gradient(125deg,#b71922,#e51c24 68%,#f06a70);color:#fff}
+.month-agenda-banner div{display:flex;flex-direction:column;gap:4px}
+.month-agenda-banner strong{font-size:26px;line-height:1.1;font-weight:850;letter-spacing:-.04em}
+.month-agenda-banner small{font-size:11px;color:rgba(255,255,255,.86)}
+.month-agenda-kicker{font-size:9px;font-weight:800;letter-spacing:.14em;color:rgba(255,255,255,.8)}
+.month-agenda-banner>svg{opacity:.9;flex:0 0 auto}
+.month-agenda-controls{display:flex;align-items:center;justify-content:center;gap:20px}
+.month-agenda-controls button{width:30px;height:30px;border:1px solid var(--app-line);border-radius:50%;background:#fff;color:var(--app-text);font-size:20px;line-height:1}
+.month-agenda-controls span{min-width:100px;text-align:center;font-size:11px;font-weight:800;color:var(--app-text)}
+.pettalopo-quick-menu-wrap{position:relative;flex:0 0 auto}
+.pettalopo-menu-button{width:36px!important;height:36px!important;border:0!important;border-radius:50%!important;background:transparent!important;color:#25282c!important;box-shadow:none!important;padding:0!important}
+.pettalopo-menu-button:focus-visible{outline:2px solid var(--app-red);outline-offset:2px}
+.pettalopo-quick-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:168px;padding:6px;background:#fff;border:1px solid var(--app-line);border-radius:14px;box-shadow:0 8px 24px rgba(20,24,28,.12)}
+.pettalopo-quick-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 11px;border:0;border-radius:9px;background:#fff;color:#25282c;text-align:left;font-size:12px;font-weight:650}
+.pettalopo-quick-menu button:hover{background:#f7f7f8}
+.quick-menu-user{width:16px;text-align:center;font-size:12px;color:#777}
+.pettalopo-bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media(max-width:360px){.pettalopo-bottom-nav button{font-size:9px}.month-agenda-banner{padding:18px}.month-agenda-banner strong{font-size:23px}}

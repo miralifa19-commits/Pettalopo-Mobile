@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   ArrowRight, CalendarDays, MapPin, BookOpen, Users, Award, ChevronRight,
-  Crown, UserRound, Settings, Shield, ClipboardList, Dumbbell, MessageCircle,
-  GraduationCap
+  Crown, UserRound, Shield
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
@@ -33,24 +32,21 @@ function monthSegment(index: number) {
 }
 
 const exploreLinks: { title: string; description: string; icon: React.ReactNode; menu: ActiveMenu }[] = [
-  { title: 'Dewan Ambalan', description: 'Struktur dan pengurus', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
-  { title: 'Akun Saya', description: 'Profil dan identitas anggota', icon: <UserRound size={20} />, menu: 'akun' },
-  { title: 'Ruang Belajar', description: 'Materi kepramukaan', icon: <BookOpen size={20} />, menu: 'ruang_belajar' },
-  { title: 'Sangga', description: 'Kelompok dan anggota sangga', icon: <Users size={20} />, menu: 'sangga' },
-  { title: 'Program Kerja', description: 'Rencana kegiatan ambalan', icon: <ClipboardList size={20} />, menu: 'program_kerja' },
-  { title: 'Latihan Rutin', description: 'Jadwal dan aktivitas latihan', icon: <Dumbbell size={20} />, menu: 'latihan_rutin' },
-  { title: 'Data Anggota', description: 'Daftar anggota ambalan', icon: <UserRound size={20} />, menu: 'database' },
-  { title: 'Profil Ambalan', description: 'Sejarah, lambang dan adat', icon: <Shield size={20} />, menu: 'profil_ambalan' },
-  { title: 'SKU & SKK', description: 'Kecakapan Pramuka Penegak', icon: <Award size={20} />, menu: 'sku_skk' },
-  { title: 'Kuis Pramuka', description: 'Uji pengetahuan kepramukaan', icon: <GraduationCap size={20} />, menu: 'quiz' },
-  { title: 'Obrolan Ambalan', description: 'Komunikasi anggota', icon: <MessageCircle size={20} />, menu: 'chat' },
-  { title: 'Pengaturan', description: 'Pengaturan aplikasi', icon: <Settings size={20} />, menu: 'pengaturan' },
+  { title: 'Mabigus', description: 'Majelis Pembimbing Gugus Depan', icon: <Shield size={20} />, menu: 'mabigus' },
+  { title: 'Anggota', description: 'Daftar anggota putra dan putri', icon: <UserRound size={20} />, menu: 'anggota_ambalan' },
+  { title: 'Sangga', description: 'Daftar lima sangga putra dan putri', icon: <Users size={20} />, menu: 'sangga' },
+  { title: 'Dewan Ambalan', description: 'Pengurus Dewan Ambalan saat ini', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const monthStripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const strip = monthStripRef.current;
+    if (strip) strip.scrollLeft = today.getMonth() * strip.clientWidth;
+  }, []);
   const nextAgenda = programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
     .filter((entry) => entry.date && entry.date >= today)
@@ -65,32 +61,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   return (
     <div className="home-landing">
       <section className="home-hero home-hero-compact">
-        <div className="home-hero-grid">
-          <div className="home-hero-copy">
-            <span className="section-eyebrow">AMBALAN LA SURULLAH PETTA LOPO</span>
-            <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
-            <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
-          </div>
-          <div className="month-wheel-wrap" aria-label="Kalender kegiatan ambalan">
-            <svg className="month-wheel-graphic" viewBox="0 0 320 320" role="group" aria-label="Pilih bulan kegiatan">
-              {MONTHS.map((month, index) => {
-                const point = polarPoint(119, index * 30);
-                return (
-                  <g key={month} className="month-wheel-sector" onClick={() => setSelectedMonth(index)} role="button" tabIndex={0} aria-label={MONTH_NAMES[index]} aria-pressed={selectedMonth === index} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelectedMonth(index); }}>
-                    <path d={monthSegment(index)} fill={MONTH_COLORS[index]} stroke="#ffffff" strokeWidth="2.5" />
-                    <text x={point.x} y={point.y + 4} textAnchor="middle">{month}</text>
-                  </g>
-                );
-              })}
-              <circle cx="160" cy="160" r="86" fill="#ffffff" />
-              <circle cx="160" cy="112" r="18" fill="#a20e50" />
-              <text x="160" y="119" textAnchor="middle" className="month-wheel-medal">★</text>
-              <text x="160" y="151" textAnchor="middle" className="month-wheel-index">BULAN {selectedMonth + 1}/12</text>
-              <text x="160" y="174" textAnchor="middle" className="month-wheel-name">{MONTH_NAMES[selectedMonth]}</text>
-              <text x="160" y="193" textAnchor="middle" className="month-wheel-sub">{monthActivities.length ? monthActivities[0].nama.slice(0, 25) : 'Belum ada kegiatan'}</text>
-              <text x="160" y="211" textAnchor="middle" className="month-wheel-link" onClick={() => document.getElementById("month-activities")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Rincian ›</text>
-            </svg>
-          </div>
+        <div className="home-hero-copy">
+          <span className="section-eyebrow">AMBALAN LA SURULLAH PETTA LOPO</span>
+          <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
+          <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
         </div>
         <div className="home-hero-actions">
           <button type="button" className="landing-primary" onClick={() => onNavigateMenu?.('dashboard')}>
@@ -102,32 +76,37 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
         </div>
       </section>
 
-      {nextAgenda ? (
-        <button type="button" className="agenda-next-card" onClick={() => onOpenAgenda?.(nextAgenda.id)}>
-          <span className="agenda-next-icon"><CalendarDays size={18} /></span>
-          <span className="agenda-next-content">
-            <span className="agenda-next-label">AGENDA BERIKUTNYA</span>
-            <strong>{nextAgenda.nama}</strong>
-            <span className="agenda-next-meta">
-              <span><CalendarDays size={13} />{formatAgendaDate(nextAgenda.waktuPelaksanaan)}</span>
-              <span><MapPin size={13} />{nextAgenda.tempat || 'Lokasi menyusul'}</span>
-            </span>
-          </span>
-          <ArrowRight className="agenda-next-arrow" size={17} />
-        </button>
-      ) : (
-        <div className="agenda-next-card agenda-next-empty">
-          <span className="agenda-next-icon"><CalendarDays size={18} /></span>
-          <span className="agenda-next-content">
-            <span className="agenda-next-label">AGENDA BERIKUTNYA</span>
-            <strong>Belum ada agenda mendatang</strong>
-          </span>
+      <section className="month-agenda-section" aria-label="Agenda bulan ini">
+        <div className="month-agenda-heading">
+          <div><span className="section-eyebrow">KALENDER AMBALAN</span><h2>Agenda Bulan Ini</h2></div>
+          <span className="month-count">{today.getFullYear()}</span>
         </div>
-      )}
+        <div className="month-agenda-strip" ref={monthStripRef} onScroll={(event) => {
+          const element = event.currentTarget;
+          const index = Math.round(element.scrollLeft / Math.max(element.clientWidth, 1));
+          setSelectedMonth(Math.min(11, Math.max(0, index)));
+        }}>
+          {MONTH_NAMES.map((name, index) => {
+            const count = programKerjaList.filter((item) => {
+              const date = parseAgendaDate(item.waktuPelaksanaan);
+              return date && date.getFullYear() === today.getFullYear() && date.getMonth() === index;
+            }).length;
+            return <article className="month-agenda-banner" key={name} aria-label={`Agenda ${name}`}>
+              <div><span className="month-agenda-kicker">AGENDA AMBALAN</span><strong>{name}</strong><small>{today.getFullYear()} • {count} agenda</small></div>
+              <CalendarDays size={34} aria-hidden="true" />
+            </article>;
+          })}
+        </div>
+        <div className="month-agenda-controls" aria-label="Pilih bulan">
+          <button type="button" onClick={() => monthStripRef.current?.scrollTo({ left: Math.max(0, (selectedMonth - 1) * (monthStripRef.current?.clientWidth || 0)), behavior: 'smooth' })} aria-label="Bulan sebelumnya">‹</button>
+          <span>{MONTH_NAMES[selectedMonth]}</span>
+          <button type="button" onClick={() => monthStripRef.current?.scrollTo({ left: Math.min(11, selectedMonth + 1) * (monthStripRef.current?.clientWidth || 0), behavior: 'smooth' })} aria-label="Bulan berikutnya">›</button>
+        </div>
+      </section>
 
       <section className="landing-section" id="month-activities">
         <div className="section-heading">
-          <div><span className="section-eyebrow">RENCANA KEGIATAN</span><h2>Kegiatan {MONTH_NAMES[selectedMonth]}</h2></div>
+          <div><span className="section-eyebrow">RENCANA KEGIATAN</span><h2>Agenda {MONTH_NAMES[selectedMonth]}</h2></div>
           <span className="month-count">{monthActivities.length} agenda</span>
         </div>
         {monthActivities.length ? (
@@ -147,7 +126,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
         ) : (
           <div className="landing-card empty-agenda">
             <CalendarDays size={20} />
-            <div><strong>Belum ada kegiatan pada {MONTH_NAMES[selectedMonth]}</strong><p>Pilih bulan lain pada roda kalender untuk melihat agenda ambalan.</p></div>
+            <div><strong>Belum ada kegiatan pada {MONTH_NAMES[selectedMonth]}</strong><p>Geser banner bulan di atas untuk melihat agenda bulan lainnya.</p></div>
           </div>
         )}
       </section>

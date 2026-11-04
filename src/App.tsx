@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Award, Home, MessageCircle, Settings, Bell } from 'lucide-react';
+import { CalendarDays, Award, Home, MessageCircle, Settings, Bell, MoreVertical, Cog } from 'lucide-react';
 import { LOGO_IMAGE_PATH } from './data/scoutData';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -15,6 +15,9 @@ import { LatihanRutinView } from './components/views/LatihanRutinView';
 import { AkunView } from './components/views/AkunView';
 import { DatabaseAnggotaView } from './components/views/DatabaseAnggotaView';
 import { ProfilAmbalanView } from './components/views/ProfilAmbalanView';
+import { MabigusView } from './components/views/MabigusView';
+import { AnggotaAmbalanView } from './components/views/AnggotaAmbalanView';
+import { DewanAmbalanRosterView } from './components/views/DewanAmbalanRosterView';
 import { SanggaView } from './components/views/SanggaView';
 import { QuizPramukaView } from './components/views/QuizPramukaView';
 import { ChatAmbalanView } from './components/views/ChatAmbalanView';
@@ -36,6 +39,7 @@ import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('home');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
@@ -150,9 +154,18 @@ export default function App() {
           <div className="pettalopo-topbar-motto" aria-label="Bergerak, Berkarya, Mengabdi">
             <span>Bergerak&nbsp; • &nbsp;Berkarya&nbsp; • &nbsp;Mengabdi</span>
           </div>
-          <button type="button" className="pettalopo-menu-button" onClick={() => setIsNotificationsOpen(true)} aria-label="Buka notifikasi">
-            <Bell size={21} />
-          </button>
+          <div className="pettalopo-quick-menu-wrap">
+            <button type="button" className="pettalopo-menu-button" onClick={() => setIsQuickMenuOpen((open) => !open)} aria-label="Menu lainnya" aria-expanded={isQuickMenuOpen}>
+              <MoreVertical size={22} />
+            </button>
+            {isQuickMenuOpen && (
+              <div className="pettalopo-quick-menu">
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}><Settings size={16} /><span>Pengaturan</span></button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}><span className="quick-menu-user">●</span><span>Akun</span></button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsNotificationsOpen(true); }}><Bell size={16} /><span>Notifikasi</span></button>
+              </div>
+            )}
+          </div>
         </header>
         <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
@@ -180,14 +193,11 @@ export default function App() {
             <ProfilAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />
           )}
 
-          {activeMenu === 'dewan_ambalan' && (
-            <DewanAmbalanView
-              currentUser={user}
-              allMembers={allMembers}
-              programKerjaList={programKerjaList}
-              onUpdateProgramKerjaList={setProgramKerjaList}
-              onBack={() => setActiveMenu('home')}
-            />
+          {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'mabigus' && <MabigusView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'ruang_kerja_dewan' && (
+            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'sangga' && (
@@ -202,7 +212,7 @@ export default function App() {
           )}
 
           {activeMenu === 'ruang_belajar' && (
-            <RuangBelajarView isAdmin={isAdmin} />
+            <RuangBelajarView isAdmin={isAdmin} onOpenQuiz={() => setActiveMenu('quiz')} />
           )}
 
           {activeMenu === 'quiz' && (
@@ -282,6 +292,7 @@ export default function App() {
           <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Beranda</span></button>
           <button type="button" onClick={() => setActiveMenu('dashboard')} aria-current={activeMenu === 'dashboard' || activeMenu === 'kegiatan_latihan' ? 'page' : undefined}><CalendarDays size={19}/><span>Agenda</span></button>
           <button type="button" onClick={() => setActiveMenu('sku_skk')} aria-current={activeMenu === 'sku_skk' ? 'page' : undefined}><Award size={19}/><span>SKU</span></button>
+          <button type="button" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}><Cog size={19}/><span>Dewan</span></button>
           <button type="button" onClick={() => setActiveMenu('chat')} aria-current={activeMenu === 'chat' ? 'page' : undefined}><MessageCircle size={19}/><span>Obrolan</span></button>
           <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-current={activeMenu === 'pengaturan' ? 'page' : undefined}><Settings size={19}/><span>Setelan</span></button>
         </nav>

@@ -15,6 +15,7 @@ export type ActiveMenu =
   | 'ruang_belajar'
   | 'quiz'
   | 'misi_pramuka'
+  | 'misi_pramuka'
   | 'chat'
   | 'pengaturan'
   | 'latihan_rutin'

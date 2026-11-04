@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { UserAccount, ProgramKerjaItem } from '../../types';
 import { askKakCikalAI } from '../../services/aiChatService';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
@@ -491,65 +490,123 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setViewMode('preview');
   };
 
-  // Export Surat to PDF via html2canvas + jsPDF with inline base64 assets (100% reliable)
+  // PDF surat resmi: teks tetap tajam, tata letak formal, dan kop bergaya dokumen sumber.
   const handleDownloadPdf = async (surat: GeneratedSurat) => {
-    if (!letterRef.current) return;
     setIsExportingPdf(true);
-
     try {
-      const element = letterRef.current;
+      const pageWidth = 571.5 * 25.4 / 72;
+      const pageHeight = 828 * 25.4 / 72;
+      const marginX = 22;
+      const contentWidth = pageWidth - marginX * 2;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pageWidth, pageHeight], compress: true });
+      const lineHeight = 5.2;
+      const bottomLimit = pageHeight - 20;
+      let y = 48;
 
-      // Render letter to canvas
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
+      const drawLetterhead = () => {
+        pdf.addImage(TUNAS_KELAPA_BASE64, 'PNG', 22, 5.5, 19, 19, undefined, 'FAST');
+        pdf.addImage(WOSM_BASE64, 'PNG', pageWidth - 41, 5.5, 19, 19, undefined, 'FAST');
+        pdf.setTextColor(20, 20, 20);
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(15);
+        pdf.text('GERAKAN PRAMUKA', pageWidth / 2, 13.5, { align: 'center' });
+        pdf.setFontSize(14);
+        const gudepText = surat.gudepType === '10.035' ? 'GUGUS DEPAN 10-035' : surat.gudepType === '10.036' ? 'GUGUS DEPAN 10-036' : 'GUGUS DEPAN 10-035 / 10-036';
+        pdf.text(gudepText, pageWidth / 2, 20, { align: 'center' });
+        pdf.text('PANGKALAN SMA NEGERI 9 MAROS', pageWidth / 2, 26.5, { align: 'center' });
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(7.2);
+        pdf.text("( sekretariat : J. Pattene, Desa Pa'bentengang, Dusun ujung bulo, Kec. Marusu, Kab. Maros )", pageWidth / 2, 32, { align: 'center' });
+        pdf.setLineWidth(0.75);
+        pdf.line(13.5, 35.2, pageWidth - 13.5, 35.2);
+        pdf.setLineWidth(0.25);
+        pdf.line(13.5, 36.1, pageWidth - 13.5, 36.1);
+      };
+      const nextPage = () => {
+        pdf.addPage([pageWidth, pageHeight], 'portrait');
+        drawLetterhead();
+        y = 48;
+      };
+      const ensureSpace = (height: number) => { if (y + height > bottomLimit) nextPage(); };
+      const writeText = (value: string, opts?: { bold?: boolean; italic?: boolean; indent?: number; width?: number; align?: 'left' | 'right' | 'center'; gapAfter?: number }) => {
+        if (!value || !value.trim()) return;
+        const o = opts || {};
+        pdf.setFont('times', o.bold ? (o.italic ? 'bolditalic' : 'bold') : (o.italic ? 'italic' : 'normal'));
+        pdf.setFontSize(11.5);
+        const lines = pdf.splitTextToSize(value.trim(), o.width || (contentWidth - (o.indent || 0)));
+        ensureSpace(lines.length * lineHeight + (o.gapAfter || 0));
+        if (o.align === 'right') pdf.text(lines, pageWidth - marginX, y, { align: 'right', lineHeightFactor: 1.15 });
+        else if (o.align === 'center') pdf.text(lines, pageWidth / 2, y, { align: 'center', lineHeightFactor: 1.15 });
+        else pdf.text(lines, marginX + (o.indent || 0), y, { lineHeightFactor: 1.15 });
+        y += lines.length * lineHeight + (o.gapAfter || 0);
+      };
+      const writeLabelValue = (label: string, value: string, prefix = '') => {
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(11.5);
+        const labelWidth = 29;
+        const lines = pdf.splitTextToSize(value || '-', contentWidth - labelWidth - 5);
+        ensureSpace(Math.max(1, lines.length) * lineHeight);
+        pdf.text(prefix + label, marginX, y);
+        pdf.text(':', marginX + labelWidth, y);
+        pdf.text(lines, marginX + labelWidth + 5, y, { lineHeightFactor: 1.15 });
+        y += Math.max(1, lines.length) * lineHeight;
+      };
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      drawLetterhead();
+      if (surat.includeTanggal) writeText('Maros, ' + surat.tanggalSurat, { align: 'right', gapAfter: 1 });
+      if (surat.includeNomor) writeLabelValue('Nomor', surat.nomorSurat);
+      if (surat.includeLampiran) writeLabelValue('Lampiran', surat.lampiran);
+      if (surat.includePerihal) writeLabelValue('Perihal', surat.perihal);
+      if (surat.includeKeteranganIdentitas) writeLabelValue('Keterangan', surat.keteranganIdentitas);
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      if (surat.includeKepadaYth) {
+        y += 5;
+        writeText('Kepada Yth.');
+        writeText(surat.penerimaNama, { bold: true });
+        writeText(surat.penerimaTempat);
+      }
+      y += 5;
+      writeText("Assalamu'alaikum Warahmatullahi Wabarakatuh", { italic: true });
+      writeText('Salam Pramuka,', { bold: true, gapAfter: 2 });
+      writeText(surat.isiParagraf, { gapAfter: 3 });
 
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-      } else {
-        const margin = 8;
-        const contentWidth = pageWidth - (margin * 2);
-        const contentHeight = (canvas.height * contentWidth) / canvas.width;
-        pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, Math.min(contentHeight, pageHeight - margin * 2));
+      const prefixFor = (n: number) => surat.bulletStyle === 'nomor' ? String(n + 1) + '.' : surat.bulletStyle === 'abcd' ? String.fromCharCode(97 + n) + '.' : surat.bulletStyle === 'strip' ? '-' : '•';
+      const details: Array<[string, string, number]> = [
+        ['Hari/Tanggal', surat.rincianHariTanggal, 0],
+        ['Waktu', surat.rincianWaktu, 1]
+      ];
+      if (surat.includeTempat) details.push(['Tempat', surat.rincianTempat, 2]);
+      if (surat.includeKeteranganAcara) details.push(['Keterangan', surat.rincianKeteranganAcara, 3]);
+      details.forEach((row) => writeLabelValue(row[0], row[1], prefixFor(row[2]) + ' '));
+      y += 3;
+      writeText(surat.penutupParagraf, { gapAfter: 3 });
+      writeText("Wassalamu'alaikum Warahmatullahi Wabarakatuh", { italic: true });
+      writeText('Salam Pramuka.', { bold: true, gapAfter: 5 });
+
+      if (surat.includeTembusan && surat.tembusanList && surat.tembusanList.length) {
+        ensureSpace(8);
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(9.5);
+        pdf.text('Tembusan:', marginX, y);
+        y += 4.5;
+        surat.tembusanList.forEach((item, index) => writeText(String(index + 1) + '. ' + item, { indent: 3 }));
       }
 
-      const safeName = `Surat_Pramuka_${surat.nomorUrut || 'Ambalan'}_${(surat.gudepType || '10-035').replace('.', '-')}.pdf`;
-      
-      // Direct Blob Download for 100% browser/iframe compatibility
-      const pdfBlob = pdf.output('blob');
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = blobUrl;
-      downloadLink.download = safeName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
+      // Penandatangan, QR, dan stempel sengaja ditunda pada tahap pertama.
+      const safeName = 'Surat_Pramuka_' + (surat.nomorUrut || 'Ambalan') + '_' + (surat.gudepType || '10-035').replace('.', '-') + '.pdf';
+      const blobUrl = URL.createObjectURL(pdf.output('blob'));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = safeName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
       setDownloadSuccessToast(true);
-      setTimeout(() => setDownloadSuccessToast(false), 3500);
-
+      window.setTimeout(() => setDownloadSuccessToast(false), 3500);
     } catch (err) {
-      console.error('Error generating PDF with jsPDF/html2canvas:', err);
-      // Fallback: window.print()
-      window.print();
+      console.error('Gagal membuat PDF surat:', err);
+      alert('PDF belum berhasil dibuat. Silakan coba kembali.');
     } finally {
       setIsExportingPdf(false);
     }

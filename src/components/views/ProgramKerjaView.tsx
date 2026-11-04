@@ -20,6 +20,21 @@ import { ProgramKerjaItem, ProgramKerjaStatus } from '../../types';
 import { BULAN_LIST } from '../PetaPerjalananProker';
 import { SusunKegiatanModal } from '../dashboard/SusunKegiatanModal';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { parseAgendaDate } from '../../utils/agendaDate';
+
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
+const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const MONTH_COLORS = ['#c7192d','#f0520b','#df7900','#64a70b','#13834a','#0794b2','#087d73','#2452d5','#202b3d','#6524a1','#a20e50','#c01663'];
+function wheelPoint(radius: number, angle: number) {
+  const rad = (angle - 90) * Math.PI / 180;
+  return { x: 160 + radius * Math.cos(rad), y: 160 + radius * Math.sin(rad) };
+}
+function wheelSegment(index: number) {
+  const center = index * 30 + 15;
+  const a = wheelPoint(151, center - 13.2), b = wheelPoint(151, center + 13.2);
+  const c = wheelPoint(87, center + 13.2), d = wheelPoint(87, center - 13.2);
+  return `M ${a.x} ${a.y} A 151 151 0 0 1 ${b.x} ${b.y} L ${c.x} ${c.y} A 87 87 0 0 0 ${d.x} ${d.y} Z`;
+}
 
 interface ProgramKerjaViewProps {
   programKerjaList: ProgramKerjaItem[];
@@ -45,6 +60,7 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
   
   // FITUR URUTKAN: 'bulan' vs 'tanggal_diubah'
   const [sortBy, setSortBy] = useState<'bulan' | 'tanggal_diubah'>('bulan');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
 
   // Form State (Shared for Add & Edit)
   const [tipe, setTipe] = useState<'Kegiatan' | 'Latihan Rutin'>(fixedTipe || 'Kegiatan');
@@ -176,8 +192,10 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
   // 1. Filter Kategori
   const filteredItems = programKerjaList.filter(item => {
     const activeFilter = fixedTipe || filterTipe;
-    if (activeFilter === 'Semua') return true;
-    return (item.tipe || 'Kegiatan') === activeFilter;
+    if (activeFilter !== 'Semua' && (item.tipe || 'Kegiatan') !== activeFilter) return false;
+    const parsedDate = parseAgendaDate(item.waktuPelaksanaan);
+    const itemMonth = parsedDate ? parsedDate.getMonth() : MONTH_NAMES.findIndex(m => m.toLowerCase() === (item.bulan || '').toLowerCase());
+    return itemMonth === selectedMonth;
   });
 
   // 2. Terapkan Urutan: Berdasarkan Bulan (Juli ke Juni) atau Berdasarkan Tanggal Diubah (Terbaru)
@@ -219,6 +237,34 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
           ) : undefined
         }
       />
+
+      <section className="program-month-wheel-section">
+        <div className="section-heading">
+          <div><span className="section-eyebrow">JELAJAHI BERDASARKAN BULAN</span><h2>Kalender Program Kerja</h2></div>
+          <span className="month-count">{filteredItems.length} agenda</span>
+        </div>
+        <div className="program-month-wheel-wrap">
+          <svg className="month-wheel-graphic program-month-wheel" viewBox="0 0 320 320" role="group" aria-label="Pilih bulan program kerja">
+            {MONTHS.map((month, index) => {
+              const point = wheelPoint(119, index * 30);
+              return (
+                <g key={month} className="month-wheel-sector" onClick={() => setSelectedMonth(index)} role="button" tabIndex={0} aria-label={MONTH_NAMES[index]} aria-pressed={selectedMonth === index} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelectedMonth(index); }}>
+                  <path d={wheelSegment(index)} fill={MONTH_COLORS[index]} stroke="#ffffff" strokeWidth="2.5" />
+                  <text x={point.x} y={point.y + 4} textAnchor="middle">{month}</text>
+                </g>
+              );
+            })}
+            <circle cx="160" cy="160" r="86" fill="#ffffff" />
+            <circle cx="160" cy="112" r="18" fill="#a20e50" />
+            <text x="160" y="119" textAnchor="middle" className="month-wheel-medal">★</text>
+            <text x="160" y="151" textAnchor="middle" className="month-wheel-index">BULAN {selectedMonth + 1}/12</text>
+            <text x="160" y="174" textAnchor="middle" className="month-wheel-name">{MONTH_NAMES[selectedMonth]}</text>
+            <text x="160" y="193" textAnchor="middle" className="month-wheel-sub">{filteredItems.length ? (filteredItems[0].nama.length > 25 ? filteredItems[0].nama.slice(0, 23) + '…' : filteredItems[0].nama) : 'Belum ada program'}</text>
+            <text x="160" y="211" textAnchor="middle" className="month-wheel-link">Pilih bulan</text>
+          </svg>
+        </div>
+        <p className="program-month-caption">Pilih salah satu bulan untuk melihat kegiatan dan latihan rutin ambalan.</p>
+      </section>
 
       {/* FILTER & FITUR URUTKAN */}
       <div className="bg-white rounded-2xl p-3 border-2 border-slate-100 shadow-xs space-y-2.5">
@@ -286,11 +332,11 @@ export const ProgramKerjaView: React.FC<ProgramKerjaViewProps> = ({
             <div>
               <h3 className="text-sm font-extrabold text-slate-800">
                 {filterTipe === 'Semua' 
-                  ? 'Belum Ada Program Kerja' 
-                  : `Belum Ada Data ${filterTipe}`}
+                  ? `Belum Ada Program Kerja pada ${MONTH_NAMES[selectedMonth]}` 
+                  : `Belum Ada Data ${filterTipe} pada ${MONTH_NAMES[selectedMonth]}`}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5 max-w-sm mx-auto">
-                Tambahkan rencana program kerja dengan memilih jenis <strong>Kegiatan</strong> atau <strong>Latihan Rutin</strong>.
+                Tambahkan rencana program kerja. Kegiatan dan latihan rutin dikelola dalam satu menu ini.
               </p>
             </div>
             <button

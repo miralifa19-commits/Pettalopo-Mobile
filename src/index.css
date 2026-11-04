@@ -358,3 +358,28 @@ main button,main a{overflow-wrap:anywhere}
  .home-hero-compact .month-wheel-wrap{width:min(100%,238px)!important;max-width:238px!important}
  .home-hero-compact .home-hero-copy h1{font-size:29px!important}
 }
+
+
+/* Restore the original editorial home hero; the 12-month wheel lives in Program Kerja. */
+.home-hero-compact{padding:24px 4px 28px!important;border-bottom:1px solid var(--app-line)!important;overflow:hidden!important}
+.home-hero-compact .home-logo-wrap{width:68px;height:68px;margin:0 0 22px;display:grid;place-items:center}
+.home-hero-compact .home-logo-wrap img{width:100%;height:100%;object-fit:contain}
+.home-hero-compact .home-hero-copy{width:100%;text-align:left}
+.home-hero-compact .home-hero-copy .section-eyebrow{font-size:9px;letter-spacing:.14em}
+.home-hero-compact .home-hero-copy h1{font-size:clamp(38px,11vw,48px)!important;line-height:1.04!important;letter-spacing:-.06em!important;margin:12px 0 14px!important}
+.home-hero-compact .home-hero-copy h1 span{color:var(--app-red)}
+.home-hero-compact .home-hero-copy>p{max-width:300px;margin:0;color:#646b72;font-size:14px;line-height:1.65}
+.home-hero-compact .home-hero-actions{display:flex!important;gap:9px;flex-wrap:wrap;margin-top:22px!important;max-width:none;width:auto}
+.home-hero-compact .home-hero-actions button{width:auto;min-height:48px;padding:0 16px;border-radius:13px;font-size:12px}
+.home-hero-compact .hero-line-art{height:34px;width:100%;position:relative;margin-top:24px;opacity:.55}
+.home-hero-compact .hero-line-art span{position:absolute;bottom:0;height:24px;width:60%;border-top:1px solid #e7a4aa;transform:skewY(-8deg)}
+.home-hero-compact .hero-line-art span:nth-child(2){left:25%;width:50%;transform:skewY(7deg)}
+.home-hero-compact .hero-line-art span:nth-child(3){right:0;width:35%;transform:skewY(-4deg)}
+.home-landing{gap:28px}
+.program-month-wheel-section{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px 16px;border:1px solid #eceef0;border-radius:20px;background:#fff}
+.program-month-wheel-section>.section-heading{width:100%;align-items:end}
+.program-month-wheel-wrap{width:min(100%,320px);margin:0 auto}
+.program-month-wheel{width:100%;height:auto;display:block}
+.program-month-wheel .month-wheel-sector text{fill:#fff;font-size:9px;font-weight:800;pointer-events:none}
+.program-month-caption{margin:0;text-align:center;color:#747b82;font-size:11px;line-height:1.4}
+.program-month-wheel-section+.bg-white{margin-top:0}

@@ -533,3 +533,12 @@ main button,main a{overflow-wrap:anywhere}
 .month-agenda-controls button{width:30px;height:30px;border:1px solid var(--app-line);border-radius:50%;background:#fff;color:var(--app-text);font-size:20px;line-height:1}
 .month-agenda-controls span{min-width:100px;text-align:center;font-size:11px;font-weight:800;color:var(--app-text)}
 .pettalopo-menu-button{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:50%!important}
+
+/* Top bar merah khusus home */
+.pettalopo-topbar.pettalopo-topbar-home{background:#c81e28!important;color:#fff!important;border-bottom:0!important;box-shadow:0 4px 16px rgba(183,25,34,.22)!important}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-member-shortcut strong{color:#fff!important}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-member-shortcut small{color:rgba(255,255,255,.88)!important}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-member-avatar{border:1.5px solid rgba(255,255,255,.9)!important;background:rgba(255,255,255,.2)!important;color:#fff!important}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-menu-button{color:#fff!important;background:rgba(255,255,255,.15)!important;border-radius:50%!important}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-menu-button:active{background:rgba(255,255,255,.3)!important}
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, ClipboardList, UserRound } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -8,6 +8,9 @@ import { NotificationsModal } from './components/NotificationsModal';
 import { HomeView } from './components/views/HomeView';
 import { DashboardView } from './components/views/DashboardView';
 import { ProgramKerjaView } from './components/views/ProgramKerjaView';
+import { PresensiView } from './components/views/PresensiView';
+import { MisiPramukaView } from './components/views/MisiPramukaView';
+import { GamesView } from './components/views/GamesView';
 import { DewanAmbalanView } from './components/views/DewanAmbalanView';
 import { SkuSkkView } from './components/views/SkuSkkView';
 import { RuangBelajarView } from './components/views/RuangBelajarView';
@@ -186,7 +189,7 @@ export default function App() {
 
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (
-        <header className="pettalopo-topbar">
+        <header className="pettalopo-topbar pettalopo-topbar-home">
           <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
             <span className="pettalopo-member-avatar">
               {(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
@@ -271,7 +274,27 @@ export default function App() {
           )}
 
           {activeMenu === 'chat' && (
-            <ChatAmbalanView currentUser={user} />
+            <ChatAmbalanView 
+              currentUser={user} 
+              programKerjaList={programKerjaList}
+              onBack={() => setActiveMenu('home')}
+            />
+          )}
+
+          {activeMenu === 'presensi' && (
+            <PresensiView
+              currentUser={user}
+              programKerjaList={programKerjaList}
+              onBack={() => setActiveMenu('home')}
+            />
+          )}
+
+          {activeMenu === 'misi_pramuka' && (
+            <MisiPramukaView onBack={() => setActiveMenu('home')} />
+          )}
+
+          {activeMenu === 'games' && (
+            <GamesView onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'pengaturan' && (
@@ -336,16 +359,18 @@ export default function App() {
           )}
         </main>
 
-        <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
-          <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
-          <button type="button" onClick={() => setActiveMenu('program_kerja')} aria-current={activeMenu === 'program_kerja' ? 'page' : undefined}><ClipboardList size={19}/><span>Program Kerja</span></button>
-          <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
-            <img src="/assets/dewan-gear-logo.png" alt="Dewan" className="dewan-nav-gear" />
-            <span>Dewan</span>
-          </button>
-          <button type="button" onClick={() => setActiveMenu('chat')} aria-current={activeMenu === 'chat' ? 'page' : undefined}><MessageCircle size={19}/><span>Chat</span></button>
-          <button type="button" onClick={() => setIsNotificationsOpen(true)}><Megaphone size={19}/><span>Pengumuman</span></button>
-        </nav>
+        {activeMenu !== 'chat' && (
+          <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
+            <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
+            <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
+            <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
+              <img src="/assets/dewan-gear-logo.png" alt="Dewan" className="dewan-nav-gear" />
+              <span>Dewan</span>
+            </button>
+            <button type="button" onClick={() => setActiveMenu('chat')}><MessageCircle size={19}/><span>Ruang Ambalan</span></button>
+            <button type="button" onClick={() => setIsNotificationsOpen(true)}><Megaphone size={19}/><span>Pengumuman</span></button>
+          </nav>
+        )}
 
         <NotificationsModal
           isOpen={isNotificationsOpen}

@@ -81,6 +81,58 @@ Hasilkan naskah laporan yang siap dimasukkan ke berkas resmi PDF pertanggungjawa
     }
   });
 
+  // Server-side route for Kak Cikal (AI Ambalan) using Gemini 3.8 Flash
+  app.post('/api/ai/kak-cikal', async (req, res) => {
+    try {
+      const { prompt, programKerjaList = [], actionType, selectedProker } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      const prokerSummary = (programKerjaList || []).slice(0, 24).map((p: any) => 
+        `- [${p.tipe || 'Kegiatan'}] ${p.nama} (${p.waktuPelaksanaan || 'Waktu belum ditentukan'}) di ${p.tempat || 'Pangkalan'}, sasaran: ${p.sasaran || 'Anggota'}, anggaran: ${p.anggaran || '-'}`
+      ).join('\n');
+
+      const systemInstruction = `
+Bertindaklah sebagai Kak Cikal, Asisten AI resmi Ambalan Penegak La Surullah Petta Lopo (Gugus Depan 10-035 Putra & 10-036 Putri, Pangkalan SMA Negeri 1 Maros / Sulawesi Selatan).
+Karakter: Hangat, berwibawa, bijaksana, sigap, dan menjunjung tinggi kode kehormatan Tri Satya, Dasa Darma, serta kearifan lokal Siri' na Pacce. Salam pembuka: "Salam Pramuka! ⚜️".
+
+Tugas utama kamu:
+1. Merancang kegiatan dan latihan kepramukaan (rundown acara, tapak perkemahan, manajemen risiko, pembagian tugas sangga kerja, materi latihan rutin).
+2. Menyelesaikan kendala organisasi ambalan, kedisiplinan, komunikasi antar sangga, dan dinamika regu.
+3. Memberikan rekomendasi dan saran langkah demi langkah berdasarkan Program Kerja Ambalan La Surullah Petta Lopo berikut:
+${prokerSummary}
+
+4. Membuat undangan kegiatan resmi yang siap dibagikan ke WhatsApp anggota atau pembina dengan format rapi dan berwibawa.
+
+Aturan Respon:
+- Gunakan bahasa Indonesia yang santun, baku namun bersahabat khas kepramukaan.
+- Format teks dengan rapi (gunakan bullet points, bold untuk penekanan, dan emoji pramuka yang sesuai).
+- Jika diminta membuat undangan, formatlah khusus untuk pesan WhatsApp dengan tanda bintang (*tebal*), info waktu, tempat, seragam, catatan penting, dan salam penutup ambalan.
+`.trim();
+
+      if (!apiKey) {
+        if (actionType === 'undangan' && selectedProker) {
+          const sampleUndangan = `*GERAKAN PRAMUKA GUGUS DEPAN 10-035 & 10-036*\n*AMBALAN LA SURULLAH PETTA LOPO*\n------------------------------------------\nSalam Pramuka! ⚜️\n\nKepada Yth.\nKakak-kakak Anggota & Pembina Ambalan La Surullah Petta Lopo\ndi Tempat\n\nSehubungan dengan pelaksanaan Program Kerja Ambalan, kami mengundang kehadiran Kakak-kakak pada:\n\n📅 *Kegiatan:* ${selectedProker.nama}\n🏷️ *Kategori:* ${selectedProker.tipe || 'Kegiatan'}\n🗓️ *Waktu:* ${selectedProker.waktuPelaksanaan}\n📍 *Tempat:* ${selectedProker.tempat || 'Sanggar Gugus Depan'}\n👔 *Seragam:* ${selectedProker.seragam || 'Seragam Pramuka Lengkap'}\n👥 *Sasaran:* ${selectedProker.sasaran || 'Seluruh Anggota Ambalan'}\n\n*Catatan Kehadiran:*\n${selectedProker.deskripsi || 'Harap hadir tepat waktu dan membawa perlengkapan pribadi yang diperlukan.'}\n\nDemikian undangan ini kami sampaikan. Atas kesiapan dan kehadiran Kakak-kakak diucapkan terima kasih.\n\n*Satyaku Kudarmakan, Darmaku Kubaktikan*\n*Dewan Ambalan La Surullah Petta Lopo*`;
+          return res.json({ text: sampleUndangan });
+        }
+        return res.json({ 
+          text: `Salam Pramuka! ⚜️ Kak Cikal siap membantu Kakak. Berdasarkan Program Kerja Ambalan La Surullah Petta Lopo, ada beberapa agenda penting yang sedang dipersiapkan. Apa yang bisa Kak Cikal bantu rancang atau jelaskan hari ini?` 
+        });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const fullPrompt = `${systemInstruction}\n\nPermintaan pengguna: ${prompt}`;
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: fullPrompt
+      });
+
+      return res.json({ text: response.text || '' });
+    } catch (error: any) {
+      console.error('Error with Kak Cikal AI on server:', error);
+      return res.status(500).json({ error: error.message || 'Gagal memproses Kak Cikal AI' });
+    }
+  });
+
   // Health endpoint
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });

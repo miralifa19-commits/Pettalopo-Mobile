@@ -1,0 +1,1681 @@
+import React, { useState, useRef, useEffect } from 'react';
+import QRCode from 'qrcode';
+import html2pdf from 'html2pdf.js';
+import { UserAccount, ProgramKerjaItem } from '../../types';
+import { askKakCikalAI } from '../../services/aiChatService';
+import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { getMabigusOfficials, MabigusOfficials } from '../../data/mabigusData';
+import { get8DewanPositions, Dewan8Position } from '../../data/dewanStructure';
+
+interface PersuratanAmbalanViewProps {
+  currentUser?: UserAccount;
+  allMembers?: UserAccount[];
+  programKerjaList?: ProgramKerjaItem[];
+  onBack?: () => void;
+}
+
+export type DigitalSignerType = 'kepala_sekolah' | 'pembina_putra' | 'pembina_putri';
+
+export interface GeneratedSurat {
+  id: string;
+  nomorSurat: string;
+  nomorUrut: string;
+  perihal: string;
+  lampiran: string;
+  keteranganIdentitas: string;
+  tanggalSurat: string;
+  gudepType: '10.035' | '10.036' | '10.035-10.036';
+  
+  // Toggle circular inclusions
+  includeNomor: boolean;
+  includeTanggal: boolean;
+  includePerihal: boolean;
+  includeLampiran: boolean;
+  includeKeteranganIdentitas: boolean;
+  includeKepadaYth: boolean;
+  penerimaNama: string;
+  penerimaTempat: string;
+  
+  // Isi Surat
+  isiParagraf: string;
+  bulletStyle: 'titik' | 'nomor' | 'abcd' | 'strip';
+  rincianHariTanggal: string;
+  rincianWaktu: string;
+  includeTempat: boolean;
+  rincianTempat: string;
+  includeKeteranganAcara: boolean;
+  rincianKeteranganAcara: string;
+  penutupParagraf: string;
+
+  // Pengesahan
+  dewanJabatan: string;
+  dewanNama: string;
+  dewanNta: string;
+  
+  includeKetuaGudep: boolean;
+  ketuaGudepNama: string;
+  ketuaGudepNip?: string;
+
+  pembinaJabatan: string;
+  pembinaNama: string;
+  pembinaNip?: string;
+
+  metodeTtd: 'biasa' | 'digital' | 'stempel';
+  digitalSigner: DigitalSignerType;
+  digitalSignerName: string;
+  digitalSignerTitle: string;
+  
+  qrCodeDataUrl?: string;
+  includeStempel: boolean;
+  
+  includeTembusan: boolean;
+  tembusanList: string[];
+  createdAt: string;
+}
+
+const STORAGE_KEY_SURAT = 'pettalopo_arsip_surat_resmi_v4';
+
+export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
+  allMembers = [],
+  programKerjaList = [],
+  onBack
+}) => {
+  const [viewMode, setViewMode] = useState<'form' | 'preview' | 'list'>('form');
+  const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
+  const [dewanList, setDewanList] = useState<Dewan8Position[]>(get8DewanPositions());
+
+  // Arsip Surat
+  const [arsipSurat, setArsipSurat] = useState<GeneratedSurat[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SURAT);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  // Load latest officials and dewan
+  useEffect(() => {
+    setOfficials(getMabigusOfficials());
+    setDewanList(get8DewanPositions());
+  }, []);
+
+  // --- BAGIAN 1: IDENTITAS (Google Form style dengan toggle lingkaran di samping) ---
+  const [includeNomor, setIncludeNomor] = useState(true);
+  const [nomorUrut, setNomorUrut] = useState('024');
+  const [gudepPilihan, setGudepPilihan] = useState<'10.035' | '10.036' | '10.035-10.036'>('10.035-10.036');
+  const [ceklisDuaDua, setCeklisDuaDua] = useState(false); // Mode generate 2 surat terpisah
+
+  const [includeTanggal, setIncludeTanggal] = useState(true);
+  const [tanggalSurat, setTanggalSurat] = useState(() => {
+    const today = new Date();
+    return today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  });
+
+  const [includePerihal, setIncludePerihal] = useState(true);
+  const [perihal, setPerihal] = useState('Permohonan Izin Kegiatan & Bantuan');
+
+  const [includeLampiran, setIncludeLampiran] = useState(false);
+  const [lampiran, setLampiran] = useState('1 (Satu) Berkas Proposal');
+
+  const [includeKeteranganIdentitas, setIncludeKeteranganIdentitas] = useState(false);
+  const [keteranganIdentitas, setKeteranganIdentitas] = useState('Penting / Segera');
+
+  const [includeKepadaYth, setIncludeKepadaYth] = useState(true);
+  const [penerimaNama, setPenerimaNama] = useState('Kepala SMA Negeri 9 Maros');
+  const [penerimaTempat, setPenerimaTempat] = useState('di - Tempat');
+
+  // --- BAGIAN 2: ISI SURAT ---
+  const [isiParagraf, setIsiParagraf] = useState(
+    'Salam Pramuka. Sehubungan dengan pelaksanaan program kerja Gerakan Pramuka Ambalan La Surullah Petta Lopo Pangkalan SMA Negeri 9 Maros masa bakti 2026/2027, dengan ini kami sampaikan bahwa akan diselenggarakan kegiatan pembinaan dengan rincian sebagai berikut:'
+  );
+
+  const [bulletStyle, setBulletStyle] = useState<'titik' | 'nomor' | 'abcd' | 'strip'>('titik');
+  const [rincianHariTanggal, setRincianHariTanggal] = useState('Sabtu s.d. Minggu, 21 - 22 November 2026');
+  const [rincianWaktu, setRincianWaktu] = useState('08.00 WITA s.d. Selesai');
+  const [includeTempat, setIncludeTempat] = useState(true);
+  const [rincianTempat, setRincianTempat] = useState('Sanggar Bakti Pramuka SMA Negeri 9 Maros');
+  const [includeKeteranganAcara, setIncludeKeteranganAcara] = useState(true);
+  const [rincianKeteranganAcara, setRincianKeteranganAcara] = useState('Latihan Gabungan & Pemantapan Tata Adat Ambalan');
+
+  const [penutupParagraf, setPenutupParagraf] = useState(
+    'Demikian surat ini kami sampaikan, atas perhatian, dukungan, dan kerja sama Kakak kami ucapkan terima kasih.'
+  );
+
+  // --- BAGIAN 3: PENGESAHAN & PENANDATANGAN ---
+  // Dewan Ambalan dropdown
+  const [selectedDewanId, setSelectedDewanId] = useState<string>('pradana_pa');
+  // Pembina dropdown
+  const [selectedPembinaRole, setSelectedPembinaRole] = useState<'pembina_pa' | 'pembina_pi' | 'pembantu_pa' | 'pembantu_pi'>('pembina_pa');
+  // Ketua Gugus Depan
+  const [includeKetuaGudep, setIncludeKetuaGudep] = useState(true);
+
+  // Metode Pengesahan
+  const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
+  const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
+  const [includeStempel, setIncludeStempel] = useState(true);
+
+  // Tembusan
+  const [includeTembusan, setIncludeTembusan] = useState(true);
+  const [tembusanInput, setTembusanInput] = useState('');
+  const [tembusanList, setTembusanList] = useState<string[]>([
+    'Kepala UPT SMA Negeri 9 Maros (selaku Kamabigus)',
+    'Kwartir Ranting Gerakan Pramuka Marusu',
+    'Arsip Ambalan'
+  ]);
+
+  // Preview & Printing state
+  const [previewSuratList, setPreviewSuratList] = useState<GeneratedSurat[]>([]);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  
+  // Verification Modal State
+  const [verificationModalSurat, setVerificationModalSurat] = useState<GeneratedSurat | null>(null);
+
+  const letterRef = useRef<HTMLDivElement | null>(null);
+
+  // Helpers for bullet indicators
+  const getBulletPrefix = (style: 'titik' | 'nomor' | 'abcd' | 'strip', index: number) => {
+    switch (style) {
+      case 'titik': return '•';
+      case 'nomor': return `${index + 1}.`;
+      case 'abcd': return `${String.fromCharCode(97 + index)}.`;
+      case 'strip': return '-';
+      default: return '•';
+    }
+  };
+
+  // Add Tembusan item
+  const handleAddTembusan = () => {
+    if (!tembusanInput.trim()) return;
+    setTembusanList([...tembusanList, tembusanInput.trim()]);
+    setTembusanInput('');
+  };
+
+  const handleRemoveTembusan = (idx: number) => {
+    setTembusanList(tembusanList.filter((_, i) => i !== idx));
+  };
+
+  // AI paragraph assist
+  const handleGenerateAiParagraph = async (type: 'isi' | 'penutup') => {
+    setIsGeneratingAi(true);
+    try {
+      const prompt = type === 'isi'
+        ? `Buat kalimat pembuka dan isi surat resmi Gerakan Pramuka untuk perihal: "${perihal}". Bahasa baku, sopan, bernuansa kepramukaan, singkat dan padat 2-3 kalimat.`
+        : `Buat 1 kalimat penutup resmi surat pramuka yang santun dan padat.`;
+      
+      const res = await askKakCikalAI({ prompt, programKerjaList, actionType: 'rancang' });
+      if (res) {
+        if (type === 'isi') {
+          setIsiParagraf(res.replace(/^Salam Pramuka.*?\n+/i, '').trim());
+        } else {
+          setPenutupParagraf(res.trim());
+        }
+      }
+    } catch {
+      if (type === 'isi') {
+        setIsiParagraf(`Sehubungan dengan pelaksanaan agenda Gerakan Pramuka Gugus Depan Pangkalan SMA Negeri 9 Maros, bersama surat ini kami bermaksud menyampaikan ${perihal}.`);
+      } else {
+        setPenutupParagraf('Demikian surat ini kami sampaikan, atas perhatian dan kerja sama yang baik kami ucapkan terima kasih.');
+      }
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  // Build Surat
+  const handleGenerateSurat = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Resolve Dewan
+    const currentDewan = dewanList.find(d => d.id === selectedDewanId) || dewanList[0];
+    const dewanNama = currentDewan ? currentDewan.memberName : 'Amiruddin S.';
+    const dewanJabatan = currentDewan ? currentDewan.jabatan : 'Pradana Putra';
+    const dewanNta = currentDewan?.satuan === 'Putra' ? 'NTA. 10.035.001' : 'NTA. 10.036.001';
+
+    // Resolve Pembina
+    let pembinaNama = officials.pembinaPutra;
+    let pembinaJabatan = 'Pembina Gugus Depan 10.035';
+    let pembinaNip = officials.nipPembinaPutra;
+
+    if (selectedPembinaRole === 'pembina_pi') {
+      pembinaNama = officials.pembinaPutri;
+      pembinaJabatan = 'Pembina Gugus Depan 10.036';
+      pembinaNip = officials.nipPembinaPutri;
+    } else if (selectedPembinaRole === 'pembantu_pa') {
+      pembinaNama = officials.pembantuPembinaPutra;
+      pembinaJabatan = 'Pembantu Pembina Putra 10.035';
+      pembinaNip = undefined;
+    } else if (selectedPembinaRole === 'pembantu_pi') {
+      pembinaNama = officials.pembantuPembinaPutri;
+      pembinaJabatan = 'Pembantu Pembina Putri 10.036';
+      pembinaNip = undefined;
+    }
+
+    // Resolve Digital Signer
+    let signerName = officials.pembinaPutra;
+    let signerTitle = 'Pembina Putra Gugus Depan 10.035';
+    if (digitalSigner === 'kepala_sekolah') {
+      signerName = officials.ketuaGudep;
+      signerTitle = 'Kepala SMA Negeri 9 Maros (Mabigus)';
+    } else if (digitalSigner === 'pembina_putri') {
+      signerName = officials.pembinaPutri;
+      signerTitle = 'Pembina Putri Gugus Depan 10.036';
+    }
+
+    const createdList: GeneratedSurat[] = [];
+
+    // If ceklis dua-dua is active: generate 2 letters (10.035 for Putra and 10.036 for Putri)
+    if (ceklisDuaDua) {
+      // 1. Gudep 10.035 (Putra)
+      const idPa = `surat_${Date.now()}_pa`;
+      const nomorPa = `${nomorUrut}/10.035/C/2026`;
+      const qrDataUrlPa = await QRCode.toDataURL(
+        JSON.stringify({ id: idPa, no: nomorPa, p: perihal, t: tanggalSurat, s: officials.pembinaPutra }),
+        { width: 140, margin: 1, color: { dark: '#000000', light: '#ffffff' } }
+      );
+
+      createdList.push({
+        id: idPa,
+        nomorSurat: nomorPa,
+        nomorUrut,
+        perihal,
+        lampiran,
+        keteranganIdentitas,
+        tanggalSurat,
+        gudepType: '10.035',
+        includeNomor,
+        includeTanggal,
+        includePerihal,
+        includeLampiran,
+        includeKeteranganIdentitas,
+        includeKepadaYth,
+        penerimaNama,
+        penerimaTempat,
+        isiParagraf,
+        bulletStyle,
+        rincianHariTanggal,
+        rincianWaktu,
+        includeTempat,
+        rincianTempat,
+        includeKeteranganAcara,
+        rincianKeteranganAcara,
+        penutupParagraf,
+        dewanJabatan: 'Pradana Putra',
+        dewanNama: dewanList.find(d => d.id === 'pradana_pa')?.memberName || 'Amiruddin S.',
+        dewanNta: 'NTA. 10.035.001',
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
+        pembinaJabatan: 'Pembina Gugus Depan 10.035',
+        pembinaNama: officials.pembinaPutra,
+        pembinaNip: officials.nipPembinaPutra,
+        metodeTtd,
+        digitalSigner: 'pembina_putra',
+        digitalSignerName: officials.pembinaPutra,
+        digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
+        qrCodeDataUrl: qrDataUrlPa,
+        includeStempel,
+        includeTembusan,
+        tembusanList,
+        createdAt: new Date().toISOString()
+      });
+
+      // 2. Gudep 10.036 (Putri)
+      const idPi = `surat_${Date.now()}_pi`;
+      const nomorPi = `${nomorUrut}/10.036/C/2026`;
+      const qrDataUrlPi = await QRCode.toDataURL(
+        JSON.stringify({ id: idPi, no: nomorPi, p: perihal, t: tanggalSurat, s: officials.pembinaPutri }),
+        { width: 140, margin: 1, color: { dark: '#000000', light: '#ffffff' } }
+      );
+
+      createdList.push({
+        id: idPi,
+        nomorSurat: nomorPi,
+        nomorUrut,
+        perihal,
+        lampiran,
+        keteranganIdentitas,
+        tanggalSurat,
+        gudepType: '10.036',
+        includeNomor,
+        includeTanggal,
+        includePerihal,
+        includeLampiran,
+        includeKeteranganIdentitas,
+        includeKepadaYth,
+        penerimaNama,
+        penerimaTempat,
+        isiParagraf,
+        bulletStyle,
+        rincianHariTanggal,
+        rincianWaktu,
+        includeTempat,
+        rincianTempat,
+        includeKeteranganAcara,
+        rincianKeteranganAcara,
+        penutupParagraf,
+        dewanJabatan: 'Pradana Putri',
+        dewanNama: dewanList.find(d => d.id === 'pradana_pi')?.memberName || 'Nurhaliza Azzahra',
+        dewanNta: 'NTA. 10.036.001',
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
+        pembinaJabatan: 'Pembina Gugus Depan 10.036',
+        pembinaNama: officials.pembinaPutri,
+        pembinaNip: officials.nipPembinaPutri,
+        metodeTtd,
+        digitalSigner: 'pembina_putri',
+        digitalSignerName: officials.pembinaPutri,
+        digitalSignerTitle: 'Pembina Putri Gugus Depan 10.036',
+        qrCodeDataUrl: qrDataUrlPi,
+        includeStempel,
+        includeTembusan,
+        tembusanList,
+        createdAt: new Date().toISOString()
+      });
+    } else {
+      // Single Surat
+      const id = `surat_${Date.now()}`;
+      const nomor = `${nomorUrut}/${gudepPilihan}/C/2026`;
+      const qrDataUrl = await QRCode.toDataURL(
+        JSON.stringify({ id, no: nomor, p: perihal, t: tanggalSurat, s: signerName }),
+        { width: 140, margin: 1, color: { dark: '#000000', light: '#ffffff' } }
+      );
+
+      createdList.push({
+        id,
+        nomorSurat: nomor,
+        nomorUrut,
+        perihal,
+        lampiran,
+        keteranganIdentitas,
+        tanggalSurat,
+        gudepType: gudepPilihan,
+        includeNomor,
+        includeTanggal,
+        includePerihal,
+        includeLampiran,
+        includeKeteranganIdentitas,
+        includeKepadaYth,
+        penerimaNama,
+        penerimaTempat,
+        isiParagraf,
+        bulletStyle,
+        rincianHariTanggal,
+        rincianWaktu,
+        includeTempat,
+        rincianTempat,
+        includeKeteranganAcara,
+        rincianKeteranganAcara,
+        penutupParagraf,
+        dewanJabatan,
+        dewanNama,
+        dewanNta,
+        includeKetuaGudep,
+        ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepNip: officials.nipKetuaGudep,
+        pembinaJabatan,
+        pembinaNama,
+        pembinaNip,
+        metodeTtd,
+        digitalSigner,
+        digitalSignerName: signerName,
+        digitalSignerTitle: signerTitle,
+        qrCodeDataUrl: qrDataUrl,
+        includeStempel,
+        includeTembusan,
+        tembusanList,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // Save to archive
+    const updated = [...createdList, ...arsipSurat];
+    setArsipSurat(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY_SURAT, JSON.stringify(updated));
+    } catch {}
+
+    setPreviewSuratList(createdList);
+    setActivePreviewIndex(0);
+    setViewMode('preview');
+  };
+
+  // Export Surat to PDF via html2pdf.js
+  const handleDownloadPdf = async (surat: GeneratedSurat) => {
+    if (!letterRef.current) return;
+    setIsExportingPdf(true);
+    try {
+      const opt = {
+        margin: [10, 12, 10, 12] as [number, number, number, number],
+        filename: `Surat_Pramuka_${surat.nomorUrut}_${surat.gudepType.replace('.', '-')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      };
+
+      await html2pdf().set(opt).from(letterRef.current).save();
+    } catch (err) {
+      console.error('Error generating PDF with html2pdf:', err);
+      // Fallback: window.print()
+      window.print();
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  const activeSurat = previewSuratList[activePreviewIndex] || previewSuratList[0];
+
+  return (
+    <div className="space-y-4 pb-28 font-sans">
+      <MenuHeaderCard
+        title="Persuratan Ambalan"
+        subtitle="Form Resmi Pembuat Surat Keluar Gugus Depan SMAN 9 Maros"
+        onBack={onBack || (() => {})}
+      />
+
+      {/* Mode Navigation Tabs */}
+      <div className="flex items-center gap-2 p-1 bg-white rounded-2xl border border-slate-200 text-xs shadow-xs">
+        <button
+          type="button"
+          onClick={() => setViewMode('form')}
+          className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
+            viewMode === 'form' ? 'bg-[#c81e28] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          📝 Isi Form Surat
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (arsipSurat.length > 0 && !activeSurat) {
+              setPreviewSuratList([arsipSurat[0]]);
+              setActivePreviewIndex(0);
+            }
+            setViewMode('preview');
+          }}
+          disabled={!activeSurat && arsipSurat.length === 0}
+          className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
+            viewMode === 'preview' ? 'bg-[#c81e28] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 disabled:opacity-40'
+          }`}
+        >
+          👁️ Pratinjau &amp; PDF
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('list')}
+          className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
+            viewMode === 'list' ? 'bg-[#c81e28] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          📂 Arsip ({arsipSurat.length})
+        </button>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 1. GOOGLE FORM STYLE: DUA BAGIAN (IDENTITAS & ISI SURAT)  */}
+      {/* ======================================================== */}
+      {viewMode === 'form' && (
+        <form onSubmit={handleGenerateSurat} className="space-y-4">
+          
+          {/* HEADER FORM GOOGLE FORM STYLE */}
+          <div className="bg-white rounded-2xl border-t-8 border-t-[#c81e28] border-x border-b border-slate-200 p-5 shadow-xs space-y-2">
+            <h2 className="text-base font-black text-slate-900">Form Pengisian Surat Resmi Ambalan</h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Silakan isi identitas dan isi surat di bawah. Klik <strong>lingkaran di samping setiap kolom</strong> untuk menentukan apakah kolom tersebut dimasukkan ke dalam surat.
+            </p>
+          </div>
+
+          {/* ==================== BAGIAN 1: IDENTITAS ==================== */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
+                Bagian 1: Identitas Surat
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Klik lingkaran untuk memilih</span>
+            </div>
+
+            {/* Pilihan Gugus Depan */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-bold text-slate-800 block">
+                Gugus Depan Pangkalan SMA Negeri 9 Maros
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { id: '10.035-10.036', label: 'Gudep 10.035 - 10.036 (Gabungan)' },
+                  { id: '10.035', label: 'Gudep 10.035 (Putra)' },
+                  { id: '10.036', label: 'Gudep 10.036 (Putri)' }
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setCeklisDuaDua(false);
+                      setGudepPilihan(g.id as any);
+                    }}
+                    className={`p-2.5 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer ${
+                      !ceklisDuaDua && gudepPilihan === g.id
+                        ? 'border-[#c81e28] bg-red-50 text-[#b71922]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Opsi Generate 2 Surat Sekaligus */}
+              <div className="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-800">Generate 2 Surat Sekaligus</p>
+                  <p className="text-[10px] text-slate-500">Terbitkan otomatis untuk Gudep 10.035 &amp; 10.036 secara terpisah</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCeklisDuaDua(!ceklisDuaDua)}
+                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                    ceklisDuaDua
+                      ? 'border-[#c81e28] bg-[#c81e28] text-white'
+                      : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {ceklisDuaDua && <span className="text-xs">✓</span>}
+                </button>
+              </div>
+            </div>
+
+            {/* 1. Tanggal (Wajib) */}
+            <div className="flex items-start gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIncludeTanggal(!includeTanggal)}
+                title="Pilih untuk menampilkan di surat"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeTanggal
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeTanggal && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Tanggal Surat <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">Sejajar nomor surat di kanan</span>
+                </div>
+                <input
+                  type="text"
+                  value={tanggalSurat}
+                  onChange={(e) => setTanggalSurat(e.target.value)}
+                  placeholder="Contoh: 10 November 2026"
+                  required
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-[#c81e28]"
+                />
+              </div>
+            </div>
+
+            {/* 2. Nomor Surat (Wajib) */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIncludeNomor(!includeNomor)}
+                title="Pilih untuk menampilkan di surat"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeNomor
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeNomor && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Nomor Surat <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Hasil: {nomorUrut}/{ceklisDuaDua ? '10.035 & 10.036' : gudepPilihan}/C/2026
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={nomorUrut}
+                    onChange={(e) => setNomorUrut(e.target.value)}
+                    placeholder="Contoh: 015"
+                    required
+                    className="w-24 text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-mono focus:outline-none focus:border-[#c81e28]"
+                  />
+                  <span className="text-xs font-mono text-slate-500">
+                    /{ceklisDuaDua ? '10.035 / 10.036' : gudepPilihan}/C/2026
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Perihal (Wajib) */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIncludePerihal(!includePerihal)}
+                title="Pilih untuk menampilkan di surat"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includePerihal
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includePerihal && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-bold text-slate-800">
+                  Perihal <span className="text-[#c81e28]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={perihal}
+                  onChange={(e) => setPerihal(e.target.value)}
+                  placeholder="Contoh: Undangan Kegiatan Latihan Gabungan"
+                  required
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-[#c81e28]"
+                />
+              </div>
+            </div>
+
+            {/* 4. Lampiran (Opsional, dengan lingkaran opsi) */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIncludeLampiran(!includeLampiran)}
+                title="Pilih untuk memasukkan lampiran ke surat"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeLampiran
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeLampiran && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Lampiran <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500">
+                    {includeLampiran ? 'Dimasukkan ke surat' : 'Dilewati'}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={lampiran}
+                  onChange={(e) => setLampiran(e.target.value)}
+                  placeholder="Contoh: 1 (Satu) Lembar Jadwal Kegiatan"
+                  disabled={!includeLampiran}
+                  className={`w-full text-xs p-2.5 rounded-xl border border-slate-200 transition-all ${
+                    includeLampiran ? 'bg-white text-slate-900 focus:border-[#c81e28]' : 'bg-slate-100 text-slate-400'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* 5. Keterangan Identitas (Opsional, dengan lingkaran opsi) */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIncludeKeteranganIdentitas(!includeKeteranganIdentitas)}
+                title="Pilih untuk memasukkan keterangan identitas"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeKeteranganIdentitas
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeKeteranganIdentitas && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500">
+                    {includeKeteranganIdentitas ? 'Dimasukkan ke surat' : 'Dilewati'}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={keteranganIdentitas}
+                  onChange={(e) => setKeteranganIdentitas(e.target.value)}
+                  placeholder="Contoh: Sangat Segera / Penting"
+                  disabled={!includeKeteranganIdentitas}
+                  className={`w-full text-xs p-2.5 rounded-xl border border-slate-200 transition-all ${
+                    includeKeteranganIdentitas ? 'bg-white text-slate-900 focus:border-[#c81e28]' : 'bg-slate-100 text-slate-400'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* 6. Kepada Yth. (Opsional, dengan lingkaran opsi) */}
+            <div className="flex items-start gap-3 pt-1 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIncludeKepadaYth(!includeKepadaYth)}
+                title="Pilih untuk memasukkan Kepada Yth"
+                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeKepadaYth
+                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeKepadaYth && <span className="text-xs">✓</span>}
+              </button>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Tujuan Surat (Kepada Yth.) <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500">
+                    {includeKepadaYth ? 'Dimasukkan ke surat' : 'Dilewati'}
+                  </span>
+                </div>
+                {includeKepadaYth && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={penerimaNama}
+                      onChange={(e) => setPenerimaNama(e.target.value)}
+                      placeholder="Nama / Instansi Penerima"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
+                    />
+                    <input
+                      type="text"
+                      value={penerimaTempat}
+                      onChange={(e) => setPenerimaTempat(e.target.value)}
+                      placeholder="di - Tempat"
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* ==================== BAGIAN 2: ISI SURAT ==================== */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
+                Bagian 2: Isi Surat
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Times New Roman 12pt</span>
+            </div>
+
+            {/* Salam Pembuka (Otomatis) */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Salam Pembuka &amp; Salam Pramuka (Otomatis)
+              </span>
+              <p className="text-xs font-serif italic text-slate-800">Assalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
+              <p className="text-xs font-serif font-bold text-slate-800">Salam Pramuka,</p>
+            </div>
+
+            {/* Isi Surat Paragraf */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Isi Surat (Paragraf)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateAiParagraph('isi')}
+                  disabled={isGeneratingAi}
+                  className="text-[11px] font-bold text-[#c81e28] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  ✨ Bantu Buat Paragraf
+                </button>
+              </div>
+              <textarea
+                rows={3}
+                value={isiParagraf}
+                onChange={(e) => setIsiParagraf(e.target.value)}
+                placeholder="Tuliskan isi surat secara ringkas dan lugas..."
+                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 leading-relaxed font-serif focus:border-[#c81e28] focus:outline-none"
+              />
+            </div>
+
+            {/* Poin-Poin Rincian Acara */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">
+                  Poin-Poin Rincian Kegiatan
+                </span>
+                
+                {/* Opsi Model Bullet */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                  {[
+                    { id: 'titik', label: '• Titik' },
+                    { id: 'nomor', label: '123' },
+                    { id: 'abcd', label: 'abc' },
+                    { id: 'strip', label: '- Strip' }
+                  ].map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setBulletStyle(b.id as any)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        bulletStyle === b.id ? 'bg-[#c81e28] text-white' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hari / Tanggal (Wajib) */}
+              <div className="flex items-start gap-2">
+                <span className="w-6 text-center text-xs font-bold text-[#c81e28] pt-2.5">
+                  {getBulletPrefix(bulletStyle, 0)}
+                </span>
+                <div className="flex-1">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                    Hari / Tanggal <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={rincianHariTanggal}
+                    onChange={(e) => setRincianHariTanggal(e.target.value)}
+                    required
+                    placeholder="Contoh: Sabtu, 21 November 2026"
+                    className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
+                  />
+                </div>
+              </div>
+
+              {/* Waktu (Wajib) */}
+              <div className="flex items-start gap-2">
+                <span className="w-6 text-center text-xs font-bold text-[#c81e28] pt-2.5">
+                  {getBulletPrefix(bulletStyle, 1)}
+                </span>
+                <div className="flex-1">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                    Waktu <span className="text-[#c81e28]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={rincianWaktu}
+                    onChange={(e) => setRincianWaktu(e.target.value)}
+                    required
+                    placeholder="Contoh: 08.00 WITA s.d. Selesai"
+                    className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
+                  />
+                </div>
+              </div>
+
+              {/* Tempat (Opsional dengan lingkaran toggle) */}
+              <div className="flex items-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIncludeTempat(!includeTempat)}
+                  className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
+                    includeTempat ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {includeTempat && <span className="text-xs">✓</span>}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Tempat <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {includeTempat ? 'Dimasukkan' : 'Dilewati'}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={rincianTempat}
+                    onChange={(e) => setRincianTempat(e.target.value)}
+                    disabled={!includeTempat}
+                    placeholder="Contoh: Sanggar Bakti SMA Negeri 9 Maros"
+                    className={`w-full text-xs p-2 rounded-xl border border-slate-200 transition-all ${
+                      includeTempat ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Keterangan Acara (Opsional dengan lingkaran toggle) */}
+              <div className="flex items-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIncludeKeteranganAcara(!includeKeteranganAcara)}
+                  className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
+                    includeKeteranganAcara ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {includeKeteranganAcara && <span className="text-xs">✓</span>}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Keterangan / Agenda Kegiatan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {includeKeteranganAcara ? 'Dimasukkan' : 'Dilewati'}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={rincianKeteranganAcara}
+                    onChange={(e) => setRincianKeteranganAcara(e.target.value)}
+                    disabled={!includeKeteranganAcara}
+                    placeholder="Contoh: Menggunakan Seragam Pramuka Lengkap"
+                    className={`w-full text-xs p-2 rounded-xl border border-slate-200 transition-all ${
+                      includeKeteranganAcara ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'
+                    }`}
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Penutup Paragraf */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Penutup (Paragraf)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateAiParagraph('penutup')}
+                  disabled={isGeneratingAi}
+                  className="text-[11px] font-bold text-[#c81e28] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  ✨ Bantu Penutup
+                </button>
+              </div>
+              <textarea
+                rows={2}
+                value={penutupParagraf}
+                onChange={(e) => setPenutupParagraf(e.target.value)}
+                placeholder="Tuliskan penutup surat..."
+                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 leading-relaxed font-serif focus:border-[#c81e28] focus:outline-none"
+              />
+            </div>
+
+            {/* Salam Penutup (Otomatis) */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Salam Penutup (Otomatis)
+              </span>
+              <p className="text-xs font-serif italic text-slate-800">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
+            </div>
+
+          </div>
+
+          {/* ==================== BAGIAN 3: PENGESAHAN ==================== */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
+                Bagian 3: Pengesahan &amp; Penandatangan
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
+            </div>
+
+            {/* Dropdown Dewan Ambalan (Nama Otomatis) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Dewan Penandatangan (Otomatis Masuk)
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">8 Roda Kepengurusan</span>
+              </div>
+              <select
+                value={selectedDewanId}
+                onChange={(e) => setSelectedDewanId(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
+              >
+                {dewanList.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.jabatan} — {d.memberName} ({d.satuan})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dropdown Pembina (Nama Otomatis) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Pembina Penandatangan (Otomatis dari Mabigus)
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">Sesuai data Mabigus</span>
+              </div>
+              <select
+                value={selectedPembinaRole}
+                onChange={(e) => setSelectedPembinaRole(e.target.value as any)}
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
+              >
+                <option value="pembina_pa">Pembina Putra: {officials.pembinaPutra}</option>
+                <option value="pembina_pi">Pembina Putri: {officials.pembinaPutri}</option>
+                <option value="pembantu_pa">Pembantu Pembina Putra: {officials.pembantuPembinaPutra}</option>
+                <option value="pembantu_pi">Pembantu Pembina Putri: {officials.pembantuPembinaPutri}</option>
+              </select>
+            </div>
+
+            {/* Ketua Gugus Depan (Dr. H. Idrus, S. Pd., M. Pd - Nama Otomatis) */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-900">Ketua Gugus Depan (Mengetahui)</p>
+                <p className="text-[11px] font-bold text-[#b71922]">{officials.ketuaGudep}</p>
+                {officials.nipKetuaGudep && (
+                  <p className="text-[10px] text-slate-500 font-mono">{officials.nipKetuaGudep}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIncludeKetuaGudep(!includeKetuaGudep)}
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  includeKetuaGudep ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
+                }`}
+              >
+                {includeKetuaGudep && <span className="text-xs">✓</span>}
+              </button>
+            </div>
+
+            {/* Metode Tanda Tangan: Ttd Biasa, Ttd Digital, Stempel Basah */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <label className="text-xs font-bold text-slate-800 block">
+                Pilihan Pengesahan Dokumen
+              </label>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'digital', title: 'Ttd Digital (QR)', sub: 'Barcode Verifikasi' },
+                  { id: 'biasa', title: 'Ttd Biasa', sub: 'Ruang Tanda Tangan' },
+                  { id: 'stempel', title: 'Stempel Basah', sub: 'Cap Lingkaran' }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setMetodeTtd(item.id as any)}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      metodeTtd === item.id
+                        ? 'border-[#c81e28] bg-red-50 text-[#b71922] font-black'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    <p className="text-xs">{item.title}</p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">{item.sub}</p>
+                  </button>
+                ))}
+              </div>
+
+              {/* Jika Ttd Digital dipilih: Opsi 3 Otoritas */}
+              {metodeTtd === 'digital' && (
+                <div className="p-3 bg-red-50 rounded-xl border border-red-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#b71922]">
+                      Otoritas Penandatangan Digital (3 Pilihan)
+                    </span>
+                    <span className="text-[9px] text-slate-500">Scan QR untuk verifikasi</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: 'kepala_sekolah', label: '1. Kepala Sekolah', name: officials.ketuaGudep },
+                      { id: 'pembina_putra', label: '2. Pembina Putra', name: officials.pembinaPutra },
+                      { id: 'pembina_putri', label: '3. Pembina Putri', name: officials.pembinaPutri }
+                    ].map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setDigitalSigner(s.id as DigitalSignerType)}
+                        className={`p-2 rounded-xl text-left border text-xs transition-all cursor-pointer ${
+                          digitalSigner === s.id
+                            ? 'bg-[#c81e28] text-white border-[#c81e28] font-bold'
+                            : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <p className="font-bold">{s.label}</p>
+                        <p className={`text-[10px] truncate ${digitalSigner === s.id ? 'text-red-100' : 'text-slate-500'}`}>
+                          {s.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Checkbox Stempel Basah */}
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-800">Sertakan Stempel Basah Ambalan</span>
+                <button
+                  type="button"
+                  onClick={() => setIncludeStempel(!includeStempel)}
+                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                    includeStempel ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {includeStempel && <span className="text-xs">✓</span>}
+                </button>
+              </div>
+            </div>
+
+            {/* Tembusan (Ketik + tombol tambah) */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800">
+                  Tembusan Surat <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIncludeTembusan(!includeTembusan)}
+                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                    includeTembusan ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {includeTembusan && <span className="text-xs">✓</span>}
+                </button>
+              </div>
+
+              {includeTembusan && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tembusanInput}
+                      onChange={(e) => setTembusanInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddTembusan();
+                        }
+                      }}
+                      placeholder="Ketik tembusan lalu tekan (+)..."
+                      className="flex-1 text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTembusan}
+                      className="px-4 py-2.5 rounded-xl bg-[#c81e28] text-white font-black text-sm hover:bg-[#a91b24] transition-all cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {tembusanList.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      {tembusanList.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 rounded-xl bg-slate-100 text-xs text-slate-800 font-medium"
+                        >
+                          <span>{idx + 1}. {item}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTembusan(idx)}
+                            className="text-slate-400 hover:text-red-600 font-bold px-2 py-0.5 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* SUBMIT BUTTON */}
+          <button
+            type="submit"
+            className="w-full py-3.5 rounded-2xl bg-[#c81e28] hover:bg-[#a91b24] text-white font-extrabold text-sm shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>📄 Generate &amp; Pratinjau Surat Resmi</span>
+          </button>
+        </form>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. TAMPILAN PRATINJAU SURAT (KOP ASLI SESUAI PDF LAMPIRAN) */}
+      {/* ======================================================== */}
+      {viewMode === 'preview' && activeSurat && (
+        <div className="space-y-4">
+          
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('form')}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                ← Edit Form
+              </button>
+
+              {previewSuratList.length > 1 && (
+                <div className="flex items-center gap-1">
+                  {previewSuratList.map((s, idx) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setActivePreviewIndex(idx)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                        activePreviewIndex === idx ? 'bg-[#c81e28] text-white shadow-xs' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      Surat {idx + 1} ({s.gudepType})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {activeSurat.metodeTtd === 'digital' && (
+                <button
+                  type="button"
+                  onClick={() => setVerificationModalSurat(activeSurat)}
+                  className="py-2 px-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span>🔍 Uji Scan QR</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => handleDownloadPdf(activeSurat)}
+                disabled={isExportingPdf}
+                className="py-2 px-4 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>{isExportingPdf ? '⏳ Menyiapkan PDF...' : '📥 Unduh Dokumen PDF'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* KERTAS RESMI SURAT (STANDAR A4 GERAKAN PRAMUKA) */}
+          <div
+            ref={letterRef}
+            className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-300 shadow-xl max-w-2xl mx-auto text-black font-serif leading-normal select-text"
+            style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt' }}
+          >
+            {/* KOP SURAT ASLI DARI PDF LAMPIRAN */}
+            <div className="border-b-[3px] border-black pb-1">
+              <div className="flex items-center justify-between gap-3">
+                {/* Logo Tunas Kelapa Kiri */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
+                  <img
+                    src="/assets/kop_tunas_kelapa.png"
+                    alt="Logo Tunas Kelapa"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
+                {/* Teks Kop Tengah */}
+                <div className="text-center flex-1 leading-tight px-1" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                  <h2 className="text-base sm:text-xl font-black uppercase tracking-wider text-black">
+                    GERAKAN PRAMUKA
+                  </h2>
+                  <h3 className="text-sm sm:text-lg font-black uppercase tracking-wide text-black mt-0.5">
+                    GUGUS DEPAN {activeSurat.gudepType === '10.035' ? '10-035' : activeSurat.gudepType === '10.036' ? '10-036' : '10-035 / 10-036'}
+                  </h3>
+                  <h1 className="text-base sm:text-xl font-extrabold uppercase tracking-tight text-black mt-0.5">
+                    PANGKALAN SMA NEGERI 9 MAROS
+                  </h1>
+                  <p className="text-[9px] sm:text-[10px] text-black mt-1 italic font-sans font-normal leading-tight">
+                    ( sekretariat : Jl. Pattene, Desa Pa&apos;bentengang, Dusun ujung bulo, Kec. Marusu, Kab Maros )
+                  </p>
+                </div>
+
+                {/* Logo WOSM Kanan */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
+                  <img
+                    src="/assets/kop_wosm.png"
+                    alt="Logo WOSM Pramuka Dunia"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Garis Ganda Pembatas Kop */}
+              <div className="w-full mt-2">
+                <div className="w-full border-t-[2.5px] border-black"></div>
+                <div className="w-full border-t-[1px] border-black mt-[1.5px]"></div>
+              </div>
+            </div>
+
+            {/* Identitas Surat: Nomor, Lampiran, Perihal, Keterangan (Kiri) & Tanggal (Kanan Sejajar Nomor) */}
+            <div className="pt-4 flex justify-between items-start" style={{ fontSize: '12pt' }}>
+              <div className="space-y-1">
+                {activeSurat.includeNomor && (
+                  <p>
+                    <span className="inline-block w-24">Nomor</span> : {activeSurat.nomorSurat}
+                  </p>
+                )}
+                {activeSurat.includeLampiran && (
+                  <p>
+                    <span className="inline-block w-24">Lampiran</span> : {activeSurat.lampiran}
+                  </p>
+                )}
+                {activeSurat.includePerihal && (
+                  <p>
+                    <span className="inline-block w-24 font-bold">Perihal</span> : <strong>{activeSurat.perihal}</strong>
+                  </p>
+                )}
+                {activeSurat.includeKeteranganIdentitas && (
+                  <p>
+                    <span className="inline-block w-24">Keterangan</span> : {activeSurat.keteranganIdentitas}
+                  </p>
+                )}
+              </div>
+
+              {activeSurat.includeTanggal && (
+                <div className="text-right font-medium">
+                  <p>Maros, {activeSurat.tanggalSurat}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Kepada Yth. (Opsional) */}
+            {activeSurat.includeKepadaYth && (
+              <div className="pt-4 leading-snug" style={{ fontSize: '12pt' }}>
+                <p>Kepada Yth.</p>
+                <p className="font-bold">{activeSurat.penerimaNama}</p>
+                <p>{activeSurat.penerimaTempat}</p>
+              </div>
+            )}
+
+            {/* Salam Pembuka */}
+            <div className="pt-4 space-y-1" style={{ fontSize: '12pt' }}>
+              <p className="italic">Assalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
+              <p className="font-bold">Salam Pramuka,</p>
+            </div>
+
+            {/* Isi Paragraf Surat */}
+            <div className="pt-3 leading-relaxed text-justify space-y-3" style={{ fontSize: '12pt' }}>
+              <p>{activeSurat.isiParagraf}</p>
+
+              {/* Rincian Poin-Poin Acara */}
+              <div className="pl-6 space-y-1">
+                <p>
+                  <span className="inline-block w-36 font-bold">{getBulletPrefix(activeSurat.bulletStyle, 0)} Hari / Tanggal</span> : {activeSurat.rincianHariTanggal}
+                </p>
+                <p>
+                  <span className="inline-block w-36 font-bold">{getBulletPrefix(activeSurat.bulletStyle, 1)} Waktu</span> : {activeSurat.rincianWaktu}
+                </p>
+                {activeSurat.includeTempat && (
+                  <p>
+                    <span className="inline-block w-36 font-bold">{getBulletPrefix(activeSurat.bulletStyle, 2)} Tempat</span> : {activeSurat.rincianTempat}
+                  </p>
+                )}
+                {activeSurat.includeKeteranganAcara && (
+                  <p>
+                    <span className="inline-block w-36 font-bold">{getBulletPrefix(activeSurat.bulletStyle, 3)} Keterangan</span> : {activeSurat.rincianKeteranganAcara}
+                  </p>
+                )}
+              </div>
+
+              {/* Penutup */}
+              <p>{activeSurat.penutupParagraf}</p>
+            </div>
+
+            {/* Salam Penutup */}
+            <div className="pt-3 space-y-0.5" style={{ fontSize: '12pt' }}>
+              <p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
+              <p className="font-bold">Salam Pramuka.</p>
+            </div>
+
+            {/* Tanggal Pengesahan */}
+            <div className="pt-4 text-right" style={{ fontSize: '12pt' }}>
+              <p>Ditetapkan di Maros pada tanggal {activeSurat.tanggalSurat}</p>
+            </div>
+
+            {/* Tanda Tangan Mengetahui */}
+            <div className="pt-4 text-center font-sans" style={{ fontSize: '11pt' }}>
+              {/* Dewan Ambalan */}
+              <div className="grid grid-cols-2 gap-4 pb-6">
+                <div>
+                  <p className="font-bold">{activeSurat.dewanJabatan},</p>
+                  <div className="h-16 flex items-center justify-center">
+                    {/* Placeholder space for TTD dewan */}
+                  </div>
+                  <p className="font-bold underline">{activeSurat.dewanNama}</p>
+                  <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
+                </div>
+
+                <div>
+                  <p className="font-bold">{activeSurat.pembinaJabatan},</p>
+                  <div className="h-16 flex items-center justify-center relative">
+                    {/* Stempel Basah Placement */}
+                    {activeSurat.includeStempel && (
+                      <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
+                        <span>GERAKAN PRAMUKA</span>
+                        <span>GUDEP 10-035/10-036</span>
+                        <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
+                      </div>
+                    )}
+
+                    {/* QR Code Verifikasi atau Spasi TTD */}
+                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
+                      <div
+                        onClick={() => setVerificationModalSurat(activeSurat)}
+                        className="cursor-pointer text-center group"
+                        title="Klik untuk verifikasi keaslian dokumen"
+                      >
+                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
+                        <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
+                      </div>
+                    ) : (
+                      <div className="h-16"></div>
+                    )}
+                  </div>
+                  <p className="font-bold underline">{activeSurat.pembinaNama}</p>
+                  {activeSurat.pembinaNip && (
+                    <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Ketua Gugus Depan Mengetahui (Tengah Bawah) */}
+              {activeSurat.includeKetuaGudep && (
+                <div className="pt-2 border-t border-slate-200 inline-block min-w-[280px]">
+                  <p className="font-bold">Mengetahui,</p>
+                  <p className="font-bold text-xs">Ketua Gugus Depan SMA Negeri 9 Maros</p>
+                  
+                  <div className="my-2 h-16 flex items-center justify-center">
+                    {activeSurat.metodeTtd === 'digital' && activeSurat.digitalSigner === 'kepala_sekolah' && activeSurat.qrCodeDataUrl ? (
+                      <div
+                        onClick={() => setVerificationModalSurat(activeSurat)}
+                        className="cursor-pointer text-center group"
+                        title="Klik untuk verifikasi keaslian dokumen"
+                      >
+                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-14 h-14 mx-auto" />
+                        <span className="text-[7px] font-mono text-slate-400 block">Scan Dokumen Asli</span>
+                      </div>
+                    ) : (
+                      <div className="h-12"></div>
+                    )}
+                  </div>
+
+                  <p className="font-bold underline text-sm">{activeSurat.ketuaGudepNama}</p>
+                  {activeSurat.ketuaGudepNip && (
+                    <p className="text-[10px] text-slate-500 font-mono">{activeSurat.ketuaGudepNip}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Tembusan (Opsional) */}
+            {activeSurat.includeTembusan && activeSurat.tembusanList.length > 0 && (
+              <div className="pt-6 border-t border-slate-200 text-[10px] sm:text-xs font-sans">
+                <p className="font-bold uppercase tracking-wider">Tembusan Kepada Yth :</p>
+                <ol className="list-decimal pl-4 space-y-0.5 mt-0.5">
+                  {activeSurat.tembusanList.map((t, idx) => (
+                    <li key={idx}>{t}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. TAMPILAN ARSIP SURAT KELUAR                           */}
+      {/* ======================================================== */}
+      {viewMode === 'list' && (
+        <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900">Buku Register &amp; Arsip Surat</h3>
+              <p className="text-xs text-slate-500">Seluruh surat resmi yang telah diterbitkan</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewMode('form')}
+              className="py-2 px-3 rounded-xl bg-[#c81e28] text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              + Buat Surat Baru
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {arsipSurat.length > 0 ? (
+              arsipSurat.map((surat) => (
+                <div key={surat.id} className="py-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-100 text-[#b71922]">
+                        {surat.nomorSurat}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {surat.tanggalSurat}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">
+                      {surat.perihal}
+                    </h4>
+                    {surat.includeKepadaYth && (
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Tujuan: {surat.penerimaNama}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setVerificationModalSurat(surat)}
+                      className="px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer"
+                      title="Verifikasi QR"
+                    >
+                      ✓ Verif
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewSuratList([surat]);
+                        setActivePreviewIndex(0);
+                        setViewMode('preview');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Buka
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-slate-400">
+                <p className="text-xs font-semibold">Belum ada surat yang diterbitkan</p>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('form')}
+                  className="mt-2 text-xs font-bold text-[#c81e28] hover:underline cursor-pointer"
+                >
+                  + Buat surat pertama sekarang
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. MODAL VERIFIKASI SCAN QR DOKUMEN RESMI (CENTANG HIJAU) */}
+      {/* ======================================================== */}
+      {verificationModalSurat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
+            
+            {/* Centang Hijau Besar */}
+            <div className="w-20 h-20 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-4xl shadow-inner animate-in zoom-in-50 duration-200">
+              ✓
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-emerald-700 tracking-wide">
+                DOKUMEN TERVERIFIKASI ASLI
+              </h3>
+              <p className="text-xs text-slate-500">
+                Data terdaftar sah di Database Ambalan SMA Negeri 9 Maros
+              </p>
+            </div>
+
+            {/* Ringkasan Data Surat */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2 font-sans">
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500 font-medium">Nomor Surat:</span>
+                <span className="font-mono font-bold text-slate-900">{verificationModalSurat.nomorSurat}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500 font-medium">Perihal:</span>
+                <span className="font-bold text-slate-900 text-right max-w-[180px] truncate">{verificationModalSurat.perihal}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500 font-medium">Penandatangan:</span>
+                <span className="font-bold text-[#b71922] text-right">{verificationModalSurat.digitalSignerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Tanggal Rilis:</span>
+                <span className="font-bold text-slate-900">{verificationModalSurat.tanggalSurat}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewSuratList([verificationModalSurat]);
+                  setActivePreviewIndex(0);
+                  setVerificationModalSurat(null);
+                  setViewMode('preview');
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+              >
+                📥 Buka &amp; Unduh Surat (PDF)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVerificationModalSurat(null)}
+                className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};

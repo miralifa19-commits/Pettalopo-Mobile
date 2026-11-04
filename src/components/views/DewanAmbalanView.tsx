@@ -2,8 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { UserAccount, ProgramKerjaItem, ActiveKegiatanSession, AmbalanNotificationItem } from '../../types';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { ProgramKerjaView } from './ProgramKerjaView';
-import { CalendarDays, Dumbbell, ChevronRight } from 'lucide-react';
+import { CalendarDays, Dumbbell, ChevronRight, Crown, Users, Settings, RotateCcw, Check } from 'lucide-react';
 import { registerAmbalanUser } from '../../services/firebaseService';
+import { 
+  get8DewanPositions, 
+  save8DewanPositions, 
+  Dewan8Position 
+} from '../../data/dewanStructure';
+import { PersuratanAmbalanView } from './PersuratanAmbalanView';
 
 interface DewanAmbalanViewProps {
   currentUser?: UserAccount;
@@ -58,6 +64,46 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   // Navigation State: 'menu' (tampilan utama 5 menu dewan) atau salah satu menu terpilih
   const [activeMenu, setActiveMenu] = useState<DewanMenuId | 'menu'>('menu');
   const [selectedProkerType, setSelectedProkerType] = useState<'Kegiatan' | 'Latihan Rutin' | null>(null);
+
+  // 8 Roda Dewan Kepengurusan State
+  const [dewan8List, setDewan8List] = useState<Dewan8Position[]>(() => get8DewanPositions());
+  const [showManageDewanModal, setShowManageDewanModal] = useState(false);
+  const [editingPosition, setEditingPosition] = useState<Dewan8Position | null>(null);
+
+  const handleUpdateDewanMember = async (positionId: string, memberUidOrName: string) => {
+    const selected = allMembers.find(m => (m.uid && m.uid === memberUidOrName) || m.nama === memberUidOrName);
+    const targetPos = dewan8List.find(p => p.id === positionId);
+    if (!targetPos) return;
+
+    const newName = selected ? selected.nama : memberUidOrName;
+    const newUid = selected?.uid;
+    const newSangga = selected?.sangga;
+
+    const updated = dewan8List.map(p => {
+      if (p.id === positionId) {
+        return {
+          ...p,
+          memberUid: newUid,
+          memberName: newName,
+          sangga: newSangga
+        };
+      }
+      return p;
+    });
+
+    setDewan8List(updated);
+    save8DewanPositions(updated);
+
+    if (selected) {
+      await registerAmbalanUser({
+        ...selected,
+        role: 'dewan',
+        isDewan: true,
+        dewanJabatan: targetPos.jabatan,
+        jabatan: targetPos.jabatan
+      });
+    }
+  };
 
   // ==========================================
   // 1. KELOLA PROGRAM KERJA STATE
@@ -256,7 +302,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
     <div className="space-y-4 pb-24 font-sans">
 
       {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
-      {activeMenu !== 'proker' && (
+      {activeMenu !== 'proker' && activeMenu !== 'persuratan' && (
         <MenuHeaderCard
           title="Dewan Ambalan"
           subtitle={
@@ -264,8 +310,6 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
               ? 'Pengelolaan & administrasi masa bakti'
               : activeMenu === 'anggota_sangga'
               ? 'Kelola Anggota & Sangga Penegak'
-              : activeMenu === 'persuratan'
-              ? 'Kelola Persuratan Resmi Ambalan'
               : activeMenu === 'keuangan'
               ? 'Kelola Kas & Iuran Ambalan'
               : 'Kelola Rekap Laporan Dewan'
@@ -285,58 +329,224 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
           TAMPILAN MENU UTAMA (5 MENU DEWAN AMBALAN)
           ======================================================== */}
       {activeMenu === 'menu' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           
-          {/* 1. Kelola Program Kerja */}
-          <button
-            type="button"
-            onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
-            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
-          >
-            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">1.</span>
-            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Program Kerja</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rencana, pelaksanaan, dan evaluasi program</span>
-          </button>
-          {/* 2. Kelola Anggota dan Sangga */}
-          <button
-            type="button"
-            onClick={() => setActiveMenu('anggota_sangga')}
-            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
-          >
-            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">2.</span>
-            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Anggota dan Sangga</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Data anggota, tingkatan, SKU, dan sangga</span>
-          </button>
-          {/* 3. Kelola Persuratan */}
-          <button
-            type="button"
-            onClick={() => setActiveMenu('persuratan')}
-            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
-          >
-            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">3.</span>
-            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Persuratan</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Surat resmi dan arsip ambalan</span>
-          </button>
-          {/* 4. Kelola Keuangan */}
-          <button
-            type="button"
-            onClick={() => setActiveMenu('keuangan')}
-            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
-          >
-            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">4.</span>
-            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Keuangan</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Kas dan iuran anggota</span>
-          </button>
-          {/* 5. Kelola Laporan */}
-          <button
-            type="button"
-            onClick={() => setActiveMenu('laporan')}
-            className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left active:bg-slate-50"
-          >
-            <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">5.</span>
-            <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Laporan</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rekap kegiatan dan laporan masa bakti</span>
-          </button>
+          {/* 5 Menu Dewan Ambalan */}
+          <div className="space-y-2.5">
+            {/* 1. Kelola Program Kerja */}
+            <button
+              type="button"
+              onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">1.</span>
+              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Program Kerja</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rencana, pelaksanaan, dan evaluasi program</span>
+            </button>
+            {/* 2. Kelola Anggota dan Sangga */}
+            <button
+              type="button"
+              onClick={() => setActiveMenu('anggota_sangga')}
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">2.</span>
+              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Anggota dan Sangga</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Data anggota, tingkatan, SKU, dan sangga</span>
+            </button>
+            {/* 3. Kelola Persuratan */}
+            <button
+              type="button"
+              onClick={() => setActiveMenu('persuratan')}
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">3.</span>
+              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Persuratan</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Surat resmi dan arsip ambalan</span>
+            </button>
+            {/* 4. Kelola Keuangan */}
+            <button
+              type="button"
+              onClick={() => setActiveMenu('keuangan')}
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">4.</span>
+              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Keuangan</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Kas dan iuran anggota</span>
+            </button>
+            {/* 5. Kelola Laporan */}
+            <button
+              type="button"
+              onClick={() => setActiveMenu('laporan')}
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">5.</span>
+              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Laporan</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rekap kegiatan dan laporan masa bakti</span>
+            </button>
+          </div>
+
+          {/* ========================================================
+              8 RODA KEPENGURUSAN DEWAN AMBALAN (ROTASI DEWAN)
+              ======================================================== */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-red-50 text-[#e51c24]">
+                  <Crown size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase">
+                    8 Roda Kepengurusan Dewan Ambalan
+                  </h3>
+                  <p className="text-[10px] text-slate-500">
+                    Otomatis masuk &amp; memiliki akses di Grup Dewan Ambalan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManageDewanModal(true)}
+                className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-[#e51c24] border border-red-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all"
+              >
+                <Settings size={12} />
+                <span>Pilih / Rotasi Dewan</span>
+              </button>
+            </div>
+
+            {/* Grid 8 Posisi: 4 Putra & 4 Putri */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Kolom Satuan Putra */}
+              <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-black uppercase text-blue-800 tracking-wider block">
+                  ⚜️ Fungsionaris Putra (Gudep 10.035)
+                </span>
+                {dewan8List.filter(p => p.satuan === 'Putra').map((pos) => (
+                  <div key={pos.id} className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-1 shadow-2xs">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-slate-500 block truncate">{pos.jabatan}</span>
+                      <strong className="text-xs text-slate-900 block truncate">{pos.memberName}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingPosition(pos);
+                        setShowManageDewanModal(true);
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold shrink-0 cursor-pointer"
+                    >
+                      Ganti
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Kolom Satuan Putri */}
+              <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-black uppercase text-rose-800 tracking-wider block">
+                  🌸 Fungsionaris Putri (Gudep 10.036)
+                </span>
+                {dewan8List.filter(p => p.satuan === 'Putri').map((pos) => (
+                  <div key={pos.id} className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-1 shadow-2xs">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-slate-500 block truncate">{pos.jabatan}</span>
+                      <strong className="text-xs text-slate-900 block truncate">{pos.memberName}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingPosition(pos);
+                        setShowManageDewanModal(true);
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold shrink-0 cursor-pointer"
+                    >
+                      Ganti
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================
+              MODAL ROTASI / PEMILIHAN 8 DEWAN AMBALAN (ADMIN)
+              ======================================================== */}
+          {showManageDewanModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs font-sans">
+              <div className="bg-white w-full max-w-lg rounded-3xl p-5 border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Crown size={18} className="text-[#e51c24]" />
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      {editingPosition ? `Tetapkan ${editingPosition.jabatan}` : 'Kelola 8 Roda Dewan Ambalan'}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowManageDewanModal(false);
+                      setEditingPosition(null);
+                    }}
+                    className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-200 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pilih anggota untuk memegang 8 roda kepengurusan. Akun yang dipilih akan secara otomatis masuk dan memiliki akses fungsionaris pada <strong>Grup Dewan Ambalan</strong> di Ruang Ambalan.
+                </p>
+
+                {/* Form assign per posisi */}
+                <div className="space-y-3">
+                  {(editingPosition ? [editingPosition] : dewan8List).map((pos) => {
+                    const candidateMembers = allMembers.filter(m => pos.satuan ? m.satuan === pos.satuan : true);
+                    return (
+                      <div key={pos.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <span className={pos.satuan === 'Putra' ? 'text-blue-600' : 'text-rose-600'}>
+                              {pos.satuan === 'Putra' ? '⚜️' : '🌸'}
+                            </span>
+                            {pos.jabatan}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {pos.satuan}
+                          </span>
+                        </div>
+
+                        <select
+                          value={pos.memberUid || pos.memberName}
+                          onChange={(e) => handleUpdateDewanMember(pos.id, e.target.value)}
+                          className="w-full text-xs font-semibold px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[#e51c24]"
+                        >
+                          <option value={pos.memberName}>-- {pos.memberName} (Petahana) --</option>
+                          {candidateMembers.map((m) => (
+                            <option key={m.uid || m.nama} value={m.uid || m.nama}>
+                              {m.nama} (Sangga {m.sangga} - {m.tingkat})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowManageDewanModal(false);
+                      setEditingPosition(null);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-[#e51c24] hover:bg-[#c81e28] text-white text-xs font-bold transition-all shadow-xs cursor-pointer text-center"
+                  >
+                    Simpan &amp; Terapkan ke Sistem
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
@@ -642,227 +852,15 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
       )}
 
       {/* ========================================================
-          3. HALAMAN KELOLA PERSURATAN (SURAT OTOMATIS)
+          3. HALAMAN KELOLA PERSURATAN RESMI AMBALAN
           ======================================================== */}
       {activeMenu === 'persuratan' && (
-        <div className="space-y-3">
-          
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700">Persuratan Ambalan</span>
-            <button
-              type="button"
-              onClick={() => setIsCreatingSurat(!isCreatingSurat)}
-              className="px-3 py-1.5 rounded-xl bg-[#e51c24] text-white text-xs font-bold shadow-xs transition-all"
-            >
-              {isCreatingSurat ? 'Tutup Form' : 'Buat Surat Otomatis'}
-            </button>
-          </div>
-
-          {/* Form Pembuatan Surat Otomatis */}
-          {isCreatingSurat && (
-            <form onSubmit={handleCreateSurat} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-              <h3 className="text-xs font-bold text-slate-900">Form Surat Otomatis Resmi</h3>
-              
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Jenis Surat:</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(['Undangan', 'Tugas', 'Dispensasi', 'Peminjaman', 'Keterangan'] as const).map((j) => (
-                    <button
-                      key={j}
-                      type="button"
-                      onClick={() => setSuratJenis(j)}
-                      className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold ${
-                        suratJenis === j ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {j}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Perihal / Judul Surat:</label>
-                <input
-                  type="text"
-                  value={suratPerihal}
-                  onChange={(e) => setSuratPerihal(e.target.value)}
-                  placeholder="Contoh: Undangan Rapat Pleno Dewan Ambalan"
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Tujuan / Penerima:</label>
-                <input
-                  type="text"
-                  value={suratPenerima}
-                  onChange={(e) => setSuratPenerima(e.target.value)}
-                  placeholder="Contoh: Yth. Kepala SMPI Al-Wasi Maros"
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Pilih Anggota Terkait (Opsional):</label>
-                <select
-                  value={suratMemberTerkait}
-                  onChange={(e) => setSuratMemberTerkait(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                >
-                  <option value="">-- Pilih Anggota Ambalan --</option>
-                  {allMembers.map((m) => (
-                    <option key={m.uid || m.nama} value={m.nama}>
-                      {m.nama} ({m.satuan} - Sangga {m.sangga})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Tanggal Kegiatan:</label>
-                  <input
-                    type="text"
-                    value={suratTanggalKegiatan}
-                    onChange={(e) => setSuratTanggalKegiatan(e.target.value)}
-                    placeholder="Contoh: 24 Oktober 2026"
-                    className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Tempat:</label>
-                  <input
-                    type="text"
-                    value={suratTempat}
-                    onChange={(e) => setSuratTempat(e.target.value)}
-                    placeholder="Sanggar Ambalan"
-                    className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Keperluan / Keterangan Singkat:</label>
-                <textarea
-                  rows={2}
-                  value={suratKeperluan}
-                  onChange={(e) => setSuratKeperluan(e.target.value)}
-                  placeholder="Uraian ringkas tujuan pembuatan surat..."
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 outline-none resize-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#e51c24] text-white text-xs font-bold transition-all shadow-xs"
-              >
-                Terbitkan & Buat Surat Otomatis
-              </button>
-            </form>
-          )}
-
-          {/* Modal Pratinjau Surat */}
-          {previewSurat && (
-            <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-md space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-900">Pratinjau Surat Otomatis</span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold"
-                  >
-                    Cetak / PDF
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewSurat(null)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold"
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </div>
-
-              {/* Teks Surat Resmi */}
-              <div className="border border-slate-300 p-4 rounded-xl bg-white space-y-2 text-slate-900 text-xs">
-                <div className="text-center border-b-2 border-slate-900 pb-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">GERAKAN PRAMUKA GUGUS DEPAN 10-035 & 10-036</p>
-                  <h4 className="text-xs font-bold uppercase">AMBALAN LA SURULLAH PETTA LOPO</h4>
-                  <p className="text-[10px] text-slate-500">Pangkalan SMPI Al-Wasi Maros • Kwartir Ranting Maros Baru</p>
-                </div>
-
-                <div className="flex justify-between text-[11px] pt-1">
-                  <div>
-                    <p>Nomor : {previewSurat.nomorSurat}</p>
-                    <p>Perihal : <strong>{previewSurat.perihal}</strong></p>
-                  </div>
-                  <p>Maros, {previewSurat.tanggalSurat}</p>
-                </div>
-
-                <div className="pt-1">
-                  <p>Kepada Yth.</p>
-                  <p className="font-bold">{previewSurat.penerima}</p>
-                  <p>di Tempat</p>
-                </div>
-
-                <p className="pt-1 leading-relaxed">
-                  Dengan hormat, sehubungan dengan agenda Gerakan Pramuka Ambalan La Surullah Petta Lopo, disampaikan bahwa:
-                </p>
-
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] space-y-0.5 font-mono">
-                  <p>• Jenis Surat : {previewSurat.jenis}</p>
-                  {previewSurat.anggotaTerlibat && <p>• Anggota Terkait : {previewSurat.anggotaTerlibat}</p>}
-                  <p>• Hari / Tanggal : {previewSurat.tanggalKegiatan}</p>
-                  <p>• Tempat : {previewSurat.tempat}</p>
-                  <p>• Keperluan : {previewSurat.keperluan}</p>
-                </div>
-
-                <p className="pt-1 leading-relaxed">
-                  Demikian surat ini disampaikan untuk dipergunakan sebagaimana mestinya. Atas perhatian dan kerjasamanya diucapkan terima kasih.
-                </p>
-
-                <div className="pt-4 grid grid-cols-2 text-center text-[11px]">
-                  <div>
-                    <p>Pradana Ambalan,</p>
-                    <p className="mt-8 font-bold underline">Muhammad Fadli Pratama</p>
-                  </div>
-                  <div>
-                    <p>Kerani (Sekretaris),</p>
-                    <p className="mt-8 font-bold underline">Andi Tenri Sumpala</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Daftar Arsip Surat Keluar */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2">
-            <h3 className="text-xs font-bold text-slate-900 uppercase pb-1 border-b border-slate-100">
-              Daftar Arsip Surat Keluar ({suratList.length})
-            </h3>
-            <div className="space-y-1.5">
-              {suratList.map((surat) => (
-                <div key={surat.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-mono text-slate-500 font-bold block">{surat.nomorSurat}</span>
-                    <span className="text-xs font-bold text-slate-900 block truncate">{surat.perihal}</span>
-                    <span className="text-[10px] text-slate-500">{surat.tanggalSurat} • Tujuan: {surat.penerima}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewSurat(surat)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold shrink-0"
-                  >
-                    Buka
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
+        <PersuratanAmbalanView
+          currentUser={currentUser}
+          allMembers={allMembers}
+          programKerjaList={prokers}
+          onBack={() => setActiveMenu('menu')}
+        />
       )}
 
       {/* ========================================================

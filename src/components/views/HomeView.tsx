@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   ArrowRight, BookOpen, Users, ChevronRight,
-  Crown, UserRound, Shield
+  Crown, UserRound, Shield, Target, Gamepad2
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { parseAgendaDate } from '../../utils/agendaDate';
@@ -15,6 +15,8 @@ interface HomeViewProps {
 }
 
 const exploreLinks: { title: string; description: string; icon: React.ReactNode; menu: ActiveMenu }[] = [
+  { title: 'Misi Pramuka', description: 'Tantangan bakti & misi kepramukaan', icon: <Target size={20} />, menu: 'misi_pramuka' },
+  { title: 'Games', description: 'Kuis & permainan kepramukaan seru', icon: <Gamepad2 size={20} />, menu: 'games' },
   { title: 'Mabigus', description: 'Majelis Pembimbing Gugus Depan', icon: <Shield size={20} />, menu: 'mabigus' },
   { title: 'Anggota', description: 'Daftar anggota putra dan putri', icon: <UserRound size={20} />, menu: 'anggota_ambalan' },
   { title: 'Sangga', description: 'Daftar lima sangga putra dan putri', icon: <Users size={20} />, menu: 'sangga' },

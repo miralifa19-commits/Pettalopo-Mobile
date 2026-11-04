@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Award, Home, MessageCircle, Settings, Bell, MoreVertical, Cog } from 'lucide-react';
+import { CalendarDays, Award, Home, MessageCircle, Settings, Bell, MoreVertical, Cog, ClipboardCheck } from 'lucide-react';
 import { LOGO_IMAGE_PATH } from './data/scoutData';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -143,30 +143,33 @@ export default function App() {
         <UpdateChecker />
 
         {/* Dynamic Main Body Scroll View */}
-        <header className="pettalopo-topbar">
-          <button type="button" className="pettalopo-topbar-brand" onClick={() => setActiveMenu('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
-            <img src={LOGO_IMAGE_PATH} alt="Logo kecil Ambalan Petta Lopo" />
-            <span className="pettalopo-topbar-title">
-              <strong>Ambalan Petta Lopo</strong>
-              <small>Gudep 10-035 &amp; 10-036</small>
-            </span>
-          </button>
-          <div className="pettalopo-topbar-motto" aria-label="Bergerak, Berkarya, Mengabdi">
-            <span>Bergerak&nbsp; • &nbsp;Berkarya&nbsp; • &nbsp;Mengabdi</span>
-          </div>
-          <div className="pettalopo-quick-menu-wrap">
-            <button type="button" className="pettalopo-menu-button" onClick={() => setIsQuickMenuOpen((open) => !open)} aria-label="Menu lainnya" aria-expanded={isQuickMenuOpen}>
-              <MoreVertical size={22} />
+        {activeMenu === 'home' && (
+          <header className="pettalopo-topbar">
+            <button type="button" className="pettalopo-topbar-brand" onClick={() => setActiveMenu('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
+              <img src={LOGO_IMAGE_PATH} alt="Logo kecil Ambalan Petta Lopo" />
+              <span className="pettalopo-topbar-title">
+                <strong>Ambalan Petta Lopo</strong>
+                <small>Gudep 10-035 &amp; 10-036</small>
+              </span>
             </button>
-            {isQuickMenuOpen && (
-              <div className="pettalopo-quick-menu">
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}><Settings size={16} /><span>Pengaturan</span></button>
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}><span className="quick-menu-user">●</span><span>Akun</span></button>
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsNotificationsOpen(true); }}><Bell size={16} /><span>Notifikasi</span></button>
-              </div>
-            )}
-          </div>
-        </header>
+            <div className="pettalopo-topbar-motto" aria-label="Bergerak, Berkarya, Mengabdi">
+              <span>Bergerak&nbsp; • &nbsp;Berkarya&nbsp; • &nbsp;Mengabdi</span>
+            </div>
+            <div className="pettalopo-quick-menu-wrap">
+              <button type="button" className="pettalopo-menu-button" onClick={() => setIsQuickMenuOpen((open) => !open)} aria-label="Menu lainnya" aria-expanded={isQuickMenuOpen}>
+                <MoreVertical size={22} />
+              </button>
+              {isQuickMenuOpen && (
+                <div className="pettalopo-quick-menu">
+                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('dashboard'); }}><ClipboardCheck size={16} /><span>Presensi</span></button>
+                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}><Settings size={16} /><span>Pengaturan</span></button>
+                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}><span className="quick-menu-user">●</span><span>Akun</span></button>
+                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsNotificationsOpen(true); }}><Bell size={16} /><span>Notifikasi</span></button>
+                </div>
+              )}
+            </div>
+          </header>
+        )}
         <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
             <HomeView
@@ -238,6 +241,8 @@ export default function App() {
               programKerjaList={programKerjaList}
               onUpdateList={setProgramKerjaList}
               isAdmin={isAdmin}
+              headerTitle="Lihat Kegiatan"
+              onBack={() => setActiveMenu('home')}
             />
           )}
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Home, MessageCircle, Settings, MoreVertical, Cog, Megaphone, ClipboardList, UserRound } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -86,6 +87,48 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin';
+
+  // Android hardware/system back button: close overlays first, then return to Home.
+  // Pressing Back again while already on Home exits the native application.
+  useEffect(() => {
+    let cancelled = false;
+    let listener: { remove: () => Promise<void> } | undefined;
+
+    CapacitorApp.addListener('backButton', () => {
+      if (isAuthModalOpen) {
+        setIsAuthModalOpen(false);
+        return;
+      }
+      if (isNotificationsOpen) {
+        setIsNotificationsOpen(false);
+        return;
+      }
+      if (isQuickMenuOpen) {
+        setIsQuickMenuOpen(false);
+        return;
+      }
+      if (activeMenu !== 'home') {
+        setActiveMenu('home');
+        setSelectedAgendaId(null);
+        return;
+      }
+      void CapacitorApp.exitApp();
+    }).then((handle) => {
+      if (cancelled) {
+        void handle.remove();
+      } else {
+        listener = handle;
+      }
+    }).catch((error) => {
+      console.warn('Android back button listener could not be registered:', error);
+    });
+
+    return () => {
+      cancelled = true;
+      if (listener) void listener.remove();
+    };
+  }, [activeMenu, isAuthModalOpen, isNotificationsOpen, isQuickMenuOpen]);
+
 
 
   // Persist and sync user

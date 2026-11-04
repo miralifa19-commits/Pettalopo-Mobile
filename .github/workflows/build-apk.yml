@@ -278,6 +278,8 @@ jobs:
           PY
 
       - name: Configure permanent APK signing
+        id: signing
+        if: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 != '' && secrets.PETTALOPO_KEYSTORE_PASSWORD != '' && secrets.PETTALOPO_KEY_ALIAS != '' && secrets.PETTALOPO_KEY_PASSWORD != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.PETTALOPO_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
@@ -317,12 +319,21 @@ jobs:
           PY
 
       - name: Build Release APK
+        if: steps.signing.outcome == 'success'
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --stacktrace
 
+      - name: Build Debug APK (fallback when permanent signing is not configured)
+        if: steps.signing.outcome == 'skipped'
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
       - name: Publish GitHub Release
+        if: steps.signing.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -335,5 +346,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pettalopo-Mobile-v${{ github.run_number }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 14

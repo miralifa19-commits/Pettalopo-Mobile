@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowRight, CalendarDays, MapPin, BookOpen, Users, ChevronLeft, ChevronRight,
   Crown, UserRound, Shield
@@ -25,6 +25,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   const today = new Date();
   const currentYear = today.getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const touchStartX = useRef<number | null>(null);
 
   const monthGradients = [
     ['#9F1239', '#E11D48'],
@@ -52,6 +53,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   const changeMonth = (direction: -1 | 1) => {
     setSelectedMonth((month) => Math.min(11, Math.max(0, month + direction)));
   };
+  const handleAgendaTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+  };
+  const handleAgendaTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartX.current === null) return;
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(deltaX) > 45) changeMonth(deltaX < 0 ? 1 : -1);
+    touchStartX.current = null;
+  };
+  const agendaTitleSize = monthAgendas.length >= 10 ? 'text-[10px]' : monthAgendas.length >= 6 ? 'text-[11px]' : 'text-[12px]';
   const [gradientStart, gradientEnd] = monthGradients[selectedMonth];
 
 
@@ -87,68 +98,52 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
         </div>
 
         <div
-          className="w-full overflow-hidden rounded-[26px] p-4 sm:p-5 text-white"
+          className="w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-white touch-pan-y select-none"
           style={{ background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)` }}
+          onTouchStart={handleAgendaTouchStart}
+          onTouchEnd={handleAgendaTouchEnd}
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <span className="block text-[9px] font-extrabold tracking-[0.18em] text-white/75">AGENDA AMBALAN</span>
-              <h3 className="mt-2 text-[30px] font-black leading-none tracking-tight capitalize">
-                {currentMonthLabel}
-              </h3>
-              <p className="mt-2 text-[11px] font-medium text-white/85">
-                {currentYear} <span className="mx-1">•</span> {monthAgendas.length} agenda
-              </p>
+              <span className="block text-[8px] font-extrabold tracking-[0.16em] text-white/75">AGENDA AMBALAN</span>
+              <h3 className="mt-1 text-[19px] font-extrabold leading-tight tracking-tight capitalize">{currentMonthLabel}</h3>
+              <p className="mt-0.5 text-[10px] font-medium text-white/85">{currentYear} <span className="mx-1">•</span> {monthAgendas.length} agenda</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => changeMonth(-1)}
-                disabled={selectedMonth === 0}
-                aria-label="Bulan sebelumnya"
-                className="grid h-9 w-9 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                <ChevronLeft size={19} />
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button type="button" onClick={() => changeMonth(-1)} disabled={selectedMonth === 0} aria-label="Bulan sebelumnya" className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35">
+                <ChevronLeft size={17} />
               </button>
-              <button
-                type="button"
-                onClick={() => changeMonth(1)}
-                disabled={selectedMonth === 11}
-                aria-label="Bulan berikutnya"
-                className="grid h-9 w-9 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                <ChevronRight size={19} />
+              <button type="button" onClick={() => changeMonth(1)} disabled={selectedMonth === 11} aria-label="Bulan berikutnya" className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35">
+                <ChevronRight size={17} />
               </button>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-2.5">
-            {monthAgendas.length > 0 ? monthAgendas.map(({ item, date }) => (
+          <div className="mt-2.5">
+            {monthAgendas.length > 0 ? monthAgendas.map(({ item, date }, index) => (
               <button
                 type="button"
-                className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/20 p-3 text-left text-white transition active:bg-white/25"
+                className="flex w-full min-w-0 items-center gap-2.5 border-b border-white/20 py-2 text-left text-white last:border-b-0 active:bg-white/10"
                 key={item.id}
                 onClick={() => onOpenAgenda?.(item.id)}
               >
-                <span className="flex h-[54px] w-[52px] shrink-0 flex-col items-center justify-center rounded-xl bg-white/20 text-white">
-                  <strong className="text-[21px] font-black leading-none">{date!.getDate()}</strong>
-                  <small className="mt-1 text-[9px] font-bold uppercase tracking-wide">
-                    {date!.toLocaleString('id-ID', { month: 'short' }).replace('.', '')}
-                  </small>
+                <span className="w-9 shrink-0 text-center leading-tight">
+                  <strong className="block text-[16px] font-extrabold">{date!.getDate()}</strong>
+                  <small className="block text-[8px] font-semibold uppercase text-white/80">{date!.toLocaleString('id-ID', { month: 'short' }).replace('.', '')}</small>
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <strong className="break-words text-[12px] font-extrabold leading-snug">{item.nama}</strong>
-                  <span className="flex min-w-0 items-start gap-1.5 text-[10px] leading-snug text-white/85">
-                    <MapPin size={12} className="mt-[1px] shrink-0" />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <strong className={`break-words font-bold leading-snug ${agendaTitleSize}`}>{item.nama}</strong>
+                  <span className="flex min-w-0 items-start gap-1 text-[9px] leading-snug text-white/80">
+                    <MapPin size={10} className="mt-[1px] shrink-0" />
                     <span className="break-words">{item.tempat || 'Lokasi menyusul'}</span>
                   </span>
                 </span>
-                <ChevronRight size={17} className="shrink-0 text-white/80" />
+                <ChevronRight size={14} className="shrink-0 text-white/75" />
               </button>
             )) : (
-              <div className="rounded-2xl border border-white/15 bg-white/20 px-4 py-5 text-center">
-                <CalendarDays size={24} className="mx-auto mb-2 text-white/85" />
-                <p className="text-[12px] font-bold text-white">Belum ada agenda bulan ini</p>
+              <div className="py-3 text-center">
+                <CalendarDays size={20} className="mx-auto mb-1.5 text-white/85" />
+                <p className="text-[11px] font-semibold text-white">Belum ada agenda bulan ini</p>
               </div>
             )}
           </div>

@@ -514,9 +514,8 @@ main button,main a{overflow-wrap:anywhere}
 .pettalopo-overflow-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:170px;padding:6px;border:1px solid var(--app-line);border-radius:14px;background:#fff;box-shadow:0 8px 28px rgba(20,24,28,.12)}
 .pettalopo-overflow-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:0;border-radius:10px;background:#fff;color:#30343a;text-align:left;font-size:12px;font-weight:700}
 .pettalopo-overflow-menu button:active{background:#fff0f1;color:var(--app-red)}
-.pettalopo-bottom-nav button.pettalopo-nav-dewan{height:58px;align-self:center;margin-top:-15px;border:1px solid #f1c9cd!important;border-radius:18px!important;background:#fff!important;color:var(--app-red)!important;box-shadow:0 5px 14px rgba(196,30,42,.12)}
-.pettalopo-bottom-nav button.pettalopo-nav-dewan[aria-current="page"]{background:var(--app-red)!important;color:#fff!important;border-color:var(--app-red)!important}
-.pettalopo-bottom-nav button.pettalopo-nav-dewan:before{display:none}
+.dewan-nav-gear{width:19px;height:19px;object-fit:contain;display:block;filter:grayscale(1) opacity(0.65);transition:filter .15s ease,opacity .15s ease}
+.pettalopo-bottom-nav button[aria-current="page"] .dewan-nav-gear{filter:none;opacity:1}
 .pettalopo-bottom-nav button span{font-size:9px}
 @media(max-width:380px){.pettalopo-bottom-nav{padding-left:4px;padding-right:4px}.pettalopo-bottom-nav button span{font-size:8px}.agenda-month-copy small{font-size:9px}}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Cog, Megaphone, ClipboardList, UserRound } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, ClipboardList, UserRound } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -337,7 +337,10 @@ export default function App() {
         <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
           <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
           <button type="button" onClick={() => setActiveMenu('program_kerja')} aria-current={activeMenu === 'program_kerja' ? 'page' : undefined}><ClipboardList size={19}/><span>Program Kerja</span></button>
-          <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}><Cog size={27}/><span>Dewan</span></button>
+          <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
+            <img src="/assets/dewan-gear-logo.png" alt="Dewan" className="dewan-nav-gear" />
+            <span>Dewan</span>
+          </button>
           <button type="button" onClick={() => setActiveMenu('chat')} aria-current={activeMenu === 'chat' ? 'page' : undefined}><MessageCircle size={19}/><span>Chat</span></button>
           <button type="button" onClick={() => setIsNotificationsOpen(true)}><Megaphone size={19}/><span>Pengumuman</span></button>
         </nav>

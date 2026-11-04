@@ -258,12 +258,10 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
       {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
       {activeMenu !== 'proker' && (
         <MenuHeaderCard
-          title={activeMenu === 'proker' ? 'Kelola Program Kerja' : 'Dewan Ambalan'}
+          title="Dewan Ambalan"
           subtitle={
             activeMenu === 'menu'
               ? 'Pengelolaan & administrasi masa bakti'
-              : activeMenu === 'proker'
-              ? 'Pilih kategori program kerja yang akan dikelola'
               : activeMenu === 'anggota_sangga'
               ? 'Kelola Anggota & Sangga Penegak'
               : activeMenu === 'persuratan'

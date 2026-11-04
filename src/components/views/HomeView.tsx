@@ -1,10 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
-  ArrowRight, CalendarDays, BookOpen, Users, ChevronRight,
+  ArrowRight, BookOpen, Users, ChevronRight,
   Crown, UserRound, Shield
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
-import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
+import { parseAgendaDate } from '../../utils/agendaDate';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
 
 interface HomeViewProps {
@@ -22,17 +22,18 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const currentYear = today.getFullYear();
-  const selectedMonth = today.getMonth();
+  const currentMonth = today.getMonth();
+
+  const monthDate = useMemo(() => new Date(currentYear, currentMonth, 1), [currentYear, currentMonth]);
+  const rawMonthYear = monthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+  const monthYearLabel = rawMonthYear.charAt(0).toUpperCase() + rawMonthYear.slice(1);
 
   const monthAgendas = useMemo(() => programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
-    .filter((entry) => entry.date && entry.date.getMonth() === selectedMonth && entry.date.getFullYear() === currentYear)
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, selectedMonth, currentYear]);
-
-  const monthDate = new Date(currentYear, selectedMonth, 1);
-  const monthYearLabel = monthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    .filter((entry) => entry.date && entry.date.getMonth() === currentMonth && entry.date.getFullYear() === currentYear)
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, currentMonth, currentYear]);
 
 
 
@@ -65,50 +66,31 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
           <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Kegiatan dan Latihan Bulan Ini</h2></div>
         </div>
 
-        <div
-          className="h-[280px] w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-white touch-pan-y select-none"
-          style={{ background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)` }}
-          onTouchStart={handleAgendaTouchStart}
-          onTouchEnd={handleAgendaTouchEnd}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <span className="block text-[8px] font-extrabold tracking-[0.16em] text-white/75">AGENDA AMBALAN</span>
-              <h3 className="mt-1 text-[19px] font-extrabold leading-tight tracking-tight capitalize">{currentMonthLabel}</h3>
-              <p className="mt-0.5 text-[10px] font-medium text-white/85">{currentYear} <span className="mx-1">•</span> {monthAgendas.length} agenda</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <button type="button" onClick={() => changeMonth(-1)} disabled={selectedMonth === 0} aria-label="Bulan sebelumnya" className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35">
-                <ChevronLeft size={17} />
-              </button>
-              <button type="button" onClick={() => changeMonth(1)} disabled={selectedMonth === 11} aria-label="Bulan berikutnya" className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-35">
-                <ChevronRight size={17} />
-              </button>
-            </div>
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="border-b border-slate-100 pb-2.5">
+            <h3 className="text-base font-bold text-slate-800 leading-snug">
+              {monthYearLabel}
+            </h3>
           </div>
 
-          <div className="mt-2.5 max-h-[178px] overflow-y-auto overscroll-contain pr-1">
-            {monthAgendas.length > 0 ? monthAgendas.map(({ item, date }, index) => (
-              <button
-                type="button"
-                className="flex w-full min-w-0 items-center gap-2.5 border-b border-gray-100 py-2 text-left text-gray-900 last:border-b-0 active:bg-gray-50"
-                key={item.id}
-                onClick={() => onOpenAgenda?.(item.id)}
-              >
-                <span className="w-9 shrink-0 text-center leading-tight">
-                  <strong className="block text-[16px] font-extrabold">{date!.getDate()}</strong>
-                  
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <strong className="break-words text-[11px] font-bold leading-snug">{item.nama}</strong>
-                </span>
-                <ChevronRight size={14} className="shrink-0 text-gray-400" />
-              </button>
-            )) : (
-              <div className="py-3 text-center">
-                <CalendarDays size={20} className="mx-auto mb-1.5 text-gray-400" />
-                <p className="text-[11px] font-semibold text-gray-600">Belum ada kegiatan bulan ini</p>
-              </div>
+          <div className="divide-y divide-slate-100">
+            {monthAgendas.length > 0 ? (
+              monthAgendas.map(({ item }) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => onOpenAgenda?.(item.id)}
+                  className="flex w-full items-center justify-between py-2.5 text-left text-slate-700 transition active:bg-slate-50"
+                >
+                  <span className="truncate text-[13px] font-medium text-slate-800">
+                    {item.nama}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="py-3 text-center text-xs text-slate-400">
+                Belum ada agenda bulan ini
+              </p>
             )}
           </div>
         </div>

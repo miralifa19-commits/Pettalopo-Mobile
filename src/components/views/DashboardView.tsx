@@ -415,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   }}
                   className="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5"
                 >
-                  <span>Buka di Program Kerja</span>
+                  <span>Buka Lihat Kegiatan</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>

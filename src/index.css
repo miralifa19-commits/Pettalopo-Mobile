@@ -302,7 +302,7 @@ main button,main a{overflow-wrap:anywhere}
 /* Reference-inspired 12-month wheel and restored Jelajahi Ambalan menu. */
 .home-hero-compact{padding-top:2px!important;padding-bottom:8px!important}
 .home-hero-compact .home-hero-grid{grid-template-columns:minmax(0,1fr) 176px!important;gap:6px!important;align-items:center}
-.home-hero-compact .home-hero h1{font-size:clamp(30px,8.5vw,36px)!important;line-height:1.02!important;margin:6px 0 8px!important}
+.home-hero-compact .home-hero-copy h1{font-size:clamp(30px,8.5vw,36px)!important;line-height:1.02!important;margin:6px 0 8px!important}
 .home-hero-compact .home-hero-copy>p{font-size:11px!important;line-height:1.4!important;max-width:185px}
 .month-wheel-wrap{width:100%;max-width:176px;justify-self:end;gap:0}
 .month-wheel-graphic{display:block;width:100%;height:auto;overflow:visible}
@@ -327,7 +327,7 @@ main button,main a{overflow-wrap:anywhere}
 @media(max-width:380px){
  .home-hero-compact .home-hero-grid{grid-template-columns:minmax(0,1fr) 158px!important}
  .month-wheel-wrap{max-width:158px}
- .home-hero-compact .home-hero h1{font-size:30px!important}
+ .home-hero-compact .home-hero-copy h1{font-size:30px!important}
  .explore-ambalan-grid{gap:7px}
  .explore-ambalan-card{padding:9px 7px;gap:7px}
  .explore-ambalan-copy strong{font-size:10px}

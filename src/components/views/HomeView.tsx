@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ArrowRight, CalendarDays, MapPin, BookOpen, Users, Award, ChevronRight,
   Crown, UserRound, Settings, Shield, ClipboardList, Dumbbell, MessageCircle,
-  GraduationCap, Compass, FolderOpen
+  GraduationCap
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
@@ -45,8 +45,6 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
   { title: 'Kuis Pramuka', description: 'Uji pengetahuan kepramukaan', icon: <GraduationCap size={20} />, menu: 'quiz' },
   { title: 'Obrolan Ambalan', description: 'Komunikasi anggota', icon: <MessageCircle size={20} />, menu: 'chat' },
   { title: 'Pengaturan', description: 'Pengaturan aplikasi', icon: <Settings size={20} />, menu: 'pengaturan' },
-  { title: 'Laporan', description: 'Rekap dan laporan kegiatan', icon: <FolderOpen size={20} />, menu: 'laporan' },
-  { title: 'Organisasi', description: 'Informasi organisasi ambalan', icon: <Compass size={20} />, menu: 'organisasi' },
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {

@@ -140,11 +140,15 @@ export default function App() {
 
         {/* Dynamic Main Body Scroll View */}
         <header className="pettalopo-topbar">
-          <button type="button" className="pettalopo-topbar-brand" onClick={() => setActiveMenu('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
-            <img src={LOGO_IMAGE_PATH} alt="Logo kecil Ambalan Petta Lopo" />
-            <span className="pettalopo-topbar-title">
-              <strong>Ambalan La Surullah</strong>
-              <small>Petta Lopo</small>
+          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
+            <span className="pettalopo-member-avatar">
+              {(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
+                ? <img src={(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
+                : <span>{(user.nama || 'A').trim().charAt(0).toUpperCase()}</span>}
+            </span>
+            <span className="pettalopo-member-meta">
+              <strong>{user.nama || 'Profil Anggota'}</strong>
+              <small>{user.role === 'admin' ? 'Pembina / Admin' : /laksana/i.test(user.tingkat || '') ? 'Penegak Laksana' : /bantara/i.test(user.tingkat || '') ? 'Penegak Bantara' : 'Calon Anggota'}</small>
             </span>
           </button>
           <button type="button" className="pettalopo-menu-button" onClick={() => setIsNotificationsOpen(true)} aria-label="Buka notifikasi">

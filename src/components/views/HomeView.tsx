@@ -36,7 +36,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
     ['#0E7490', '#06B6D4'],
     ['#115E59', '#14B8A6'],
     ['#1E3A8A', '#3B82F6'],
-    ['#0F172A', '#475569'],
+    ['#3730A3', '#8B5CF6'],
     ['#581C87', '#A855F7'],
     ['#831843', '#BE185D'],
     ['#9D174D', '#EC4899']
@@ -62,7 +62,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
     if (Math.abs(deltaX) > 45) changeMonth(deltaX < 0 ? 1 : -1);
     touchStartX.current = null;
   };
-  const agendaTitleSize = monthAgendas.length >= 10 ? 'text-[10px]' : monthAgendas.length >= 6 ? 'text-[11px]' : 'text-[12px]';
   const [gradientStart, gradientEnd] = monthGradients[selectedMonth];
 
 
@@ -93,12 +92,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
       </section>
       <section className="landing-section">
         <div className="section-heading">
-          <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Agenda Bulan Ini</h2></div>
-          <span className="month-count">{monthYearLabel}</span>
+          <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Kegiatan dan Latihan Bulan Ini</h2></div>
         </div>
 
         <div
-          className="w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-white touch-pan-y select-none"
+          className="h-[280px] w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-white touch-pan-y select-none"
           style={{ background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)` }}
           onTouchStart={handleAgendaTouchStart}
           onTouchEnd={handleAgendaTouchEnd}
@@ -119,7 +117,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
             </div>
           </div>
 
-          <div className="mt-2.5">
+          <div className="mt-2.5 max-h-[178px] overflow-y-auto overscroll-contain pr-1">
             {monthAgendas.length > 0 ? monthAgendas.map(({ item, date }, index) => (
               <button
                 type="button"
@@ -132,7 +130,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
                   <small className="block text-[8px] font-semibold uppercase text-white/80">{date!.toLocaleString('id-ID', { month: 'short' }).replace('.', '')}</small>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <strong className={`break-words font-bold leading-snug ${agendaTitleSize}`}>{item.nama}</strong>
+                  <strong className="break-words text-[11px] font-bold leading-snug">{item.nama}</strong>
                   <span className="flex min-w-0 items-start gap-1 text-[9px] leading-snug text-white/80">
                     <MapPin size={10} className="mt-[1px] shrink-0" />
                     <span className="break-words">{item.tempat || 'Lokasi menyusul'}</span>
@@ -148,10 +146,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
             )}
           </div>
         </div>
-
-        <button type="button" className="all-program-works-button" onClick={() => onNavigateMenu?.('program_kerja')}>
-          Lihat Semua Program Kerja <ArrowRight size={17} />
-        </button>
       </section>
 
       <button type="button" className="ruang-belajar-wide" onClick={() => onNavigateMenu?.('ruang_belajar')}>

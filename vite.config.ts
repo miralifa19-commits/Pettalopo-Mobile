@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // GitHub Pages serves this project under /Pettalopo-Mobile/.
+    // Native APK builds and local development keep the root path.
+    base: process.env.GITHUB_PAGES === 'true' ? '/Pettalopo-Mobile/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

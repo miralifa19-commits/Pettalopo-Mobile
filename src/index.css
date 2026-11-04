@@ -384,3 +384,10 @@ main button,main a{overflow-wrap:anywhere}
 .quick-menu-user{width:16px;text-align:center;font-size:12px;color:#777}
 .pettalopo-bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))}
 @media(max-width:360px){.pettalopo-bottom-nav button{font-size:9px}.month-agenda-banner{padding:18px}.month-agenda-banner strong{font-size:23px}}
+
+
+/* Ensure the Home-only red top bar keeps high-contrast controls. */
+.pettalopo-topbar .pettalopo-topbar-brand strong{color:#fff}
+.pettalopo-topbar .pettalopo-topbar-brand small{color:rgba(255,255,255,.84)}
+.pettalopo-topbar .pettalopo-menu-button{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+.pettalopo-topbar .pettalopo-topbar-motto{color:#fff}

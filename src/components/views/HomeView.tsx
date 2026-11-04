@@ -26,30 +26,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   const currentYear = today.getFullYear();
   const selectedMonth = today.getMonth();
 
-  const monthGradients = [
-    ['#9F1239', '#E11D48'],
-    ['#C2410C', '#F97316'],
-    ['#B45309', '#F59E0B'],
-    ['#4D7C0F', '#84CC16'],
-    ['#166534', '#22C55E'],
-    ['#0E7490', '#06B6D4'],
-    ['#115E59', '#14B8A6'],
-    ['#1E3A8A', '#3B82F6'],
-    ['#3730A3', '#8B5CF6'],
-    ['#581C87', '#A855F7'],
-    ['#831843', '#BE185D'],
-    ['#9D174D', '#EC4899']
-  ] as const;
-
   const monthAgendas = useMemo(() => programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
     .filter((entry) => entry.date && entry.date.getMonth() === selectedMonth && entry.date.getFullYear() === currentYear)
     .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, selectedMonth, currentYear]);
 
   const monthDate = new Date(currentYear, selectedMonth, 1);
-  const currentMonthLabel = monthDate.toLocaleString('id-ID', { month: 'long' });
-
-  const [gradientStart, gradientEnd] = monthGradients[selectedMonth];
+  const monthYearLabel = monthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
 
 

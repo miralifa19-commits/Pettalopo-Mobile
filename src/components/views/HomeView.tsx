@@ -41,13 +41,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   return (
     <div className="home-landing">
       <section className="home-hero home-hero-compact">
-        <button type="button" className="home-ambalan-identity" onClick={() => onNavigateMenu?.('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
-          <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan La Surullah Petta Lopo" />
-          <span><small>AMBALAN</small><strong>La Surullah Petta Lopo</strong></span>
-        </button>
-        <div className="home-hero-copy">
-          <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
-          <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
+        <div className="home-hero-brandline">
+          <span>AMBALAN LA SURULLAH PETTA LOPO</span>
+        </div>
+        <div className="home-hero-main">
+          <div className="home-hero-copy">
+            <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
+            <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
+          </div>
+          <button type="button" className="home-hero-logo" onClick={() => onNavigateMenu?.('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
+            <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan La Surullah Petta Lopo" />
+          </button>
         </div>
         <div className="home-hero-actions">
           <button type="button" className="landing-primary" onClick={() => onNavigateMenu?.('dashboard')}>

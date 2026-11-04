@@ -297,3 +297,38 @@ main button,main a{overflow-wrap:anywhere}
  .home-hero-grid{grid-template-columns:minmax(0,1fr) 108px}
 }
 @media(prefers-reduced-motion:reduce){.pettalopo-topbar-motto span{animation:none}}
+
+
+/* Reference-inspired 12-month wheel and restored Jelajahi Ambalan menu. */
+.home-hero-compact{padding-top:2px!important;padding-bottom:8px!important}
+.home-hero-compact .home-hero-grid{grid-template-columns:minmax(0,1fr) 176px!important;gap:6px!important;align-items:center}
+.home-hero-compact .home-hero h1{font-size:clamp(30px,8.5vw,36px)!important;line-height:1.02!important;margin:6px 0 8px!important}
+.home-hero-compact .home-hero-copy>p{font-size:11px!important;line-height:1.4!important;max-width:185px}
+.month-wheel-wrap{width:100%;max-width:176px;justify-self:end;gap:0}
+.month-wheel-graphic{display:block;width:100%;height:auto;overflow:visible}
+.month-wheel-sector{cursor:pointer;outline:none}
+.month-wheel-sector path{transition:filter .16s ease,stroke-width .16s ease}
+.month-wheel-sector:hover path,.month-wheel-sector:focus path{filter:brightness(1.08);stroke:#e51c24;stroke-width:3}
+.month-wheel-sector text{fill:#fff;font-size:9px;font-weight:800;pointer-events:none}
+.month-wheel-medal{fill:#ffd45a;font-size:19px;font-weight:900}
+.month-wheel-index{fill:#91a0b2;font-size:9px;font-weight:800;letter-spacing:1px}
+.month-wheel-name{fill:#a20e50;font-size:15px;font-weight:900}
+.month-wheel-sub{fill:#344154;font-size:7px;font-weight:800}
+.month-wheel-link{fill:#b52a38;font-size:8px;font-weight:800}
+.home-hero-compact .home-hero-actions{margin-top:8px!important}
+.explore-ambalan-section{margin-top:4px}
+.explore-ambalan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.explore-ambalan-card{display:flex;align-items:center;gap:9px;min-width:0;width:100%;padding:11px 9px;text-align:left;border:1px solid #eceef0;background:#fff;border-radius:15px}
+.explore-ambalan-card .quick-icon{width:35px;height:35px;flex:0 0 35px;border-radius:11px;display:grid;place-items:center;background:#fff0f1;color:#e51c24}
+.explore-ambalan-copy{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.explore-ambalan-copy strong{font-size:11px;line-height:1.25;font-weight:800;color:#25282c}
+.explore-ambalan-copy small{font-size:9px;line-height:1.25;color:#777f88}
+.explore-ambalan-arrow{flex:0 0 15px;color:#a0a6ad}
+@media(max-width:380px){
+ .home-hero-compact .home-hero-grid{grid-template-columns:minmax(0,1fr) 158px!important}
+ .month-wheel-wrap{max-width:158px}
+ .home-hero-compact .home-hero h1{font-size:30px!important}
+ .explore-ambalan-grid{gap:7px}
+ .explore-ambalan-card{padding:9px 7px;gap:7px}
+ .explore-ambalan-copy strong{font-size:10px}
+}

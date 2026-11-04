@@ -410,3 +410,20 @@ main button,main a{overflow-wrap:anywhere}
 .home-ambalan-identity strong{color:#e51c24;font-size:clamp(16px,4.8vw,20px);font-weight:850;line-height:1.12;letter-spacing:-.025em}
 .home-hero-compact{padding-top:4px!important}
 @media(max-width:380px){.home-ambalan-identity img{width:56px;height:56px;flex-basis:56px}.home-ambalan-identity strong{font-size:16px}}
+
+
+/* Final requested header/hero alignment: no red separator; crest beside hero copy. */
+.pettalopo-topbar{border-bottom:0!important;box-shadow:none!important;background:#fff!important}
+.pettalopo-topbar,.pettalopo-topbar *{border-bottom-color:transparent!important}
+.home-hero-compact{display:grid!important;grid-template-columns:88px minmax(0,1fr)!important;grid-template-rows:auto auto!important;column-gap:12px!important;align-items:center!important;padding:10px 4px 12px!important;border-bottom:0!important}
+.home-hero-compact>.home-ambalan-identity{grid-column:1;grid-row:1 / span 2;align-self:start;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;width:88px;padding:0;margin:0}
+.home-hero-compact>.home-ambalan-identity img{width:82px;height:82px;flex:0 0 82px;object-fit:contain}
+.home-hero-compact>.home-ambalan-identity span{align-items:center;gap:1px}
+.home-hero-compact>.home-ambalan-identity small{color:#202124;font-size:8px;letter-spacing:.08em}
+.home-hero-compact>.home-ambalan-identity strong{display:none}
+.home-hero-compact>.home-hero-copy{grid-column:2;grid-row:1;width:100%;text-align:left}
+.home-hero-compact>.home-hero-copy .section-eyebrow{color:#202124!important;font-size:9px!important;font-weight:700!important;letter-spacing:.08em!important}
+.home-hero-compact>.home-hero-copy h1{font-size:clamp(26px,7vw,34px)!important;line-height:1.04!important;margin:3px 0 6px!important}
+.home-hero-compact>.home-hero-copy>p{font-size:11px!important;line-height:1.4!important;margin:0!important}
+.home-hero-compact>.home-hero-actions{grid-column:2;grid-row:2;width:100%;margin:8px 0 0!important;justify-content:flex-start}
+@media(max-width:360px){.home-hero-compact{grid-template-columns:74px minmax(0,1fr)!important;column-gap:8px!important}.home-hero-compact>.home-ambalan-identity{width:74px}.home-hero-compact>.home-ambalan-identity img{width:70px;height:70px;flex-basis:70px}.home-hero-compact>.home-hero-copy h1{font-size:25px!important}}

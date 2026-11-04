@@ -253,8 +253,8 @@ jobs:
           v31_body = "\n".join("        <item name='" + name + "'>" + value + "</item>" for name, value in entries if not name.startswith("android:"))
           (v31 / "styles.xml").write_text(
               '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
-              '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\\n'
-              + v31_body + '\\n    </style>\\n</resources>\\n'
+              '    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">\n'
+              + v31_body + '\n    </style>\n</resources>\n'
           )
           print("Native launch layer is blank and red; original React splash is retained as the only branded splash.")
           PY

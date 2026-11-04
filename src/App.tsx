@@ -185,6 +185,7 @@ export default function App() {
         <UpdateChecker />
 
         {/* Dynamic Main Body Scroll View */}
+        {activeMenu === 'home' && (
         <header className="pettalopo-topbar">
           <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
             <span className="pettalopo-member-avatar">
@@ -213,6 +214,7 @@ export default function App() {
             )}
           </div>
         </header>
+        )}
         <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
             <HomeView

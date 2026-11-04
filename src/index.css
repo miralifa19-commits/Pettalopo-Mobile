@@ -393,3 +393,20 @@ main button,main a{overflow-wrap:anywhere}
 .home-hero-compact .home-hero-copy{margin-top:0!important}
 .home-hero-compact .home-hero-copy h1{margin-top:8px!important}
 .home-hero-compact .hero-line-art{display:none!important}
+
+
+/* Member identity in top bar; Ambalan identity moves to the top of the home hero. */
+.pettalopo-topbar{min-height:68px;padding:9px 16px!important;display:flex;align-items:center;justify-content:space-between;background:#fff}
+.pettalopo-member-shortcut{display:flex;align-items:center;gap:10px;min-width:0;max-width:calc(100% - 54px);padding:0;border:0;background:transparent;text-align:left;cursor:pointer}
+.pettalopo-member-avatar{width:43px;height:43px;flex:0 0 43px;overflow:hidden;border-radius:50%;display:grid;place-items:center;background:#fff0f1;border:1.5px solid #f1c7ca;color:#e51c24;font-size:17px;font-weight:850}
+.pettalopo-member-avatar img{width:100%;height:100%;object-fit:cover}
+.pettalopo-member-meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pettalopo-member-meta strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#202124;font-size:13px;line-height:1.2;font-weight:800}
+.pettalopo-member-meta small{color:#e51c24;font-size:10px;line-height:1.2;font-weight:700}
+.home-ambalan-identity{display:flex;align-items:center;gap:12px;width:100%;padding:4px 4px 12px;margin:0 0 2px;border:0;background:transparent;text-align:left;cursor:pointer}
+.home-ambalan-identity img{width:62px;height:62px;flex:0 0 62px;object-fit:contain}
+.home-ambalan-identity span{display:flex;flex-direction:column;gap:3px}
+.home-ambalan-identity small{color:#777;font-size:9px;font-weight:800;letter-spacing:.14em}
+.home-ambalan-identity strong{color:#e51c24;font-size:clamp(16px,4.8vw,20px);font-weight:850;line-height:1.12;letter-spacing:-.025em}
+.home-hero-compact{padding-top:4px!important}
+@media(max-width:380px){.home-ambalan-identity img{width:56px;height:56px;flex-basis:56px}.home-ambalan-identity strong{font-size:16px}}

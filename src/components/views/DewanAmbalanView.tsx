@@ -4,6 +4,7 @@ import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { ProgramKerjaView } from './ProgramKerjaView';
 import { CalendarDays, Dumbbell, ChevronRight } from 'lucide-react';
 import { registerAmbalanUser } from '../../services/firebaseService';
+import { downloadSuratPdf } from '../../utils/suratPdf';
 
 interface DewanAmbalanViewProps {
   currentUser?: UserAccount;
@@ -31,6 +32,7 @@ interface SuratKeluarItem {
   tempat?: string;
   anggotaTerlibat?: string;
   keperluan?: string;
+  penandatangan?: { pradana?: string; kerani?: string; dewan?: string };
 }
 
 interface IuranRecord {
@@ -167,6 +169,27 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   const [suratKeperluan, setSuratKeperluan] = useState('');
   const [suratMemberTerkait, setSuratMemberTerkait] = useState('');
   const [previewSurat, setPreviewSurat] = useState<SuratKeluarItem | null>(null);
+  const [pakaiPradana, setPakaiPradana] = useState(false);
+  const [pakaiKerani, setPakaiKerani] = useState(false);
+  const [pakaiDewan, setPakaiDewan] = useState(false);
+  const [namaPradana, setNamaPradana] = useState('');
+  const [namaKerani, setNamaKerani] = useState('');
+  const [namaDewan, setNamaDewan] = useState('');
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleDownloadSurat = async (surat: SuratKeluarItem) => {
+    setIsGeneratingPdf(true);
+    setPdfProgress(0);
+    try {
+      await downloadSuratPdf(surat, setPdfProgress);
+    } catch (error) {
+      console.error('Gagal membuat PDF surat:', error);
+      window.alert(error instanceof Error ? error.message : 'PDF surat gagal dibuat. Silakan coba lagi.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleCreateSurat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,7 +216,12 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
       tanggalKegiatan: suratTanggalKegiatan.trim() || 'Sesuai Jadwal Kegiatan',
       tempat: suratTempat.trim() || 'Sanggar Pramuka SMPI Al-Wasi Maros',
       anggotaTerlibat: suratMemberTerkait || undefined,
-      keperluan: suratKeperluan.trim() || 'Menjalankan tugas kepramukaan ambalan.'
+      keperluan: suratKeperluan.trim() || 'Menjalankan tugas kepramukaan ambalan.',
+      penandatangan: {
+        ...(pakaiPradana ? { pradana: namaPradana } : {}),
+        ...(pakaiKerani ? { kerani: namaKerani } : {}),
+        ...(pakaiDewan ? { dewan: namaDewan } : {})
+      }
     };
 
     setSuratList([item, ...suratList]);
@@ -203,6 +231,12 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
     setSuratPenerima('');
     setSuratTanggalKegiatan('');
     setSuratKeperluan('');
+    setPakaiPradana(false);
+    setPakaiKerani(false);
+    setPakaiDewan(false);
+    setNamaPradana('');
+    setNamaKerani('');
+    setNamaDewan('');
   };
 
   // ==========================================
@@ -755,6 +789,43 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
                 />
               </div>
 
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <p className="text-[11px] font-bold text-slate-700">Penandatangan Surat</p>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                    <input type="checkbox" checked={pakaiPradana} onChange={(e) => setPakaiPradana(e.target.checked)} className="h-4 w-4 accent-[#e51c24]" />
+                    Pradana Ambalan
+                  </label>
+                  {pakaiPradana && (
+                    <select required value={namaPradana} onChange={(e) => setNamaPradana(e.target.value)} className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-slate-200">
+                      <option value="">Pilih nama Pradana</option>
+                      {allMembers.map((m) => <option key={m.uid || m.nama} value={m.nama}>{m.nama}</option>)}
+                    </select>
+                  )}
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                    <input type="checkbox" checked={pakaiKerani} onChange={(e) => setPakaiKerani(e.target.checked)} className="h-4 w-4 accent-[#e51c24]" />
+                    Kerani (Sekretaris)
+                  </label>
+                  {pakaiKerani && (
+                    <select required value={namaKerani} onChange={(e) => setNamaKerani(e.target.value)} className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-slate-200">
+                      <option value="">Pilih nama Kerani</option>
+                      {allMembers.map((m) => <option key={m.uid || m.nama} value={m.nama}>{m.nama}</option>)}
+                    </select>
+                  )}
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                    <input type="checkbox" checked={pakaiDewan} onChange={(e) => setPakaiDewan(e.target.checked)} className="h-4 w-4 accent-[#e51c24]" />
+                    Dewan Ambalan (Opsional)
+                  </label>
+                  {pakaiDewan && (
+                    <select required value={namaDewan} onChange={(e) => setNamaDewan(e.target.value)} className="w-full text-xs px-3 py-2 rounded-xl bg-white border border-slate-200">
+                      <option value="">Pilih nama Dewan Ambalan</option>
+                      {allMembers.filter((m) => m.role === 'dewan' || m.role === 'admin' || Boolean(m.isDewan)).map((m) => <option key={m.uid || m.nama} value={m.nama}>{m.nama}</option>)}
+                    </select>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500">Centang jabatan yang akan menandatangani. Jika dicentang, nama wajib dipilih. Dewan Ambalan bersifat opsional.</p>
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-xl bg-[#e51c24] text-white text-xs font-bold transition-all shadow-xs"
@@ -772,10 +843,11 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => window.print()}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold"
+                    onClick={() => handleDownloadSurat(previewSurat)}
+                    disabled={isGeneratingPdf}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold disabled:opacity-50"
                   >
-                    Cetak / PDF
+                    {isGeneratingPdf ? 'Menyiapkan PDF...' : 'Unduh PDF'}
                   </button>
                   <button
                     type="button"
@@ -787,13 +859,19 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
                 </div>
               </div>
 
-              {/* Teks Surat Resmi */}
-              <div className="border border-slate-300 p-4 rounded-xl bg-white space-y-2 text-slate-900 text-xs">
-                <div className="text-center border-b-2 border-slate-900 pb-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">GERAKAN PRAMUKA GUGUS DEPAN 10-035 & 10-036</p>
-                  <h4 className="text-xs font-bold uppercase">AMBALAN LA SURULLAH PETTA LOPO</h4>
-                  <p className="text-[10px] text-slate-500">Pangkalan SMPI Al-Wasi Maros • Kwartir Ranting Maros Baru</p>
+              {isGeneratingPdf && (
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>Menyiapkan dokumen PDF</span><span>{pdfProgress}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="h-full rounded-full bg-[#e51c24] transition-all duration-300" style={{ width: `${pdfProgress}%` }} />
+                  </div>
                 </div>
+              )}
+              {/* Pratinjau isi surat; kop final memakai PDF asli yang diunggah */}
+              <div className="border border-slate-300 p-4 rounded-xl bg-white space-y-2 text-slate-900 text-xs">
+                <p className="text-center text-[10px] font-semibold text-slate-500 border-b border-slate-200 pb-2">Kop surat resmi mengikuti berkas PDF asli Ambalan.</p>
 
                 <div className="flex justify-between text-[11px] pt-1">
                   <div>
@@ -825,16 +903,13 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
                   Demikian surat ini disampaikan untuk dipergunakan sebagaimana mestinya. Atas perhatian dan kerjasamanya diucapkan terima kasih.
                 </p>
 
-                <div className="pt-4 grid grid-cols-2 text-center text-[11px]">
-                  <div>
-                    <p>Pradana Ambalan,</p>
-                    <p className="mt-8 font-bold underline">Muhammad Fadli Pratama</p>
+                {previewSurat.penandatangan && (
+                  <div className="pt-4 grid grid-cols-2 gap-2 text-center text-[11px]">
+                    {previewSurat.penandatangan.pradana && <div><p>Pradana Ambalan,</p><p className="mt-8 font-bold underline">{previewSurat.penandatangan.pradana}</p></div>}
+                    {previewSurat.penandatangan.kerani && <div><p>Kerani (Sekretaris),</p><p className="mt-8 font-bold underline">{previewSurat.penandatangan.kerani}</p></div>}
+                    {previewSurat.penandatangan.dewan && <div><p>Dewan Ambalan,</p><p className="mt-8 font-bold underline">{previewSurat.penandatangan.dewan}</p></div>}
                   </div>
-                  <div>
-                    <p>Kerani (Sekretaris),</p>
-                    <p className="mt-8 font-bold underline">Andi Tenri Sumpala</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}

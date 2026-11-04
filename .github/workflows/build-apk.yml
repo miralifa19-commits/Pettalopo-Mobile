@@ -252,7 +252,26 @@ jobs:
           for name, value in entries:
               body = re.sub(r'<item\s+name="' + re.escape(name) + r'">.*?</item>', '', body, flags=re.S)
               body += "\n        <item name='" + name + "'>" + value + "</item>"
-          styles.write_text(content[:match.start()] + opening + body + closing + content[match.end():])
+          content = content[:match.start()] + opening + body + closing + content[match.end():]
+          # Set the same light system bars on the normal application theme,
+          # not only on the temporary Android splash theme.
+          normal = re.search(r'(<style name="AppTheme.NoActionBar"[^>]*>)(.*?)(</style>)', content, re.S)
+          if not normal:
+              raise SystemExit("AppTheme.NoActionBar was not found.")
+          normal_open, normal_body, normal_close = normal.groups()
+          system_entries = [
+              ("android:statusBarColor", "#FFFFFF"),
+              ("android:windowLightStatusBar", "true"),
+              ("android:navigationBarColor", "#FFFFFF"),
+              ("android:windowLightNavigationBar", "true"),
+              ("android:windowDrawsSystemBarBackgrounds", "true"),
+              ("android:enforceNavigationBarContrast", "false")
+          ]
+          for name, value in system_entries:
+              normal_body = re.sub(r'<item\\s+name=["\\']' + re.escape(name) + r'["\\']>.*?</item>', '', normal_body, flags=re.S)
+              normal_body += "\\n        <item name='" + name + "'>" + value + "</item>"
+          content = content[:normal.start()] + normal_open + normal_body + normal_close + content[normal.end():]
+          styles.write_text(content)
 
           v31 = resources / "values-v31"
           v31.mkdir(parents=True, exist_ok=True)

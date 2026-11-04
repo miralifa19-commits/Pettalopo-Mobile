@@ -383,3 +383,14 @@ main button,main a{overflow-wrap:anywhere}
 .program-month-wheel .month-wheel-sector text{fill:#fff;font-size:9px;font-weight:800;pointer-events:none}
 .program-month-caption{margin:0;text-align:center;color:#747b82;font-size:11px;line-height:1.4}
 .program-month-wheel-section+.bg-white{margin-top:0}
+
+
+/* Home hero: single logo stays in the top identity bar; content flows directly below it. */
+.home-hero-compact{
+  padding:8px 4px 18px!important;
+  border-bottom:0!important;
+  overflow:visible!important;
+}
+.home-hero-compact .home-hero-copy{margin-top:0!important}
+.home-hero-compact .home-hero-copy h1{margin-top:8px!important}
+.home-hero-compact .hero-line-art{display:none!important}

@@ -143,13 +143,10 @@ export default function App() {
           <button type="button" className="pettalopo-topbar-brand" onClick={() => setActiveMenu('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
             <img src={LOGO_IMAGE_PATH} alt="Logo kecil Ambalan Petta Lopo" />
             <span className="pettalopo-topbar-title">
-              <strong>Ambalan Petta Lopo</strong>
-              <small>Gudep 10-035 &amp; 10-036</small>
+              <strong>Ambalan La Surullah</strong>
+              <small>Petta Lopo</small>
             </span>
           </button>
-          <div className="pettalopo-topbar-motto" aria-label="Bergerak, Berkarya, Mengabdi">
-            <span>Bergerak&nbsp; • &nbsp;Berkarya&nbsp; • &nbsp;Mengabdi</span>
-          </div>
           <button type="button" className="pettalopo-menu-button" onClick={() => setIsNotificationsOpen(true)} aria-label="Buka notifikasi">
             <Bell size={21} />
           </button>

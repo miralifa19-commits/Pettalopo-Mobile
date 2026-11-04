@@ -19,6 +19,8 @@ import { SanggaView } from './components/views/SanggaView';
 import { QuizPramukaView } from './components/views/QuizPramukaView';
 import { ChatAmbalanView } from './components/views/ChatAmbalanView';
 import { PengaturanView } from './components/views/PengaturanView';
+import { LaporanView } from './components/views/LaporanView';
+import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { UpdateChecker } from './components/UpdateChecker';
 
@@ -254,6 +256,24 @@ export default function App() {
               onSelectUserForTesting={(selectedUser) => {
                 setUser(selectedUser);
               }}
+            />
+          )}
+
+          {activeMenu === 'laporan' && (
+            <LaporanView
+              programKerjaList={programKerjaList}
+              currentUser={user}
+              allMembers={allMembers}
+              onBack={() => setActiveMenu('home')}
+            />
+          )}
+
+          {activeMenu === 'organisasi' && (
+            <ComingSoonView
+              title="Organisasi Ambalan"
+              subtitle="Informasi organisasi dan tata kelola Ambalan La Surullah Petta Lopo."
+              icon="🏕️"
+              onBackToDashboard={() => setActiveMenu('home')}
             />
           )}
         </main>

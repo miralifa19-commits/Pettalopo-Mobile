@@ -24,7 +24,7 @@ function polarPoint(radius: number, angle: number) {
 }
 
 function monthSegment(index: number) {
-  const centerAngle = index * 30;
+  const centerAngle = index * 30 + 15;
   const start = polarPoint(151, centerAngle - 13.2);
   const end = polarPoint(151, centerAngle + 13.2);
   const innerEnd = polarPoint(87, centerAngle + 13.2);
@@ -87,8 +87,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
               <text x="160" y="119" textAnchor="middle" className="month-wheel-medal">★</text>
               <text x="160" y="151" textAnchor="middle" className="month-wheel-index">BULAN {selectedMonth + 1}/12</text>
               <text x="160" y="174" textAnchor="middle" className="month-wheel-name">{MONTH_NAMES[selectedMonth]}</text>
-              <text x="160" y="193" textAnchor="middle" className="month-wheel-sub">{monthActivities.length ? `${monthActivities.length} KEGIATAN` : 'AGENDA AMBALAN'}</text>
-              <text x="160" y="211" textAnchor="middle" className="month-wheel-link">Lihat rincian ›</text>
+              <text x="160" y="193" textAnchor="middle" className="month-wheel-sub">{monthActivities.length ? monthActivities[0].nama.slice(0, 25) : 'Belum ada kegiatan'}</text>
+              <text x="160" y="211" textAnchor="middle" className="month-wheel-link" onClick={() => document.getElementById("month-activities")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Rincian ›</text>
             </svg>
           </div>
         </div>
@@ -125,7 +125,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
         </div>
       )}
 
-      <section className="landing-section">
+      <section className="landing-section" id="month-activities">
         <div className="section-heading">
           <div><span className="section-eyebrow">RENCANA KEGIATAN</span><h2>Kegiatan {MONTH_NAMES[selectedMonth]}</h2></div>
           <span className="month-count">{monthActivities.length} agenda</span>

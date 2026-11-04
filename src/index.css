@@ -332,3 +332,29 @@ main button,main a{overflow-wrap:anywhere}
  .explore-ambalan-card{padding:9px 7px;gap:7px}
  .explore-ambalan-copy strong{font-size:10px}
 }
+
+
+/* Prominent 12-month wheel matching the supplied circular reference. */
+.home-hero-compact{padding:4px 0 10px!important}
+.home-hero-compact .home-hero-grid{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important}
+.home-hero-compact .home-hero-copy{width:100%;text-align:center}
+.home-hero-compact .home-hero-copy .section-eyebrow{font-size:8px;letter-spacing:.13em}
+.home-hero-compact .home-hero-copy h1{font-size:clamp(27px,7.5vw,33px)!important;line-height:1.02!important;margin:5px 0 6px!important}
+.home-hero-compact .home-hero-copy>p{max-width:290px;margin:0 auto;font-size:11px;line-height:1.4}
+.home-hero-compact .month-wheel-wrap{width:min(100%,258px)!important;max-width:258px!important;margin:2px auto 0;justify-self:center}
+.month-wheel-graphic{width:100%;height:auto;display:block}
+.month-wheel-sector{cursor:pointer;outline:none}
+.month-wheel-sector:focus path{stroke:#e51c24;stroke-width:3}
+.month-wheel-sector text{font-size:9px}
+.month-wheel-center-hit{cursor:pointer}
+.month-wheel-sub{font-size:6.8px!important}
+.month-wheel-link{cursor:pointer;font-size:8px!important;font-weight:900!important}
+#month-activities{scroll-margin-top:76px}
+.home-hero-compact .home-hero-actions{width:100%;max-width:320px;margin:8px auto 0!important}
+.explore-ambalan-section{padding-top:2px}
+:root{--app-red:#e51c24;--app-red-dark:#b71922;--app-red-soft:#fff0f1}
+.pettalopo-topbar,.pettalopo-bottom-nav{border-color:#f1d0d2}
+@media(max-width:380px){
+ .home-hero-compact .month-wheel-wrap{width:min(100%,238px)!important;max-width:238px!important}
+ .home-hero-compact .home-hero-copy h1{font-size:29px!important}
+}

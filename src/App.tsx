@@ -161,7 +161,7 @@ export default function App() {
               </button>
               {isQuickMenuOpen && (
                 <div className="pettalopo-quick-menu">
-                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('dashboard'); }}><ClipboardCheck size={16} /><span>Presensi</span></button>
+                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('latihan_rutin'); }}><ClipboardCheck size={16} /><span>Presensi</span></button>
                   <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}><Settings size={16} /><span>Pengaturan</span></button>
                   <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}><span className="quick-menu-user">●</span><span>Akun</span></button>
                   <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsNotificationsOpen(true); }}><Bell size={16} /><span>Notifikasi</span></button>
@@ -252,6 +252,7 @@ export default function App() {
               currentUser={user}
               isAdmin={isAdmin}
               onNavigateToProgramKerja={() => setActiveMenu('program_kerja')}
+              onBack={() => setActiveMenu('home')}
             />
           )}
 

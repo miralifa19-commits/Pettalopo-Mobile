@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
-import { LOGO_IMAGE_PATH } from '../../data/scoutData';
 
 interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
@@ -41,11 +40,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   return (
     <div className="home-landing">
       <section className="home-hero home-hero-compact">
-        <div className="home-logo-wrap">
-          <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan La Surullah Petta Lopo" />
-        </div>
         <div className="home-hero-copy">
-          <span className="section-eyebrow">AMBALAN LA SURULLAH PETTA LOPO</span>
           <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
           <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
         </div>
@@ -57,7 +52,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
             Jelajahi SKU
           </button>
         </div>
-        <div className="hero-line-art" aria-hidden="true"><span /><span /><span /></div>
       </section>
       <section className="landing-section">
         <div className="section-heading">

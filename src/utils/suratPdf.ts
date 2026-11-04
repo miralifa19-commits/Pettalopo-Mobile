@@ -159,7 +159,7 @@ export async function downloadSuratPdf(
   const jpeg = new Uint8Array(await blob.arrayBuffer());
   const bytes = makePdf(jpeg, canvas.width, canvas.height, baseViewport.width, baseViewport.height);
   onProgress(95);
-  const file = new Blob([bytes], { type: 'application/pdf' });
+  const file = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
   const url = URL.createObjectURL(file);
   const anchor = document.createElement('a');
   anchor.href = url;

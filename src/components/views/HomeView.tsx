@@ -46,7 +46,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
           <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
         </div>
         <div className="home-hero-actions">
-          <button type="button" className="landing-primary" onClick={() => onNavigateMenu?.('dashboard')}>
+          <button type="button" className="landing-primary" onClick={() => onNavigateMenu?.('program_kerja')}>
             Lihat Kegiatan <ArrowRight size={15} />
           </button>
           <button type="button" className="landing-secondary" onClick={() => onNavigateMenu?.('sku_skk')}>

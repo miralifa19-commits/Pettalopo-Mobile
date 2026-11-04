@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Award, Home, MessageCircle, Settings, Menu } from 'lucide-react';
+import { CalendarDays, Award, Home, MessageCircle, Settings, Bell } from 'lucide-react';
 import { LOGO_IMAGE_PATH } from './data/scoutData';
 import { SplashScreen } from './components/SplashScreen';
-import { AndroidSidebar } from './components/AndroidSidebar';
+import { NotificationsModal } from './components/NotificationsModal';
 
 // Views
 import { HomeView } from './components/views/HomeView';
@@ -33,7 +33,7 @@ import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
@@ -138,15 +138,18 @@ export default function App() {
 
         {/* Dynamic Main Body Scroll View */}
         <header className="pettalopo-topbar">
-          <div className="pettalopo-topbar-brand">
-            <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan Petta Lopo" />
-            <div className="pettalopo-topbar-title">
+          <button type="button" className="pettalopo-topbar-brand" onClick={() => setActiveMenu('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
+            <img src={LOGO_IMAGE_PATH} alt="Logo kecil Ambalan Petta Lopo" />
+            <span className="pettalopo-topbar-title">
               <strong>Ambalan Petta Lopo</strong>
               <small>Gudep 10-035 &amp; 10-036</small>
-            </div>
+            </span>
+          </button>
+          <div className="pettalopo-topbar-motto" aria-label="Bergerak, Berkarya, Mengabdi">
+            <span>Bergerak&nbsp; • &nbsp;Berkarya&nbsp; • &nbsp;Mengabdi</span>
           </div>
-          <button type="button" className="pettalopo-menu-button" onClick={() => setIsSidebarOpen(true)} aria-label="Buka menu">
-            <Menu size={22} />
+          <button type="button" className="pettalopo-menu-button" onClick={() => setIsNotificationsOpen(true)} aria-label="Buka notifikasi">
+            <Bell size={21} />
           </button>
         </header>
         <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
@@ -172,7 +175,7 @@ export default function App() {
           )}
 
           {activeMenu === 'profil_ambalan' && (
-            <ProfilAmbalanView />
+            <ProfilAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'dewan_ambalan' && (
@@ -263,15 +266,10 @@ export default function App() {
           <button type="button" onClick={() => setActiveMenu('pengaturan')} aria-current={activeMenu === 'pengaturan' ? 'page' : undefined}><Settings size={19}/><span>Setelan</span></button>
         </nav>
 
-        {/* Sidebar Navigation Drawer */}
-        <AndroidSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          activeMenu={activeMenu === 'kegiatan_latihan' ? 'dashboard' : activeMenu}
-          onSelectMenu={(m) => setActiveMenu(m)}
-          user={user}
-          onUpdateUser={setUser}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        <NotificationsModal
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+          notifications={[]}
         />
 
         {/* Dedicated Ambalan Login / Register Modal */}

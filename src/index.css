@@ -265,3 +265,35 @@ main button,main a{overflow-wrap:anywhere}
   .home-hero-copy>p{font-size:11px}
   .home-hero-actions button{font-size:10px;padding:0 5px}
 }
+
+
+/* Requested home/header refinements only — brand red matches the native splash (#e51c24). */
+:root{--app-red:#e51c24;--app-red-dark:#b91c24;--app-red-soft:#fff1f2}
+.pettalopo-topbar{gap:8px}
+.pettalopo-topbar-brand{padding:0;border:0;background:transparent;text-align:left;cursor:pointer}
+.pettalopo-topbar-brand:focus-visible{outline:2px solid var(--app-red);outline-offset:4px;border-radius:12px}
+.pettalopo-topbar-motto{flex:1;min-width:0;overflow:hidden;color:var(--app-red);font-size:9px;font-weight:850;letter-spacing:.035em;white-space:nowrap;text-align:center}
+.pettalopo-topbar-motto span{display:inline-block;animation:petta-motto-scroll 12s linear infinite}
+@keyframes petta-motto-scroll{0%{transform:translateX(85%)}100%{transform:translateX(-105%)}}
+.pettalopo-menu-button{border-color:#f2c9cc;color:var(--app-red)}
+.month-wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.month-wheel{position:relative;width:116px;height:116px;border:1px solid #f0c7cb;border-radius:50%;background:radial-gradient(circle,#fff 0 35%,#fff4f5 36% 68%,#fce5e7 69% 100%);box-shadow:inset 0 0 0 5px #fff}
+.month-wheel:before{content:"";position:absolute;inset:17px;border:1px dashed #e9a9ae;border-radius:50%}
+.month-wheel-item{position:absolute;left:50%;top:50%;width:27px;height:19px;margin:-9.5px 0 0 -13.5px;padding:0;border:0;border-radius:99px;background:transparent;color:#8b343a;font-size:8px;font-weight:800;transform:rotate(calc(var(--month-index)*30deg)) translateY(-46px) rotate(calc(var(--month-index)*-30deg));z-index:2}
+.month-wheel-item.active{background:var(--app-red);color:#fff;box-shadow:0 2px 7px #e51c243d}
+.month-wheel-center{position:absolute;inset:37px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:var(--app-red);box-shadow:0 1px 6px #8f1b2020}
+.month-wheel-center strong{font-size:13px;line-height:1.1;font-weight:900}
+.month-wheel-center small{margin-top:3px;color:#777;font-size:8px}
+.month-wheel-caption{color:#9b3b42;font-size:7px;font-weight:850;letter-spacing:.1em}
+.home-hero-grid{grid-template-columns:minmax(0,1fr) 116px}
+.month-count{color:#7b838c;font-size:10px;font-weight:700;white-space:nowrap}
+.quick-menu-section{margin-top:2px}
+.quick-card{width:100%;border:1px solid var(--app-line);background:#fff}
+.quick-icon{background:#fff1f2;color:var(--app-red)}
+@media(max-width:380px){
+ .pettalopo-topbar-motto{font-size:8px}
+ .month-wheel{width:108px;height:108px}
+ .month-wheel-item{transform:rotate(calc(var(--month-index)*30deg)) translateY(-42px) rotate(calc(var(--month-index)*-30deg))}
+ .home-hero-grid{grid-template-columns:minmax(0,1fr) 108px}
+}
+@media(prefers-reduced-motion:reduce){.pettalopo-topbar-motto span{animation:none}}

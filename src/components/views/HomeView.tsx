@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   ArrowRight, CalendarDays, MapPin, BookOpen, Users, Award, ChevronRight,
-  Crown, UserRound, Shield
+  Crown, UserRound, Shield, Target, Gamepad2
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { formatAgendaDate, parseAgendaDate } from '../../utils/agendaDate';
@@ -20,6 +20,8 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
   { title: 'Anggota', description: 'Daftar anggota putra dan putri', icon: <UserRound size={20} />, menu: 'anggota_ambalan' },
   { title: 'Sangga', description: 'Daftar lima sangga putra dan putri', icon: <Users size={20} />, menu: 'sangga' },
   { title: 'Dewan Ambalan', description: 'Pengurus Dewan Ambalan saat ini', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
+  { title: 'Misi Pramuka', description: 'Selesaikan misi dan tantangan kepramukaan', icon: <Target size={20} />, menu: 'misi_pramuka' },
+  { title: 'Games', description: 'Mainkan kuis dan permainan Pramuka', icon: <Gamepad2 size={20} />, menu: 'quiz' },
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {

@@ -732,7 +732,7 @@ export async function createLetterPdf(
     const prefixSebelumW = salamPenutup.slice(0, salamPenutup.lastIndexOf(kataWabarakatuh));
     const salamWidth = italic.widthOfTextAtSize(salamPenutup, 12);
     const prefixWidth = italic.widthOfTextAtSize(prefixSebelumW, 12);
-    const hurufWStartX = (layout.width - salamWidth) / 2 + prefixWidth;
+    const hurufWStartX = SIDE_MARGIN + (layout.contentWidth - salamWidth) / 2 + prefixWidth;
     layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';

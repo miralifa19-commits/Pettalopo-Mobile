@@ -718,7 +718,7 @@ export async function createLetterPdf(
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
     await layout.richParagraph(surat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''), {
-      size: 12, lineHeight: 18, align: 'justify', spacingAfter: 9,
+      size: 12, lineHeight: 18, spacingAfter: 9,
     });
 
     const bulletRows = [

@@ -527,7 +527,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const rows = Math.ceil(signers.length / 2);
   const rowHeight = 140;
   const tembusanHeight = surat.includeTembusan && surat.tembusanList?.length
-    ? 12 + surat.tembusanList.reduce((sum, item) => sum + wrapPdfText(`${sum ? '' : ''}${item}`, layout.fonts.regular, 8.5, layout.contentWidth).length * 9, 0)
+    ? 12 + surat.tembusanList.reduce((sum, item, index) => sum + wrapPdfText(`${index + 1}. ${item}`, layout.fonts.regular, 8.5, layout.contentWidth).length * 9, 0)
     : 0;
 
   // Sisakan ruang untuk SELURUH kelompok tanda tangan. Jika tidak cukup,
@@ -546,6 +546,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
     if (rowMembers === 2) {
       x = SIDE_MARGIN + (index % 2) * (columnWidth + gap);
+    } else if (isPembinaPutri) {
+      x = SIDE_MARGIN + columnWidth + gap;
     } else if (signers.length > 1 && isLastSingle) {
       // Penandatangan ketiga/kelima dan seterusnya berada di tengah baris.
       x = SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;

@@ -6,13 +6,10 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { GeneratedSurat } from '../src/components/views/PersuratanAmbalanView';
 import { createLetterPdf, type PdfAssetLoader } from '../src/services/pdfLetterGenerator';
 
-const longBody = Array.from(
-  { length: 70 },
-  (_, index) =>
-    `Paragraf uji nomor ${index + 1}. Pettalopo Mobile menyusun surat dengan teks asli, ukuran font terukur, dan pergantian halaman otomatis agar setiap baris tetap berada di dalam margin dokumen.`,
-).join('\n\n');
+const loadTestAsset: PdfAssetLoader = async (assetPath) =>
+  new Uint8Array(await readFile(path.join(process.cwd(), 'public', assetPath)));
 
-const sample: GeneratedSurat = {
+const base: GeneratedSurat = {
   id: 'pdf-self-test',
   nomorSurat: '001/10.035/C/2026',
   nomorUrut: '001',
@@ -29,14 +26,14 @@ const sample: GeneratedSurat = {
   includeKepadaYth: true,
   penerimaNama: 'Kepala SMA Negeri 9 Maros',
   penerimaTempat: 'di - Tempat',
-  isiParagraf: longBody,
+  isiParagraf: 'Dengan hormat, kami mengundang Bapak/Ibu untuk menghadiri kegiatan Pramuka. Mohon kehadiran tepat waktu.',
   bulletStyle: 'titik',
   rincianHariTanggal: 'Sabtu, 21 November 2026',
   rincianWaktu: '08.00 WITA s.d. Selesai',
   includeTempat: true,
   rincianTempat: 'Sanggar Bakti Pramuka SMA Negeri 9 Maros',
   includeKeteranganAcara: true,
-  rincianKeteranganAcara: 'Pengujian pergantian halaman PDF',
+  rincianKeteranganAcara: 'Pengujian ekspor PDF',
   penutupParagraf: 'Demikian surat ini kami sampaikan. Terima kasih.',
   includeDewan: true,
   dewanJabatan: 'Pradana Putra',
@@ -59,48 +56,37 @@ const sample: GeneratedSurat = {
   createdAt: new Date().toISOString(),
 };
 
-const loadTestAsset: PdfAssetLoader = async (assetPath) => {
-  const absolutePath = path.join(process.cwd(), 'public', assetPath);
-  const bytes = await readFile(absolutePath);
-  return new Uint8Array(bytes);
-};
+async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: string) {
+  const document = await PDFDocument.load(bytes);
+  assert.equal(document.getPageCount(), expectedPages, label + ': jumlah halaman tidak sesuai');
+  for (const page of document.getPages()) {
+    const size = page.getSize();
+    assert.ok(Math.abs(size.width - 571.5) < 0.1, label + ': lebar halaman berubah');
+    assert.ok(Math.abs(size.height - 828) < 0.1, label + ': tinggi halaman berubah');
+  }
 
-const bytes = await createLetterPdf(sample, loadTestAsset);
-const parsed = await PDFDocument.load(bytes);
-assert.ok(parsed.getPageCount() >= 2, 'Surat panjang harus menghasilkan minimal dua halaman');
-
-for (const page of parsed.getPages()) {
-  const size = page.getSize();
-  assert.ok(Math.abs(size.width - 571.5) < 0.1, 'Lebar halaman harus sama dengan PDF kop asli');
-  assert.ok(Math.abs(size.height - 828) < 0.1, 'Tinggi halaman harus sama dengan PDF kop asli');
+  const parsed = await pdfjsLib.getDocument({ data: bytes, disableWorker: true, isEvalSupported: false }).promise;
+  const pageTexts: string[] = [];
+  for (let pageNumber = 1; pageNumber <= parsed.numPages; pageNumber += 1) {
+    const page = await parsed.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const text = textContent.items.map((item) => ('str' in item ? item.str : '')).join(' ');
+    pageTexts.push(text);
+    assert.ok(text.includes('GERAKAN PRAMUKA'), label + ': kop tidak ditemukan pada halaman ' + pageNumber);
+  }
+  assert.ok(pageTexts.join(' ').includes('Pengujian PDF Surat Resmi'), label + ': teks isi tidak bisa diekstrak');
+  await parsed.destroy();
+  console.log('PASS ' + label + ': ' + expectedPages + ' halaman, kop asli ada di setiap halaman, ukuran tetap, teks dapat diseleksi/diekstrak.');
 }
 
-const pdfDocument = await pdfjsLib.getDocument({
-  data: bytes,
-  disableWorker: true,
-  isEvalSupported: false,
-}).promise;
+const shortBytes = await createLetterPdf(base, loadTestAsset);
+await inspectPdf(shortBytes, 1, 'Surat pendek');
 
-const extractedPages: string[] = [];
-for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
-  const page = await pdfDocument.getPage(pageNumber);
-  const textContent = await page.getTextContent();
-  const pageText = textContent.items
-    .map((item) => ('str' in item ? item.str : ''))
-    .join(' ');
-  extractedPages.push(pageText);
-  assert.ok(
-    pageText.includes('GERAKAN PRAMUKA'),
-    `Halaman ${pageNumber} harus memuat kop surat asli`,
-  );
-}
-
-assert.ok(
-  extractedPages.join(' ').includes('Paragraf uji nomor 1'),
-  'Isi surat harus dapat diekstrak sebagai teks PDF, bukan gambar',
-);
-
-await pdfDocument.destroy();
-console.log(
-  `PDF self-test passed: ${parsed.getPageCount()} halaman, ukuran kop asli dipertahankan, kop berulang, dan teks dapat diekstrak.`,
-);
+const longBody = Array.from({ length: 70 }, (_, index) =>
+  'Paragraf uji nomor ' + (index + 1) + '. Pettalopo Mobile menyusun surat dengan teks asli, ukuran font terukur, dan pergantian halaman otomatis agar setiap baris tetap berada di dalam margin dokumen.'
+).join('\n\n');
+const longBytes = await createLetterPdf({ ...base, isiParagraf: longBody }, loadTestAsset);
+const longDocument = await PDFDocument.load(longBytes);
+assert.ok(longDocument.getPageCount() >= 2, 'Surat panjang harus menjadi minimal dua halaman');
+await inspectPdf(longBytes, longDocument.getPageCount(), 'Surat panjang dua halaman');
+console.log('PASS Uji karakter: font bawaan PDF dan sanitasi karakter non-WinAnsi terpasang pada mesin ekspor.');

@@ -383,7 +383,7 @@ function drawSignerBlock(
 ): number {
   const titleSize = 10.5;
   let y = topY;
-  layout.drawText(\`\${approval},\`, x, y, layout.fonts.bold, 10.5);
+  layout.drawText(`${approval},`, x, y, layout.fonts.bold, 10.5);
   y -= 13;
   for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
     layout.drawText(line, x, y, layout.fonts.bold, titleSize);

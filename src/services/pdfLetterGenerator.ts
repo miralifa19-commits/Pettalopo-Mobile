@@ -502,17 +502,21 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       && members[0].approval.trim().toLocaleLowerCase('id')
         === members[1].approval.trim().toLocaleLowerCase('id');
 
-    // Bila satu baris memiliki dua pengesahan yang sama, tampilkan sekali
-    // tepat di tengah baris, bukan mengulanginya pada kedua blok.
+    // Posisi blok kanan dimulai tepat dari huruf W pada "Wabarakatuh"
+    // saat slider 0 cm. Lebar kedua kolom dibuat sama agar titik tengah
+    // Mengetahui/Menyetujui benar-benar berada di antara kedua blok TTD.
+    const maxRightX = layout.width - SIDE_MARGIN - columnWidth;
+    const rightX = Math.max(SIDE_MARGIN, Math.min(
+      (rightBlockStartX ?? (SIDE_MARGIN + columnWidth + 18)) + adjustableOffset,
+      maxRightX,
+    ));
+
     if (sharedApproval) {
-      const approvalCenterX = members.length === 2 && rightBlockStartX !== undefined
-        ? (SIDE_MARGIN + columnWidth / 2
-          + Math.min(rightBlockStartX + adjustableOffset, layout.width - SIDE_MARGIN - 72)
-          + Math.max(72, layout.width - SIDE_MARGIN - Math.min(rightBlockStartX + adjustableOffset, layout.width - SIDE_MARGIN - 72)) / 2) / 2
-        : layout.width / 2;
+      const leftCenterX = SIDE_MARGIN + columnWidth / 2;
+      const rightCenterX = rightX + columnWidth / 2;
       layout.drawCentered(
         members[0].approval,
-        approvalCenterX,
+        (leftCenterX + rightCenterX) / 2,
         y,
         layout.fonts.regular,
         10.5,
@@ -526,11 +530,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       // Kolom kiri tetap. Kolom kanan berpatokan pada huruf k pada
       // "Wabarakatuh", lalu dapat digeser sesuai pengaturan jarak TTD.
       const leftX = SIDE_MARGIN;
-      const anchoredRightX = rightBlockStartX !== undefined
-        ? rightBlockStartX + adjustableOffset
-        : SIDE_MARGIN + columnWidth + 18;
-      const maxRightX = layout.width - SIDE_MARGIN - 72;
-      const rightX = Math.min(anchoredRightX, maxRightX);
       const x = isRightColumn
         ? rightX
         : members.length === 2
@@ -538,9 +537,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
           : (signers.length > 1
             ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
             : SIDE_MARGIN);
-      const signerWidth = isRightColumn
-        ? Math.max(72, layout.width - SIDE_MARGIN - x)
-        : columnWidth;
+      const signerWidth = columnWidth;
 
       bottoms.push(drawSignerBlock(
         layout,
@@ -732,17 +729,16 @@ export async function createLetterPdf(
     const salamPenutup = cleanText('Wassalamu’alaikum Warahmatullahi Wabarakatuh');
     await layout.paragraph(salamPenutup, { size: 12, font: italic, lineHeight: 16, align: 'center' });
     const kataWabarakatuh = 'Wabarakatuh';
-    const indexHurufK = kataWabarakatuh.lastIndexOf('k');
-    const prefixSebelumK = salamPenutup.slice(0, salamPenutup.lastIndexOf(kataWabarakatuh) + indexHurufK);
+    const prefixSebelumW = salamPenutup.slice(0, salamPenutup.lastIndexOf(kataWabarakatuh));
     const salamWidth = italic.widthOfTextAtSize(salamPenutup, 12);
-    const prefixWidth = italic.widthOfTextAtSize(prefixSebelumK, 12);
-    const hurufKStartX = (layout.width - salamWidth) / 2 + prefixWidth;
+    const prefixWidth = italic.widthOfTextAtSize(prefixSebelumW, 12);
+    const hurufWStartX = (layout.width - salamWidth) / 2 + prefixWidth;
     layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
     const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
-    await drawSignatures(layout, surat, qrImage, hurufKStartX);
+    await drawSignatures(layout, surat, qrImage, hurufWStartX);
 
     stage = 'Menata tembusan surat';
     onStage(stage);

@@ -441,7 +441,7 @@ async function drawSignatures(
 ): Promise<void> {
   const hasDewan = surat.includeDewan;
   const hasPembina = surat.includePembina;
-  if (!hasDewan && !hasPembina) return;
+  if (!hasDewan && !hasPembina && !surat.includePembinaTambahan) return;
 
   await layout.ensureSpace(160);
   const gap = 14;
@@ -463,25 +463,25 @@ async function drawSignatures(
       surat.metodeTtd === 'digital' ? qrImage : undefined,
       surat.includeStempel,
     ));
-  } else {
+  } else if (hasDewan) {
     const centerX = SIDE_MARGIN + columnWidth / 2;
-    if (hasDewan) {
       bottomYs.push(drawSignerBlock(
         layout, centerX, columnWidth, topY,
         `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
         undefined, false,
       ));
-    } else {
-      bottomYs.push(drawSignerBlock(
-        layout, centerX, columnWidth, topY,
-        `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
-        surat.metodeTtd === 'digital' ? qrImage : undefined,
-        surat.includeStempel,
-      ));
     }
+  } else if (hasPembina) {
+    const centerX = SIDE_MARGIN + columnWidth / 2;
+    bottomYs.push(drawSignerBlock(
+      layout, centerX, columnWidth, topY,
+      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
+      surat.metodeTtd === 'digital' ? qrImage : undefined,
+      surat.includeStempel,
+    ));
   }
 
-  layout.y = Math.min(...bottomYs);
+  if (bottomYs.length) layout.y = Math.min(...bottomYs);
 
   if (surat.includePembinaTambahan && surat.pembinaTambahanJabatan && surat.pembinaTambahanNama) {
     await layout.ensureSpace(145);

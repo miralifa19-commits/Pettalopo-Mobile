@@ -31,6 +31,7 @@ export const MabigusView: React.FC<Props> = ({ currentUser, onBack }) => {
 
   const positions = [
     { key: 'ketuaGudep', label: 'Ketua Gugus Depan', sub: 'Pangkalan SMA Negeri 9 Maros' },
+    { key: 'ketuaGudepJabatan', label: 'Jabatan Ketua Mabigus', sub: 'Ditampilkan pada tanda tangan surat' },
     { key: 'pembinaPutra', label: 'Pembina Putra', sub: 'Gugus Depan 10.035' },
     { key: 'pembinaPutri', label: 'Pembina Putri', sub: 'Gugus Depan 10.036' },
     { key: 'pembantuPembinaPutra', label: 'Pembantu Pembina Putra', sub: 'Gugus Depan 10.035' },
@@ -59,7 +60,7 @@ export const MabigusView: React.FC<Props> = ({ currentUser, onBack }) => {
             onClick={() => setIsEditing(true)}
             className="text-xs font-bold px-3 py-1.5 rounded-xl bg-[#c81e28] text-white hover:bg-[#a91b24] transition-all cursor-pointer"
           >
-            ✏️ Edit Nama
+            ✏️ Edit Data
           </button>
         ) : (
           <div className="flex items-center gap-2">

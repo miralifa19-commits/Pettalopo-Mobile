@@ -675,7 +675,7 @@ export async function createLetterPdf(
         size: 12, lineHeight: 16, spacingAfter: 0,
       });
       await layout.paragraph('di-', { size: 12, lineHeight: 16, spacingAfter: 0 });
-      const tempatTujuan = cleanText(surat.penerimaTempat).replace(/^di\\s*-?\\s*/i, '').replace(/[,\\s]+$/, '') || 'Tempat';
+      const tempatTujuan = cleanText(surat.penerimaTempat).replace(/^di\s*-?\s*/i, '').replace(/[,\s]+$/, '') || 'Tempat';
       await layout.paragraph(tempatTujuan, {
         x: SIDE_MARGIN + 22, size: 12, lineHeight: 16, spacingAfter: 0,
       });

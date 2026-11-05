@@ -139,6 +139,25 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [wizardStep, viewMode]);
+
+  // Tombol kembali perangkat menelusuri wizard satu langkah demi satu langkah.
+  useEffect(() => {
+    if (viewMode !== 'form' && viewMode !== 'preview') return;
+    window.history.pushState({ pettalopoLetter: true, viewMode, wizardStep }, '', `#surat-${viewMode}-${wizardStep}`);
+    const handleBack = () => {
+      if (viewMode === 'preview') {
+        setViewMode('form');
+        setWizardStep(3);
+      } else if (wizardStep > 1) {
+        setWizardStep((current) => (current === 3 ? 2 : 1));
+      } else {
+        setViewMode('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
+  }, [viewMode, wizardStep]);
+
   const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
   const [suratSettings, setSuratSettings] = useState<SuratSettings>(() => {
     try { return { ...DEFAULT_SURAT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}') }; }

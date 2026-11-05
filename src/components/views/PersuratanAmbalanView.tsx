@@ -17,6 +17,15 @@ interface PersuratanAmbalanViewProps {
 
 export type DigitalSignerType = 'kepala_sekolah' | 'pembina_putra' | 'pembina_putri';
 
+const STORAGE_KEY_SETTINGS = 'pettalopo_pengaturan_surat_v1';
+const DEFAULT_SURAT_SETTINGS = {
+  pembinaPutra: 'Pembina Putra',
+  pembinaPutri: 'Pembina Putri',
+  pembantuPutra: 'Pembantu Pembina Putra',
+  pembantuPutri: 'Pembantu Pembina Putri',
+};
+type SuratSettings = typeof DEFAULT_SURAT_SETTINGS;
+
 export interface GeneratedSurat {
   id: string;
   nomorSurat: string;
@@ -46,6 +55,8 @@ export interface GeneratedSurat {
   rincianTempat: string;
   includeKeteranganAcara: boolean;
   rincianKeteranganAcara: string;
+  includeKeteranganDetail?: boolean;
+  rincianKeteranganDetail?: string;
   penutupParagraf: string;
 
   // Pengesahan (Semua yang bertanda tangan harus dipilih)
@@ -104,8 +115,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   programKerjaList = [],
   onBack
 }) => {
-  const [viewMode, setViewMode] = useState<'dashboard' | 'form' | 'preview' | 'list' | 'drafts'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'form' | 'preview' | 'list' | 'drafts' | 'settings'>('dashboard');
   const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
+  const [suratSettings, setSuratSettings] = useState<SuratSettings>(() => {
+    try { return { ...DEFAULT_SURAT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}') }; }
+    catch { return DEFAULT_SURAT_SETTINGS; }
+  });
   const [dewanList, setDewanList] = useState<Dewan8Position[]>(get8DewanPositions());
 
   // Arsip Surat
@@ -125,6 +140,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setOfficials(getMabigusOfficials());
     setDewanList(get8DewanPositions());
   }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(suratSettings)); } catch {}
+  }, [suratSettings]);
 
   // --- BAGIAN 1: IDENTITAS (Google Form style dengan toggle lingkaran di samping) ---
   const [includeNomor, setIncludeNomor] = useState(true);
@@ -163,6 +182,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [rincianTempat, setRincianTempat] = useState('Sanggar Bakti Pramuka SMA Negeri 9 Maros');
   const [includeKeteranganAcara, setIncludeKeteranganAcara] = useState(true);
   const [rincianKeteranganAcara, setRincianKeteranganAcara] = useState('Latihan Gabungan & Pemantapan Tata Adat Ambalan');
+  const [includeKeteranganDetail, setIncludeKeteranganDetail] = useState(false);
+  const [rincianKeteranganDetail, setRincianKeteranganDetail] = useState('');
 
   const [penutupParagraf, setPenutupParagraf] = useState(
     'Demikian surat ini kami sampaikan, atas perhatian, dukungan, dan kerja sama Kakak kami ucapkan terima kasih.'
@@ -374,6 +395,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         rincianTempat,
         includeKeteranganAcara,
         rincianKeteranganAcara,
+        includeKeteranganDetail,
+        rincianKeteranganDetail,
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -384,11 +407,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includePembantuPutra,
         includePembantuPutri: false,
         pembantuPutraNama: officials.pembantuPembinaPutra,
-        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutraJabatan: suratSettings.pembantuPutra,
         pembantuPutriNama: officials.pembantuPembinaPutri,
-        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutriJabatan: suratSettings.pembantuPutri,
         pembantuPutraApprovalType, pembantuPutriApprovalType,
-        pembinaJabatan: 'Pembina Gugus Depan 10.035',
+        pembinaJabatan: suratSettings.pembinaPutra,
         pembinaNama: officials.pembinaPutra,
         pembinaNip: officials.nipPembinaPutra,
         includeKetuaGudep,
@@ -521,7 +544,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembantuPutriNama: officials.pembantuPembinaPutri,
         pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
         pembantuPutraApprovalType, pembantuPutriApprovalType,
-        pembinaTambahanJabatan: 'Pembina Gugus Depan 10.036',
+        pembinaTambahanJabatan: suratSettings.pembinaPutri,
         pembinaTambahanNama: officials.pembinaPutri,
         pembinaTambahanNip: officials.nipPembinaPutri,
         includeKetuaGudep,
@@ -550,7 +573,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
 
   const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
     const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
     const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
@@ -564,7 +587,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeKepadaYth(d.includeKepadaYth ?? true); setPenerimaNama(d.penerimaNama ?? ''); setPenerimaTempat(d.penerimaTempat ?? '');
     setIsiParagraf(String(d.isiParagraf ?? '').replace(/^Salam Pramuka[,.]?\s*/i, '')); setBulletStyle(d.bulletStyle ?? 'titik');
     setRincianHariTanggal(d.rincianHariTanggal ?? ''); setRincianWaktu(d.rincianWaktu ?? ''); setIncludeTempat(d.includeTempat ?? true); setRincianTempat(d.rincianTempat ?? '');
-    setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
+    setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setIncludeKeteranganDetail(d.includeKeteranganDetail ?? false); setRincianKeteranganDetail(d.rincianKeteranganDetail ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
     setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
@@ -587,9 +610,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         currentStage = stage;
       });
 
-      const safeNumber = (surat.nomorUrut || 'Ambalan').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const safeGudep = (surat.gudepType || '10-035').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const fileName = `Surat_Pramuka_${safeNumber}_${safeGudep}.pdf`;
+      const safePerihal = (surat.perihal || 'Surat Ambalan')
+        .normalize('NFKD')
+        .replace(/[^a-zA-Z0-9 _-]/g, '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .slice(0, 90) || 'Surat_Ambalan';
+      const fileName = `${safePerihal}.pdf`;
 
       const delivery = await deliverPdfFile(pdfBytes, fileName, (stage) => {
         currentStage = stage;
@@ -630,8 +657,30 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           <button type="button" onClick={() => { setEditingDraftId(null); setViewMode('form'); }} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-red-50 text-[#b71922] flex items-center justify-center text-2xl">＋</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Buat Surat Baru</strong><span className="block text-xs text-slate-500 mt-1">Isi, generate, dan simpan surat ke bundel keluar</span></span><span className="ml-auto text-slate-400">›</span></button>
           <button type="button" onClick={() => setViewMode('drafts')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">▤</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Draf Surat</strong><span className="block text-xs text-slate-500 mt-1">{draftSurat.length} draf tersimpan</span></span><span className="ml-auto text-slate-400">›</span></button>
           <button type="button" onClick={() => setViewMode('list')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">▣</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Bundel Surat Keluar</strong><span className="block text-xs text-slate-500 mt-1">{arsipSurat.length} surat tersimpan</span></span><span className="ml-auto text-slate-400">›</span></button>
+          <button type="button" onClick={() => setViewMode('settings')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">⚙</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Pengaturan Surat</strong><span className="block text-xs text-slate-500 mt-1">Atur kalimat jabatan pada pengesahan</span></span><span className="ml-auto text-slate-400">›</span></button>
         </div>
       )}
+      {viewMode === 'settings' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900">Pengaturan Surat</h2>
+            <p className="text-xs text-slate-500 mt-1">Ubah kalimat jabatan yang akan tampil pada bagian pengesahan surat. Perubahan disimpan otomatis.</p>
+          </div>
+          {([
+            ['pembinaPutra', 'Jabatan Pembina Putra'],
+            ['pembinaPutri', 'Jabatan Pembina Putri'],
+            ['pembantuPutra', 'Jabatan Pembantu Pembina Putra'],
+            ['pembantuPutri', 'Jabatan Pembantu Pembina Putri'],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="block space-y-1">
+              <span className="text-xs font-bold text-slate-700">{label}</span>
+              <input value={suratSettings[key]} onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))} className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white" />
+            </label>
+          ))}
+          <button type="button" onClick={() => setViewMode('dashboard')} className="w-full py-3 rounded-xl bg-[#c81e28] text-white text-sm font-bold">Selesai</button>
+        </div>
+      )}
+
       {/* Download Success Notification Toast */}
       {downloadSuccessToast && (
         <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-150">
@@ -1029,6 +1078,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   />
                 </div>
               </div>
+              <div className="flex items-start gap-2">
+                <button type="button" onClick={() => setIncludeKeteranganDetail(!includeKeteranganDetail)} className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center ${includeKeteranganDetail ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
+                <div className="flex-1">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label>
+                  <input type="text" value={rincianKeteranganDetail} onChange={(e) => setRincianKeteranganDetail(e.target.value)} disabled={!includeKeteranganDetail} placeholder="Keterangan tambahan" className={`w-full text-xs p-2 rounded-xl border border-slate-200 ${includeKeteranganDetail ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'}`} />
+                </div>
+              </div>
 
             </div>
 
@@ -1316,7 +1372,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           {/* KERTAS RESMI SURAT (STANDAR A4 GERAKAN PRAMUKA) */}
           <div
             ref={letterRef}
-            className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-300 shadow-xl max-w-2xl mx-auto text-black font-serif leading-normal select-text"
+            className="bg-white w-full max-w-[794px] min-h-[1123px] mx-auto px-7 py-9 sm:px-14 sm:py-14 rounded-none border border-slate-300 shadow-sm text-black font-serif leading-normal select-text"
             style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt' }}
           >
             {/* KOP SURAT ASLI MENGGUNAKAN INLINE BASE64 LOGO (100% BEBAS DARI MASALAH CORS / JARINGAN) */}
@@ -1388,7 +1444,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </p>
                 )}
               </div>
-              <div className="text-right whitespace-nowrap">{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</div>
+              {activeSurat.includeTanggal && <div className="text-right whitespace-nowrap">{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</div>}
             </div>
 
             {/* Kepada Yth. (Opsional) */}
@@ -1411,23 +1467,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <p>{activeSurat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, '')}</p>
 
               {/* Rincian Poin-Poin Acara */}
-              <div className="pl-6 space-y-1">
-                <p>
-                  <span className="inline-block w-36 font-bold">Hari / Tanggal</span> : {activeSurat.rincianHariTanggal}
-                </p>
-                <p>
-                  <span className="inline-block w-36 font-bold">Waktu</span> : {activeSurat.rincianWaktu}
-                </p>
-                {activeSurat.includeTempat && (
-                  <p>
-                    <span className="inline-block w-36 font-bold">Tempat</span> : {activeSurat.rincianTempat}
-                  </p>
-                )}
-                {activeSurat.includeKeteranganAcara && (
-                  <p>
-                    <span className="inline-block w-36 font-bold">Agenda</span> : {activeSurat.rincianKeteranganAcara}
-                  </p>
-                )}
+              <div className="space-y-1 text-left">
+                <p><span className="inline-block w-36">Hari / Tanggal</span> : {activeSurat.rincianHariTanggal}</p>
+                <p><span className="inline-block w-36">Waktu</span> : {activeSurat.rincianWaktu}</p>
+                {activeSurat.includeTempat && <p><span className="inline-block w-36">Tempat</span> : {activeSurat.rincianTempat}</p>}
+                {activeSurat.includeKeteranganAcara && <p><span className="inline-block w-36">Agenda</span> : {activeSurat.rincianKeteranganAcara}</p>}
+                {activeSurat.includeKeteranganDetail && <p><span className="inline-block w-36">Keterangan</span> : {activeSurat.rincianKeteranganDetail}</p>}
               </div>
 
               {/* Penutup */}
@@ -1461,8 +1506,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             {/* Tembusan (Opsional) */}
             {activeSurat.includeTembusan && activeSurat.tembusanList.length > 0 && (
               <div className="pt-6 text-[10px] sm:text-xs font-sans">
-                <p className="font-bold uppercase tracking-wider">Tembusan Kepada Yth :</p>
-                <ol className="list-decimal pl-4 space-y-0.5 mt-0.5">
+                <p className="font-normal">Tembusan:</p>
+                <ol className="list-decimal pl-0 space-y-0.5 mt-0.5 list-inside">
                   {activeSurat.tembusanList.map((t, idx) => (
                     <li key={idx}>{t}</li>
                   ))}

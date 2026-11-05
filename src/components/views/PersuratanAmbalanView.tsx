@@ -584,12 +584,30 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
 
 
-  const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
-    const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
-    const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
+  const currentDraftData = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+  const persistDraftSnapshot = () => {
+    const id = editingDraftId || `draft_${Date.now()}`;
+    const draft: FormDraft = { id, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data: currentDraftData };
+    let existing: FormDraft[] = [];
+    try { existing = JSON.parse(localStorage.getItem(STORAGE_KEY_DRAFT) || '[]'); } catch {}
+    const updated = [draft, ...existing.filter((item) => item.id !== id)];
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
-    setEditingDraftId(draft.id); setViewMode('drafts');
+    setDraftSurat(updated);
+    setEditingDraftId(id);
+    return draft;
+  };
+
+  // Simpan otomatis setiap perubahan saat formulir sedang dibuka.
+  // Dengan demikian, keluar aplikasi/tab secara mendadak tidak menghilangkan isian terakhir.
+  const currentDraftSerialized = JSON.stringify(currentDraftData);
+  useEffect(() => {
+    if (viewMode !== 'form') return;
+    persistDraftSnapshot();
+  }, [viewMode, currentDraftSerialized, editingDraftId]);
+
+  const handleSaveDraft = () => {
+    persistDraftSnapshot();
+    setViewMode('drafts');
   };
   const handleOpenDraft = (draft: FormDraft) => {
     const d = draft.data as any;
@@ -691,7 +709,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   return (
     <div className="space-y-4 pb-28 font-sans">
-      <div className="flex items-center gap-3 py-1"><button type="button" onClick={() => viewMode === 'dashboard' ? onBack?.() : setViewMode('dashboard')} className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold" aria-label="Kembali">←</button><h1 className="text-lg font-extrabold text-slate-900">Kelola Surat Ambalan</h1></div>
+      <div className="flex items-center gap-3 py-1"><button type="button" onClick={() => { if (viewMode === 'form') persistDraftSnapshot(); if (viewMode === 'dashboard') onBack?.(); else setViewMode('dashboard'); }} className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold" aria-label="Kembali">←</button><h1 className="text-lg font-extrabold text-slate-900">Kelola Surat Ambalan</h1></div>
       {viewMode === 'dashboard' && (
         <div className="grid grid-cols-1 gap-3">
           <button type="button" onClick={() => { setEditingDraftId(null); setWizardStep(1); setViewMode('form'); }} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-red-50 text-[#b71922] flex items-center justify-center text-2xl">＋</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Buat Surat Baru</strong><span className="block text-xs text-slate-500 mt-1">Isi, generate, dan simpan surat ke bundel keluar</span></span><span className="ml-auto text-slate-400">›</span></button>
@@ -744,12 +762,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 { step: 3, title: 'Pengesahan' },
                 { step: 4, title: 'Pratinjau' },
               ].map((item) => (
-                <div key={item.step} className="flex-1 min-w-0 text-center">
+                <button type="button" key={item.step} onClick={() => { if (item.step <= 3) setWizardStep(item.step as 1 | 2 | 3); }} disabled={item.step === 4} className="flex-1 min-w-0 text-center disabled:cursor-default">
                   <div className={`mx-auto w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold ${wizardStep === item.step ? 'bg-[#c81e28] text-white' : wizardStep > item.step ? 'bg-red-100 text-[#b71922]' : 'bg-slate-100 text-slate-400'}`}>
                     {item.step}
                   </div>
                   <p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep === item.step ? 'text-[#b71922]' : 'text-slate-500'}`}>{item.title}</p>
-                </div>
+                </button>
               ))}
             </div>
             <div className="h-1.5 rounded-md bg-slate-100 overflow-hidden">
@@ -1189,7 +1207,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
           {/* ==================== BAGIAN 3: PENGESAHAN (SEMUA HARUS DIPILIH) ==================== */}
           {wizardStep === 3 && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+          <div className="space-y-3">
+            <div className="rounded-2xl bg-[#fff5f5] border border-red-100 px-4 py-3">
+              <h3 className="text-sm font-extrabold text-[#b71922]">Halaman 3 — Pengesahan Surat</h3>
+              <p className="text-[11px] text-slate-600 mt-1">Atur penandatangan dan pengesahan. Bagian yang tidak diperlukan boleh dikosongkan.</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
                 <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider block">
@@ -1382,6 +1405,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               )}
             </div>
 
+            </div>
           </div>
           )}
 

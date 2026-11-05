@@ -117,7 +117,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   onBack
 }) => {
   const [viewMode, setViewMode] = useState<'dashboard' | 'form' | 'preview' | 'list' | 'drafts' | 'settings'>('dashboard');
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
   const [suratSettings, setSuratSettings] = useState<SuratSettings>(() => {
     try { return { ...DEFAULT_SURAT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}') }; }
@@ -579,6 +579,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     if (editingDraftId) { const remainingDrafts = draftSurat.filter((draft) => draft.id !== editingDraftId); setDraftSurat(remainingDrafts); try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(remainingDrafts)); } catch {} setEditingDraftId(null); }
     setPreviewSuratList(createdList);
     setActivePreviewIndex(0);
+    setWizardStep(4);
     setViewMode('preview');
   };
 
@@ -1546,6 +1547,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       onClick={() => {
                         setPreviewSuratList([surat]);
                         setActivePreviewIndex(0);
+                        setWizardStep(4);
                         setViewMode('preview');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
@@ -1662,6 +1664,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 onClick={() => {
                   setPreviewSuratList([verificationModalSurat]);
                   setActivePreviewIndex(0);
+                  setWizardStep(4);
                   setVerificationModalSurat(null);
                   setViewMode('preview');
                 }}

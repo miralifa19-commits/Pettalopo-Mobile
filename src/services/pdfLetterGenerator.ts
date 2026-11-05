@@ -549,7 +549,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   let rowY = layout.y;
   const bottoms: number[] = [];
 
-  rows.forEach((members, rowIndex) => {
+  rows.forEach((members) => {
     const y = rowY;
     const rowBottoms: number[] = [];
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
@@ -578,6 +578,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     });
     rowY = Math.min(...rowBottoms) - 5;
   });
+  layout.y = Math.min(...bottoms) - 5;
+}
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;

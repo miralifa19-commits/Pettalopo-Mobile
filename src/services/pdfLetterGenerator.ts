@@ -452,7 +452,7 @@ function drawSignerBlock(
     layout.drawText(safe, align === 'right' ? x + columnWidth - textWidth : x, baseline, font, size);
   };
   if (approval) {
-    layout.drawCentered(approval, x + columnWidth / 2, y, layout.fonts.regular, 10.5);
+    drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
   for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit)) {
@@ -491,7 +491,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   // Dalam setiap baris, penandatangan pertama ditempatkan di kanan.
   if (surat.includeDewan && surat.dewanNama) {
     signers.push({
-      approval: surat.dewanApprovalType ?? fallback,
+      approval: 'Hormat kami',
       title: surat.dewanJabatan,
       name: surat.dewanNama,
       id: surat.dewanNta,
@@ -570,6 +570,10 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
     const rightX = layout.width - SIDE_MARGIN - rightBlockWidth;
 
+    const sharedApproval = members.length === 2 && members[0].approval === members[1].approval;
+    if (sharedApproval) {
+      layout.drawCentered(members[0].approval, layout.width / 2, y, layout.fonts.regular, 10.5);
+    }
     members.forEach((signer, columnIndex) => {
       const isRightColumn = members.length === 2 && columnIndex === 0;
       const x = isRightColumn
@@ -579,7 +583,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
           : SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
       const signerWidth = isRightColumn ? rightBlockWidth : columnWidth;
       bottoms.push(drawSignerBlock(
-        layout, x, signerWidth, y, signer.approval, signer.title, signer.name,
+        layout, x, signerWidth, sharedApproval ? y - 13 : y,
+        sharedApproval ? undefined : signer.approval, signer.title, signer.name,
         signer.id, signer.qr, Boolean(signer.stamp), 'left',
         isRightColumn ? signerWidth : undefined,
       ));
@@ -700,7 +705,7 @@ export async function createLetterPdf(
     stage = 'Menata penerima dan salam pembuka';
     onStage(stage);
     if (surat.includeKepadaYth) {
-      await layout.paragraph('Yang Terhormat,', { size: 12, lineHeight: 16, spacingAfter: 0 });
+      await layout.paragraph('Kepada Yth.', { size: 12, lineHeight: 16, spacingAfter: 0 });
       await layout.paragraph(surat.penerimaNama, {
         size: 12, font: bold, lineHeight: 16, spacingAfter: 0,
       });
@@ -711,9 +716,6 @@ export async function createLetterPdf(
       });
       layout.y -= 8;
     }
-
-    await layout.paragraph("Assalamu'alaikum warahmatullahi wabarakatuh", { size: 12, font: italic, lineHeight: 16, align: 'center' });
-    await layout.paragraph('Salam Pramuka,', { size: 12, font: regular, lineHeight: 16, align: 'left', spacingAfter: 8 });
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
@@ -729,7 +731,7 @@ export async function createLetterPdf(
       bulletRows.push({ label: 'Tempat', value: surat.rincianTempat });
     }
     if (surat.includeKeteranganAcara) {
-      bulletRows.push({ label: 'Agenda', value: surat.rincianKeteranganAcara });
+      bulletRows.push({ label: 'Keterangan', value: surat.rincianKeteranganAcara });
     }
     if (surat.includeKeteranganDetail && surat.rincianKeteranganDetail) {
       bulletRows.push({ label: 'Keterangan', value: surat.rincianKeteranganDetail });
@@ -751,19 +753,17 @@ export async function createLetterPdf(
     }
 
     layout.y -= 7;
-    await layout.paragraph(surat.penutupParagraf, {
-      size: 12, lineHeight: 18, align: 'justify', spacingAfter: 8,
+    await layout.richParagraph(surat.penutupParagraf, {
+      size: 12, lineHeight: 18, spacingAfter: 8,
     });
 
-    stage = 'Menata salam penutup dan tanggal pengesahan';
+    stage = 'Menata tanggal pengesahan';
     onStage(stage);
-    const salamPenutup = cleanText('Wassalamu’alaikum Warahmatullahi Wabarakatuh');
-    await layout.paragraph(salamPenutup, { size: 12, font: italic, lineHeight: 16, align: 'center' });
     layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
-    const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
+    const qrImage = surat.digitalSignerIds?.length ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
     await drawSignatures(layout, surat, qrImage);
 
     stage = 'Menata tembusan surat';

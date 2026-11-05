@@ -233,7 +233,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [signatureGapCm, setSignatureGapCm] = useState(0);
 
   // Metode Pengesahan
-  const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
+  const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' >('digital');
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
 
   // Tembusan

@@ -210,7 +210,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   const [includeKepadaYth, setIncludeKepadaYth] = useState(true);
   const [penerimaNama, setPenerimaNama] = useState('Kepala SMA Negeri 9 Maros');
-  const [penerimaTempat, setPenerimaTempat] = useState('Tempat,');
+  const [penerimaTempat, setPenerimaTempat] = useState('Tempat');
 
   // --- BAGIAN 2: ISI SURAT ---
   const [isiParagraf, setIsiParagraf] = useState(
@@ -450,7 +450,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includePerihal: true,
         includeLampiran: true,
         includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
-        includeKepadaYth,
+        includeKepadaYth: Boolean(penerimaNama.trim()),
         penerimaNama,
         penerimaTempat,
         isiParagraf: isiParagraf,
@@ -519,7 +519,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includePerihal: true,
         includeLampiran: true,
         includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
-        includeKepadaYth,
+        includeKepadaYth: Boolean(penerimaNama.trim()),
         penerimaNama,
         penerimaTempat,
         isiParagraf: isiParagraf,
@@ -589,7 +589,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includePerihal: true,
         includeLampiran: true,
         includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
-        includeKepadaYth,
+        includeKepadaYth: Boolean(penerimaNama.trim()),
         penerimaNama,
         penerimaTempat,
         isiParagraf: isiParagraf,
@@ -821,7 +821,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         </div>
       )}
 
-      {(viewMode === 'form' || viewMode === 'preview') && (<div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 space-y-2"><div className="flex items-center justify-between gap-2">{[{step:1,title:'Identitas'},{step:2,title:'Isi Surat'},{step:3,title:'Penandatanganan'},{step:4,title:'Pratinjau'}].map(item=><button type="button" key={item.step} onClick={()=>{if(item.step===4)return;setWizardStep(item.step as 1|2|3);setViewMode('form');}} className="flex-1 min-w-0 text-center"><div className={`mx-auto w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${wizardStep===item.step?'bg-[#c81e28] text-white':wizardStep>item.step?'bg-red-100 text-[#b71922]':'bg-slate-100 text-slate-400'}`}>{item.step}</div><p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep===item.step?'text-[#b71922]':'text-slate-500'}`}>{item.title}</p></button>)}</div><div className="h-1 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-[#c81e28] transition-all" style={{width:`${wizardStep/4*100}%`}} /></div></div>)}
+      {(viewMode === 'form' || viewMode === 'preview') && (<div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 space-y-2"><div className="flex items-center justify-between gap-2">{[{step:1,title:'Identitas'},{step:2,title:'Isi Surat'},{step:3,title:'Pengesahan'},{step:4,title:'Pratinjau'}].map(item=><button type="button" key={item.step} onClick={()=>{if(item.step===4)return;setWizardStep(item.step as 1|2|3);setViewMode('form');}} className="flex-1 min-w-0 text-center"><div className={`mx-auto w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${wizardStep===item.step?'bg-[#c81e28] text-white':wizardStep>item.step?'bg-red-100 text-[#b71922]':'bg-slate-100 text-slate-400'}`}>{item.step}</div><p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep===item.step?'text-[#b71922]':'text-slate-500'}`}>{item.title}</p></button>)}</div><div className="h-1 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-[#c81e28] transition-all" style={{width:`${wizardStep/4*100}%`}} /></div></div>)}
       {/* ======================================================== */}
       {/* 1. GOOGLE FORM STYLE: DUA BAGIAN (IDENTITAS & ISI SURAT)  */}
       {/* ======================================================== */}
@@ -843,27 +843,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             <div className="space-y-1"><label className="text-xs font-bold text-slate-800">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label><input type="text" value={keteranganIdentitas} onChange={(e) => setKeteranganIdentitas(e.target.value)} placeholder="Contoh: Penting / Segera" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]" /></div>
 
-            {/* 6. Kepada Yth. (Opsional, dengan lingkaran opsi) */}
-            <div className="flex items-start gap-3 pt-1 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setIncludeKepadaYth(!includeKepadaYth)}
-                title="Pilih untuk memasukkan Kepada Yth"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeKepadaYth
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">Kepada Yth.</label>
-                </div>
-                {includeKepadaYth && (
-                  <textarea rows={3} value={penerimaNama} onChange={(e) => setPenerimaNama(e.target.value)} placeholder="Nama / Instansi Penerima (bisa beberapa baris)" className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28] resize-y" />
-                )}
-              </div>
+            {/* Penerima: kosong berarti seluruh blok Kepada Yth. tidak dicetak */}
+            <div className="space-y-2 pt-1 border-t border-slate-100">
+              <label className="text-xs font-bold text-slate-800">Kepada Yth. <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label>
+              <textarea rows={3} value={penerimaNama} onChange={(e) => setPenerimaNama(e.target.value)} placeholder="Nama / Instansi Penerima (bisa beberapa baris)" className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28] resize-y" />
             </div>
 
           </div>

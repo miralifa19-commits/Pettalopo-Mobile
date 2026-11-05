@@ -527,7 +527,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       // Batas awal setiap kolom adalah koordinat tetap. Kolom kanan tidak
       // lagi menggeser teks ke kanan berdasarkan panjang masing-masing baris.
       const isRightColumn = members.length === 2 && columnIndex === 1;
-      // Kolom kiri tetap. Kolom kanan berpatokan pada huruf k pada
+      // Kolom kiri tetap. Kolom kanan berpatokan pada huruf W pada
       // "Wabarakatuh", lalu dapat digeser sesuai pengaturan jarak TTD.
       const leftX = SIDE_MARGIN;
       const x = isRightColumn

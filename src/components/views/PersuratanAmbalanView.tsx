@@ -240,6 +240,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
   const [digitalSignerIds, setDigitalSignerIds] = useState<string[]>(['pembina_putra']);
   const toggleDigitalSigner = (id: string, checked: boolean) => setDigitalSignerIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
+  const selectedDigitalSignerIds = digitalSignerIds.filter((id) => ({ dewan: includeDewan, pembantu_putra: includePembantuPutra, pembantu_putri: includePembantuPutri, pembina_putra: includePembina, pembina_putri: includePembinaPutri, kepala_sekolah: includeKetuaGudep } as Record<string, boolean>)[id]);
   const isiTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const applyIsiFormat = (marker: '**' | '*') => {
     const el = isiTextareaRef.current;
@@ -463,7 +464,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
-        digitalSignerIds,
+        digitalSignerIds: selectedDigitalSignerIds.filter((id) => ['dewan', 'pembantu_putra', 'pembina_putra', 'kepala_sekolah'].includes(id)),
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
         qrCodeDataUrl: qrDataUrlPa,
@@ -533,7 +534,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
-        digitalSignerIds,
+        digitalSignerIds: selectedDigitalSignerIds.filter((id) => ['dewan', 'pembantu_putri', 'pembina_putri', 'kepala_sekolah'].includes(id)),
         digitalSignerName: officials.pembinaPutri,
         digitalSignerTitle: 'Pembina Putri Gugus Depan 10.036',
         qrCodeDataUrl: qrDataUrlPi,
@@ -605,7 +606,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,
-        digitalSignerIds,
+        digitalSignerIds: selectedDigitalSignerIds,
         digitalSignerName: signerName,
         digitalSignerTitle: signerTitle,
         qrCodeDataUrl: qrDataUrl,
@@ -1436,16 +1437,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {Boolean(activeSurat.digitalSignerIds?.length) && (
-                <button
-                  type="button"
-                  onClick={() => setVerificationModalSurat(activeSurat)}
-                  className="py-2 px-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer flex items-center gap-1"
-                >
-                  <span>🔍 Uji Scan QR</span>
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={handleSaveDraft}

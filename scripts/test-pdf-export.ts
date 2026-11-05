@@ -65,7 +65,7 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
     assert.ok(Math.abs(size.height - 828) < 0.1, label + ': tinggi halaman berubah');
   }
 
-  const parsed = await pdfjsLib.getDocument({ data: bytes, disableWorker: true, isEvalSupported: false }).promise;
+  const parsed = await pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
   const pageTexts: string[] = [];
   for (let pageNumber = 1; pageNumber <= parsed.numPages; pageNumber += 1) {
     const page = await parsed.getPage(pageNumber);
@@ -75,7 +75,6 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
     assert.ok(text.includes('GERAKAN PRAMUKA'), label + ': kop tidak ditemukan pada halaman ' + pageNumber);
   }
   assert.ok(pageTexts.join(' ').includes('Pengujian PDF Surat Resmi'), label + ': teks isi tidak bisa diekstrak');
-  await parsed.destroy();
   console.log('PASS ' + label + ': ' + expectedPages + ' halaman, kop asli ada di setiap halaman, ukuran tetap, teks dapat diseleksi/diekstrak.');
 }
 

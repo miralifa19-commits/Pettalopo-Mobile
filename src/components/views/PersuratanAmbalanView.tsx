@@ -347,7 +347,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       setTimeout(() => {
         if (res) {
           if (type === 'isi') {
-            setIsiParagraf(res.replace(/^Salam Pramuka.*?\n+/i, '').trim());
+            setIsiParagraf(res.trim());
           } else {
             setPenutupParagraf(res.trim());
           }
@@ -434,7 +434,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
-        isiParagraf: isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''),
+        isiParagraf: isiParagraf,
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
@@ -503,7 +503,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
-        isiParagraf: isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''),
+        isiParagraf: isiParagraf,
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
@@ -573,7 +573,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
-        isiParagraf: isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''),
+        isiParagraf: isiParagraf,
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
@@ -663,7 +663,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeTanggal(d.includeTanggal ?? true); setTanggalSurat(d.tanggalSurat ?? ''); setIncludePerihal(d.includePerihal ?? true); setPerihal(d.perihal ?? draft.perihal);
     setIncludeLampiran(true); setLampiran(d.lampiran ?? ''); setIncludeKeteranganIdentitas(d.includeKeteranganIdentitas ?? false); setKeteranganIdentitas(d.keteranganIdentitas ?? '');
     setIncludeKepadaYth(d.includeKepadaYth ?? true); setPenerimaNama(d.penerimaNama ?? ''); setPenerimaTempat(d.penerimaTempat ?? '');
-    setIsiParagraf(String(d.isiParagraf ?? '').replace(/^Salam Pramuka[,.]?\s*/i, '')); setBulletStyle(d.bulletStyle ?? 'titik');
+    setIsiParagraf(String(d.isiParagraf ?? '')); setBulletStyle(d.bulletStyle ?? 'titik');
     setRincianHariTanggal(d.rincianHariTanggal ?? ''); setRincianWaktu(d.rincianWaktu ?? ''); setIncludeTempat(d.includeTempat ?? true); setRincianTempat(d.rincianTempat ?? '');
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setIncludeKeteranganDetail(d.includeKeteranganDetail ?? false); setRincianKeteranganDetail(d.rincianKeteranganDetail ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');

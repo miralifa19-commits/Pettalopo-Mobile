@@ -379,35 +379,74 @@ function drawStamp(
 function drawSignerBlock(
   layout: LetterLayout, x: number, columnWidth: number, topY: number,
   approval: string | undefined, title: string, name: string, identifier: string | undefined,
-  qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
+  qrImage: PDFImage | undefined, includeStamp: boolean,
+  align: 'left' | 'right' | 'right-block-left' = 'left',
+  includeHandwrittenLine = true,
 ): number {
   const titleSize = 10.5;
-  let y = topY;
+  const nameSize = 10.5;
+  const idSize = 8.5;
+  const titleLines = wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8);
+  const safeName = cleanText(name);
+  const safeId = cleanText(identifier || '');
+  const widths = [
+    ...(approval ? [layout.fonts.regular.widthOfTextAtSize(cleanText(approval), 10.5)] : []),
+    ...titleLines.map(line => layout.fonts.bold.widthOfTextAtSize(line, titleSize)),
+    layout.fonts.bold.widthOfTextAtSize(safeName, nameSize),
+    ...(safeId ? [layout.fonts.regular.widthOfTextAtSize(safeId, idSize)] : []),
+  ];
+  const widest = Math.max(0, ...widths);
+  // Pembina Putri berada di kolom kanan, tetapi seluruh isi blok rata kiri.
+  const blockX = align === 'right-block-left'
+    ? x + columnWidth - Math.min(columnWidth - 8, widest)
+    : x;
   const drawAligned = (text: string, font: PDFFont, size: number, baseline: number) => {
     const safe = cleanText(text);
     const textWidth = font.widthOfTextAtSize(safe, size);
-    layout.drawText(safe, align === 'right' ? x + columnWidth - textWidth : x, baseline, font, size);
+    const drawX = align === 'right' ? x + columnWidth - textWidth : blockX;
+    layout.drawText(safe, drawX, baseline, font, size);
   };
+
+  let y = topY;
   if (approval) {
     drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
-  for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
+  for (const line of titleLines) {
     drawAligned(line, layout.fonts.bold, titleSize, y);
     y -= 13;
   }
   y -= 3;
-  if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
-  if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
-  y -= 42;
-  const safeName = cleanText(name);
-  const nameSize = 10.5;
-  const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
-  const nameX = align === 'right' ? x + columnWidth - nameWidth : x;
+
+  const qrX = align === 'right' ? x + columnWidth - 34 : blockX;
+  const qrY = y - 34;
+  if (qrImage) layout.page.drawImage(qrImage, { x: qrX, y: qrY, width: 34, height: 34 });
+
+  if (includeStamp) {
+    // Cap diletakkan di samping QR, tidak menimpa area QR maupun nama.
+    const stampCenterX = qrImage
+      ? qrX + 34 + 20
+      : Math.min(x + columnWidth - 18, blockX + Math.min(columnWidth - 42, widest) + 22);
+    drawStamp(layout.page, stampCenterX, qrY + 17, layout.fonts.bold);
+  }
+  y -= qrImage ? 42 : 8;
+
+  const nameWidth = layout.fonts.bold.widthOfTextAtSize(safeName, nameSize);
+  const nameX = align === 'right' ? x + columnWidth - nameWidth : blockX;
   layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
-  layout.page.drawLine({ start: { x: nameX, y: y - 1.5 }, end: { x: nameX + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
+  if (includeHandwrittenLine) {
+    layout.page.drawLine({
+      start: { x: nameX, y: y - 1.5 },
+      end: { x: nameX + nameWidth, y: y - 1.5 },
+      thickness: 0.6,
+      color: BLACK,
+    });
+  }
   y -= 13;
-  if (identifier) { drawAligned(identifier, layout.fonts.regular, 8.5, y); y -= 11; }
+  if (safeId) {
+    drawAligned(safeId, layout.fonts.regular, idSize, y);
+    y -= 11;
+  }
   return y - 6;
 }
 
@@ -419,6 +458,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     id?: string;
     qr?: PDFImage;
     stamp?: boolean;
+    handwritten?: boolean;
   };
 
   const fallback = surat.approvalType || 'Mengetahui';
@@ -431,7 +471,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       title: 'Kepala Sekolah / Ketua Mabigus',
       name: surat.ketuaGudepNama,
       id: surat.ketuaGudepNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      qr: (surat.includeQrCode ?? surat.metodeTtd === 'digital') ? qrImage : undefined,
       stamp: surat.includeStempel,
     });
   }
@@ -485,11 +525,14 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const gap = 18;
   const columnWidth = (layout.contentWidth - gap) / 2;
   const rows = Math.ceil(signers.length / 2);
-  const rowHeight = 105;
+  const rowHeight = 140;
+  const tembusanHeight = surat.includeTembusan && surat.tembusanList?.length
+    ? 12 + surat.tembusanList.reduce((sum, item) => sum + wrapPdfText(`${sum ? '' : ''}${item}`, layout.fonts.regular, 8.5, layout.contentWidth).length * 9, 0)
+    : 0;
 
   // Sisakan ruang untuk SELURUH kelompok tanda tangan. Jika tidak cukup,
   // pindahkan semuanya ke halaman kop berikutnya, bukan memecah kelompok.
-  await layout.ensureSpace(rows * rowHeight + 24);
+  await layout.ensureSpace(rows * rowHeight + tembusanHeight + 34);
   const startY = layout.y;
   const bottoms: number[] = [];
 
@@ -497,7 +540,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const row = Math.floor(index / 2);
     const rowMembers = Math.min(2, signers.length - row * 2);
     const isLastSingle = rowMembers === 1;
-    const align: 'left' | 'right' = rowMembers === 2 && index % 2 === 1 ? 'right' : 'left';
+    const isPembinaPutri = /pembina\\s+putri/i.test(signer.title);
+    const align: 'left' | 'right' | 'right-block-left' = isPembinaPutri ? 'right-block-left' : (rowMembers === 2 && index % 2 === 1 ? 'right' : 'left');
     let x = SIDE_MARGIN;
 
     if (rowMembers === 2) {
@@ -520,6 +564,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       signer.qr,
       Boolean(signer.stamp),
       align,
+      surat.includeTtdBiasa ?? true,
     ));
   });
 
@@ -528,24 +573,25 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;
-  await layout.ensureSpace(30);
-  layout.y -= 5;
-  await layout.paragraph('Tembusan:', {
-    size: 8.5,
-    font: layout.fonts.regular,
-    lineHeight: 9,
-    spacingAfter: 0,
-  });
-
-  for (let index = 0; index < surat.tembusanList.length; index += 1) {
-    await layout.paragraph(`${index + 1}. ${surat.tembusanList[index]}`, {
-      x: SIDE_MARGIN,
-      maxWidth: layout.contentWidth,
-      size: 8.5,
-      lineHeight: 9,
-      spacingAfter: 0,
-    });
+  const size = 8.5;
+  const lineHeight = 9;
+  const entries = surat.tembusanList.flatMap((item, index) =>
+    wrapPdfText(`${index + 1}. ${item}`, layout.fonts.regular, size, layout.contentWidth)
+  );
+  const totalHeight = lineHeight * (entries.length + 1);
+  const topIfBottomAnchored = BOTTOM_SAFE_MARGIN + totalHeight;
+  const latestSafeTop = layout.y - 8;
+  // Jika masih muat, letakkan dekat margin bawah. Jika tidak, langsung
+  // di bawah tanda tangan; tidak membuat halaman baru khusus tembusan.
+  const startY = topIfBottomAnchored <= latestSafeTop ? topIfBottomAnchored : latestSafeTop;
+  let y = startY;
+  layout.drawText('Tembusan:', SIDE_MARGIN, y, layout.fonts.regular, size);
+  y -= lineHeight;
+  for (const line of entries) {
+    layout.drawText(line, SIDE_MARGIN, y, layout.fonts.regular, size);
+    y -= lineHeight;
   }
+  layout.y = y - 4;
 }
 
 export async function createLetterPdf(
@@ -679,7 +725,8 @@ export async function createLetterPdf(
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
-    const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
+    const qrEnabled = surat.includeQrCode ?? surat.metodeTtd === 'digital';
+    const qrImage = qrEnabled ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
     await drawSignatures(layout, surat, qrImage);
 
     stage = 'Menata tembusan surat';

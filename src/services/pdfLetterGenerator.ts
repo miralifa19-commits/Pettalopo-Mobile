@@ -570,7 +570,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
     const rightX = layout.width - SIDE_MARGIN - rightBlockWidth;
 
-    const sharedApproval = members.length === 2 && members[0].approval === members[1].approval;
+    const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
     if (sharedApproval) {
       layout.drawCentered(members[0].approval, layout.width / 2, y, layout.fonts.regular, 10.5);
     }

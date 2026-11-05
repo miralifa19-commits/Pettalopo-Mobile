@@ -520,7 +520,11 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
   const columnWidth = (layout.contentWidth - 18) / 2;
   const rows: Signer[][] = [];
-  for (let index = 0; index < ordered.length; index += 2) rows.push(ordered.slice(index, index + 2));
+  const otherSigners = ordered.filter((signer) => signer.role !== 'pembina_putra' && signer.role !== 'pembina_putri');
+  for (let index = 0; index < otherSigners.length; index += 2) rows.push(otherSigners.slice(index, index + 2));
+  if (putra && putri) rows.push([putra, putri]);
+  else if (putra) rows.push([putra]);
+  else if (putri) rows.push([putri]);
   const rowHeight = 105;
   await layout.ensureSpace(rows.length * rowHeight + 24);
   const startY = layout.y;

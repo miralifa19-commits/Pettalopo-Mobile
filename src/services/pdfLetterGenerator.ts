@@ -541,6 +541,9 @@ export async function createLetterPdf(
       identityRows.push({ label: 'Keterangan', value: surat.keteranganIdentitas });
     }
 
+    if (surat.includeTanggal) {
+      layout.drawRight(`${surat.kotaPengesahan || 'Maros'}, ${surat.tanggalSurat}`, layout.y, regular, 12);
+    }
     for (const row of identityRows) {
       await layout.labelValueRow({
         label: row.label,
@@ -555,7 +558,6 @@ export async function createLetterPdf(
       });
     }
     if (!identityRows.length) layout.y -= 16;
-    layout.drawRight(`${surat.kotaPengesahan || 'Maros'}, ${surat.tanggalSurat}`, layout.y, regular, 12);
 
     stage = 'Menata penerima dan salam pembuka';
     onStage(stage);
@@ -588,6 +590,9 @@ export async function createLetterPdf(
     }
     if (surat.includeKeteranganAcara) {
       bulletRows.push({ label: 'Agenda', value: surat.rincianKeteranganAcara });
+    }
+    if (surat.includeKeteranganDetail && surat.rincianKeteranganDetail) {
+      bulletRows.push({ label: 'Keterangan', value: surat.rincianKeteranganDetail });
     }
 
     for (const row of bulletRows) {

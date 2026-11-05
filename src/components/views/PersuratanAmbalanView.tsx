@@ -143,7 +143,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Tombol kembali perangkat menelusuri wizard satu langkah demi satu langkah.
   useEffect(() => {
     if (viewMode !== 'form' && viewMode !== 'preview') return;
-    window.history.pushState({ pettalopoLetter: true, viewMode, wizardStep }, '', `#surat-${viewMode}-${wizardStep}`);
+    window.history.pushState({ pettalopoLetter: true, viewMode, wizardStep }, '', window.location.href);
     const handleBack = () => {
       if (viewMode === 'preview') {
         setViewMode('form');

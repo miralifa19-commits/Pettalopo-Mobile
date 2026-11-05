@@ -235,7 +235,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Metode Pengesahan
   const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
-  const [includeStempel, setIncludeStempel] = useState(false);
 
   // Tembusan
   const [includeTembusan, setIncludeTembusan] = useState(true);
@@ -511,7 +510,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         digitalSignerName: officials.pembinaPutri,
         digitalSignerTitle: 'Pembina Putri Gugus Depan 10.036',
         qrCodeDataUrl: qrDataUrlPi,
-        includeStempel,
+        includeStempel: false,
         includeTembusan,
         tembusanList,
         signatureGapCm,
@@ -601,7 +600,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
 
 
-  const currentDraftData = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+  const currentDraftData = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeTembusan, tembusanList };
   const persistDraftSnapshot = () => {
     const id = editingDraftId || `draft_${Date.now()}`;
     const draft: FormDraft = { id, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data: currentDraftData };

@@ -70,7 +70,9 @@ export async function deliverPdfFile(
 
   try {
     onStage('Menyiapkan unduhan PDF di browser');
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blobBuffer = new Uint8Array(pdfBytes.byteLength);
+    blobBuffer.set(pdfBytes);
+    const blob = new Blob([blobBuffer.buffer], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = blobUrl;

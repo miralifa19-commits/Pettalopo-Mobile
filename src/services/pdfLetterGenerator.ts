@@ -550,21 +550,41 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;
-  await layout.ensureSpace(30);
-  layout.y -= 5;
+
+  const fontSize = 8.5;
+  const lineHeight = 9;
+  const entries = surat.tembusanList.map((item, index) => `${index + 1}. ${item}`);
+  const headingLines = wrapPdfText('Tembusan:', layout.fonts.regular, fontSize, layout.contentWidth);
+  const entryLineCount = entries.reduce(
+    (total, entry) => total + wrapPdfText(entry, layout.fonts.regular, fontSize, layout.contentWidth).length,
+    0,
+  );
+  const totalLines = headingLines.length + entryLineCount;
+  const blockHeight = totalLines * lineHeight;
+  const bottomPosition = BOTTOM_SAFE_MARGIN + lineHeight;
+  const blockTop = bottomPosition + (totalLines - 1) * lineHeight;
+  const gapBeforeBlock = 10;
+
+  // Tembusan ditempatkan di bagian bawah halaman. Jika ruang setelah isi dan
+  // seluruh tanda tangan tidak cukup, pindahkan satu blok utuh ke halaman kop baru.
+  if (layout.y - gapBeforeBlock < blockTop || blockHeight > layout.height - CONTENT_TOP_FROM_TOP - BOTTOM_SAFE_MARGIN) {
+    await layout.addLetterheadPage();
+  }
+
+  layout.y = blockTop;
   await layout.paragraph('Tembusan:', {
-    size: 8.5,
+    size: fontSize,
     font: layout.fonts.regular,
-    lineHeight: 9,
+    lineHeight,
     spacingAfter: 0,
   });
 
-  for (let index = 0; index < surat.tembusanList.length; index += 1) {
-    await layout.paragraph(`${index + 1}. ${surat.tembusanList[index]}`, {
+  for (const entry of entries) {
+    await layout.paragraph(entry, {
       x: SIDE_MARGIN,
       maxWidth: layout.contentWidth,
-      size: 8.5,
-      lineHeight: 9,
+      size: fontSize,
+      lineHeight,
       spacingAfter: 0,
     });
   }

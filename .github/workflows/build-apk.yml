@@ -49,7 +49,7 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install Dependencies and refresh bun.lock
-        run: bun install --save-text-lockfile
+        run: bun install
 
       - name: Commit resolved bun.lock on feature branch
         run: |
@@ -138,6 +138,20 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Configure Capacitor FileProvider paths for PDF opening
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+              <files-path name="files" path="." />
+              <cache-path name="cache" path="." />
+              <external-files-path name="external-files" path="." />
+              <external-cache-path name="external-cache" path="." />
+              <external-path name="pettalopo-documents" path="Documents/Pettalopo/" />
+          </paths>
+          XML
 
       - name: Keep Android system splash styling without Capacitor splash plugin
         run: |

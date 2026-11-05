@@ -377,170 +377,56 @@ function drawStamp(
 }
 
 function drawSignerBlock(
-  layout: LetterLayout,
-  centerX: number,
-  columnWidth: number,
-  topY: number,
-  title: string,
-  name: string,
-  identifier: string | undefined,
-  qrImage: PDFImage | undefined,
-  includeStamp: boolean,
+  layout: LetterLayout, x: number, columnWidth: number, topY: number,
+  approval: string, title: string, name: string, identifier: string | undefined,
+  qrImage: PDFImage | undefined, includeStamp: boolean,
 ): number {
-  const titleSize = 11;
-  const titleLines = wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 10);
+  const titleSize = 10.5;
   let y = topY;
-
-  titleLines.forEach((line) => {
-    layout.drawCentered(line, centerX, y, layout.fonts.bold, titleSize);
+  layout.drawText(\`\${approval},\`, x, y, layout.fonts.bold, 10.5);
+  y -= 13;
+  for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
+    layout.drawText(line, x, y, layout.fonts.bold, titleSize);
     y -= 13;
-  });
-
-  y -= 4;
-  if (qrImage) {
-    const qrSize = 42;
-    layout.page.drawImage(qrImage, {
-      x: centerX - qrSize / 2,
-      y: y - qrSize + 4,
-      width: qrSize,
-      height: qrSize,
-    });
   }
-
-  if (includeStamp) {
-    drawStamp(layout.page, centerX + columnWidth / 2 - 23, y - 18, layout.fonts.bold);
-  }
-
-  y -= 49;
-  const nameSize = 11;
+  y -= 3;
+  if (qrImage) layout.page.drawImage(qrImage, { x, y: y - 34, width: 34, height: 34 });
+  if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
+  y -= 42;
   const safeName = cleanText(name);
+  const nameSize = 10.5;
   const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
-  const nameX = centerX - nameWidth / 2;
-  layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
-  layout.page.drawLine({
-    start: { x: nameX, y: y - 1.5 },
-    end: { x: nameX + nameWidth, y: y - 1.5 },
-    thickness: 0.6,
-    color: BLACK,
-  });
-  y -= 14;
-
-  if (identifier) {
-    const idSize = 8.5;
-    layout.drawCentered(identifier, centerX, y, layout.fonts.regular, idSize);
-    y -= 12;
-  }
-
-  return y - 8;
+  layout.drawText(safeName, x, y, layout.fonts.bold, nameSize);
+  layout.page.drawLine({ start: { x, y: y - 1.5 }, end: { x: x + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
+  y -= 13;
+  if (identifier) { layout.drawText(identifier, x, y, layout.fonts.regular, 8.5); y -= 11; }
+  return y - 6;
 }
 
-async function drawSignatures(
-  layout: LetterLayout,
-  surat: GeneratedSurat,
-  qrImage?: PDFImage,
-): Promise<void> {
-  const hasDewan = surat.includeDewan;
-  const hasPembina = surat.includePembina;
-  if (!hasDewan && !hasPembina && !surat.includePembinaTambahan) return;
-
-  await layout.ensureSpace(160);
-  const gap = 14;
+async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage): Promise<void> {
+  const signers: Array<{ approval: string; title: string; name: string; id?: string; qr?: PDFImage; stamp?: boolean }> = [];
+  const fallback = surat.approvalType || 'Mengetahui';
+  if (surat.includeDewan && surat.dewanNama) signers.push({ approval: surat.dewanApprovalType || fallback, title: surat.dewanJabatan, name: surat.dewanNama, id: surat.dewanNta });
+  if (surat.includePembina && surat.pembinaNama) signers.push({ approval: surat.pembinaApprovalType || fallback, title: surat.pembinaJabatan, name: surat.pembinaNama, id: surat.pembinaNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+  if (surat.includePembinaTambahan && surat.pembinaTambahanJabatan && surat.pembinaTambahanNama) signers.push({ approval: surat.pembinaTambahanApprovalType || fallback, title: surat.pembinaTambahanJabatan, name: surat.pembinaTambahanNama, id: surat.pembinaTambahanNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+  if (surat.includeKetuaGudep && surat.ketuaGudepNama) signers.push({ approval: surat.ketuaGudepApprovalType || fallback, title: 'Ketua Mabigus UPT SMA Negeri 9 Maros', name: surat.ketuaGudepNama, id: surat.ketuaGudepNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+  if (!signers.length) return;
+  const gap = 18;
   const columnWidth = (layout.contentWidth - gap) / 2;
-  const topY = layout.y;
-  const bottomYs: number[] = [];
-
-  if (hasDewan && hasPembina) {
-    const leftCenter = SIDE_MARGIN + columnWidth / 2;
-    const rightCenter = SIDE_MARGIN + columnWidth + gap + columnWidth / 2;
-    bottomYs.push(drawSignerBlock(
-      layout, leftCenter, columnWidth, topY,
-      `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
-      undefined, false,
-    ));
-    bottomYs.push(drawSignerBlock(
-      layout, rightCenter, columnWidth, topY,
-      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
-      surat.metodeTtd === 'digital' ? qrImage : undefined,
-      surat.includeStempel,
-    ));
-  } else if (hasDewan) {
-    const centerX = SIDE_MARGIN + columnWidth / 2;
-      bottomYs.push(drawSignerBlock(
-        layout, centerX, columnWidth, topY,
-        `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
-        undefined, false,
-      ));
-  } else if (hasPembina) {
-    const centerX = SIDE_MARGIN + columnWidth / 2;
-    bottomYs.push(drawSignerBlock(
-      layout, centerX, columnWidth, topY,
-      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
-      surat.metodeTtd === 'digital' ? qrImage : undefined,
-      surat.includeStempel,
-    ));
+  const rowHeight = 105;
+  const rows = Math.ceil(signers.length / 2);
+  await layout.ensureSpace(rows * rowHeight + 8);
+  const startY = layout.y;
+  const bottoms: number[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    const group = signers.slice(row * 2, row * 2 + 2);
+    const y = startY - row * rowHeight;
+    const xs = group.length === 1 && signers.length === 3
+      ? [SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2]
+      : group.map((_, index) => SIDE_MARGIN + index * (columnWidth + gap));
+    group.forEach((signer, index) => bottoms.push(drawSignerBlock(layout, xs[index], columnWidth, y, signer.approval, signer.title, signer.name, signer.id, signer.qr, Boolean(signer.stamp))));
   }
-
-  if (bottomYs.length) layout.y = Math.min(...bottomYs);
-
-  if (surat.includePembinaTambahan && surat.pembinaTambahanJabatan && surat.pembinaTambahanNama) {
-    await layout.ensureSpace(145);
-    const leftCenter = SIDE_MARGIN + columnWidth / 2;
-    layout.y = drawSignerBlock(
-      layout, leftCenter, columnWidth, layout.y - 10,
-      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaTambahanJabatan}`,
-      surat.pembinaTambahanNama,
-      surat.pembinaTambahanNip,
-      surat.metodeTtd === 'digital' ? qrImage : undefined,
-      surat.includeStempel,
-    );
-  }
-}
-
-async function drawKetuaGudep(
-  layout: LetterLayout,
-  surat: GeneratedSurat,
-  qrImage?: PDFImage,
-): Promise<void> {
-  if (!surat.includeKetuaGudep) return;
-  await layout.ensureSpace(126);
-
-  const centerX = SIDE_MARGIN + 125;
-  const topY = layout.y;
-  let y = topY - 4;
-  layout.drawCentered(`${surat.approvalType || 'Mengetahui'},`, centerX, y, layout.fonts.bold, 11);
-  y -= 14;
-  layout.drawCentered('Kepala SMA Negeri 9 Maros (Kamabigus)', centerX, y, layout.fonts.bold, 10);
-
-  y -= 48;
-  if (surat.metodeTtd === 'digital' && qrImage) {
-    const qrSize = 38;
-    layout.page.drawImage(qrImage, {
-      x: centerX - qrSize / 2,
-      y: y - qrSize + 5,
-      width: qrSize,
-      height: qrSize,
-    });
-  }
-
-  y -= 5;
-  const nameSize = 11;
-  const safeName = cleanText(surat.ketuaGudepNama);
-  const nameWidth = Math.min(240, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
-  const nameX = centerX - nameWidth / 2;
-  layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
-  layout.page.drawLine({
-    start: { x: nameX, y: y - 1.5 },
-    end: { x: nameX + nameWidth, y: y - 1.5 },
-    thickness: 0.6,
-    color: BLACK,
-  });
-  y -= 14;
-
-  if (surat.ketuaGudepNip) {
-    layout.drawCentered(surat.ketuaGudepNip, centerX, y, layout.fonts.regular, 8.5);
-    y -= 12;
-  }
-  layout.y = y - 8;
+  layout.y = Math.min(...bottoms);
 }
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
@@ -615,8 +501,6 @@ export async function createLetterPdf(
       identityRows.push({ label: 'Keterangan', value: surat.keteranganIdentitas });
     }
 
-    // Tanggal pengesahan ditampilkan sekali di sisi kiri, dekat blok tanda tangan.
-
     for (const row of identityRows) {
       await layout.labelValueRow({
         label: row.label,
@@ -631,7 +515,8 @@ export async function createLetterPdf(
       });
     }
     if (!identityRows.length) layout.y -= 16;
-    layout.y -= 8;
+    layout.drawRight(`${surat.kotaPengesahan || 'Maros'}, ${surat.tanggalSurat}`, layout.y, regular, 12);
+    layout.y -= 22;
 
     stage = 'Menata penerima dan salam pembuka';
     onStage(stage);
@@ -646,12 +531,8 @@ export async function createLetterPdf(
       layout.y -= 8;
     }
 
-    await layout.paragraph('Assalamu’alaikum Warahmatullahi Wabarakatuh', {
-      size: 12, font: italic, lineHeight: 16, spacingAfter: 0,
-    });
-    await layout.paragraph('Salam Pramuka,', {
-      size: 12, font: regular, lineHeight: 16, align: 'center', spacingAfter: 8,
-    });
+    await layout.paragraph("Assalamu'alaikum warahmatullahi wabarakatuh", { size: 12, font: italic, lineHeight: 16, align: 'center' });
+    await layout.paragraph('Salam Pramuka,', { size: 12, font: regular, lineHeight: 16, align: 'left', spacingAfter: 8 });
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
@@ -692,18 +573,13 @@ export async function createLetterPdf(
 
     stage = 'Menata salam penutup dan tanggal pengesahan';
     onStage(stage);
-    await layout.paragraph('Wassalamu’alaikum Warahmatullahi Wabarakatuh', {
-      size: 12, font: italic, lineHeight: 16, spacingAfter: 0,
-    });
-    await layout.ensureSpace(18);
-    layout.drawText(`${surat.kotaPengesahan || 'Maros'}, ${surat.tanggalSurat}`, SIDE_MARGIN, layout.y, regular, 12);
-    layout.y -= 20;
+    await layout.paragraph('Wassalamu’alaikum Warahmatullahi Wabarakatuh', { size: 12, font: italic, lineHeight: 16, align: 'center' });
+    layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
     const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
     await drawSignatures(layout, surat, qrImage);
-    await drawKetuaGudep(layout, surat, qrImage);
 
     stage = 'Menata tembusan surat';
     onStage(stage);

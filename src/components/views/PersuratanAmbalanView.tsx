@@ -147,8 +147,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     const handleBack = () => {
       if (viewMode === 'preview') {
         setViewMode('form');
-        setWizardStep(3);      } else if (wizardStep > 1) {
-        setWizardStep((current) => (current === 3 ? 2 : 1));
+        setWizardStep(3);
+      } else if (wizardStep > 1) {        setWizardStep((current) => (current === 3 ? 2 : 1));
       } else {
         setViewMode('dashboard');
       }
@@ -297,8 +297,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState('');
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');  const [isPreparingPreview, setIsPreparingPreview] = useState(false);
-  const [previewPdfError, setPreviewPdfError] = useState('');
-  
+  const [previewPdfError, setPreviewPdfError] = useState('');  
   // AI Generation Progress State (0 - 100%)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiProgress, setAiProgress] = useState(0);
@@ -445,10 +444,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         gudepType: '10.035',
         includeNomor: true,
         includeTanggal: true,
-        includePerihal: true,        includeLampiran: true,
+        includePerihal: true,
+        includeLampiran: true,
         includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
-        includeKepadaYth: Boolean(penerimaNama.trim()),
-        penerimaNama,
+        includeKepadaYth: Boolean(penerimaNama.trim()),        penerimaNama,
         penerimaTempat,
         isiParagraf: isiParagraf,
         bulletStyle,
@@ -594,11 +593,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         rincianHariTanggal,
         rincianWaktu,
         includeTempat: true,
-        rincianTempat,        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
+        rincianTempat,
+        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
         rincianKeteranganAcara: rincianKeteranganDetail,
         includeKeteranganDetail: false,
-        rincianKeteranganDetail: '',
-        penutupParagraf,
+        rincianKeteranganDetail: '',        penutupParagraf,
         includeDewan,
         dewanJabatan,
         dewanNama,
@@ -744,11 +743,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const activeSurat = previewSuratList[activePreviewIndex] || previewSuratList[0];
 
   useEffect(() => {
-    if (viewMode !== 'preview' || !activeSurat) {      setPdfPreviewUrl('');
+    if (viewMode !== 'preview' || !activeSurat) {
+      setPdfPreviewUrl('');
       setPreviewPdfError('');
       setIsPreparingPreview(false);
-      return;
-    }
+      return;    }
     let cancelled = false;
     let objectUrl = '';
     setIsPreparingPreview(true);
@@ -893,12 +892,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   Rincian Kegiatan
                 </span>
               </div>
-              {/* Hari / Tanggal (Wajib) */}              <div className="flex items-start gap-2">
+              {/* Hari / Tanggal (Wajib) */}
+              <div className="flex items-start gap-2">
                 <span className="w-6 text-center text-xs font-bold text-[#c81e28] pt-2.5">
                   
                 </span>
-                <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                <div className="flex-1">                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
                     Hari / Tanggal <span className="text-[#c81e28]">*</span>
                   </label>
                   <input
@@ -1042,13 +1041,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       type="button"
                       onClick={handleAddTembusan}
                       className="px-4 py-2.5 rounded-xl bg-[#c81e28] text-white font-black text-sm hover:bg-[#a91b24] transition-all cursor-pointer"
-                    >                      +
+                    >
+                      +
                     </button>
                   </div>
 
                   {tembusanList.length > 0 && (
-                    <div className="space-y-1.5 pt-1">
-                      {tembusanList.map((item, idx) => (
+                    <div className="space-y-1.5 pt-1">                      {tembusanList.map((item, idx) => (
                         <div
                           key={idx}
                           className="flex items-center justify-between p-2 rounded-xl bg-slate-100 text-xs text-slate-800 font-medium"
@@ -1191,14 +1190,14 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                         setPreviewSuratList([surat]);
                         setActivePreviewIndex(0);
                         setWizardStep(4);
-                        setViewMode('preview');                      }}
+                        setViewMode('preview');
+                      }}
                       className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                     >
                       Buka
                     </button>
                   </div>
-                </div>
-              ))
+                </div>              ))
             ) : (
               <div className="py-8 text-center text-slate-400">
                 <p className="text-xs font-semibold">Belum ada surat yang diterbitkan</p>

@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-import * as pdfjsLib from 'pdfjs-dist';
+import { createLetterPdf, PdfExportStageError } from '../../services/pdfLetterGenerator';
+import { deliverPdfFile } from '../../services/pdfFileDelivery';
 import { UserAccount, ProgramKerjaItem } from '../../types';
 import { askKakCikalAI } from '../../services/aiChatService';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
@@ -177,6 +176,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
+  const [downloadSuccessMessage, setDownloadSuccessMessage] = useState('');
   
   // AI Generation Progress State (0 - 100%)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -492,120 +492,44 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setViewMode('preview');
   };
 
-  // Export PDF using the exact blank letterhead PDF already stored in public/assets.
-  // The source PDF is rendered as the page background; only the letter body is added on top.
+  // PDF export uses the original vector letterhead and selectable PDF text.
   const handleDownloadPdf = async (surat: GeneratedSurat) => {
-    if (!letterRef.current) return;
     setIsExportingPdf(true);
+    let currentStage = 'Memulai pembuatan PDF';
 
     try {
-      const templatePath = `${import.meta.env.BASE_URL}assets/aistudio/Gerakan_Pramuka_Gugus_Depan_10-035__10-036_Pangkalan_SMA_Negeri_9_Maros_20261104_213457_0000_6f4fe1a9.pdf`;
-      const templateResponse = await fetch(templatePath);
-      if (!templateResponse.ok) throw new Error('PDF kop surat asli tidak dapat dibaca.');
-      const templateBytes = new Uint8Array(await templateResponse.arrayBuffer());
-
-      if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-      }
-      const templateDoc = await pdfjsLib.getDocument({ data: templateBytes }).promise;
-      if (templateDoc.numPages < 1) throw new Error('PDF kop surat tidak memiliki halaman.');
-
-      const templatePage = await templateDoc.getPage(1);
-      const sourceViewport = templatePage.getViewport({ scale: 2 });
-      const templateCanvas = document.createElement('canvas');
-      templateCanvas.width = Math.ceil(sourceViewport.width);
-      templateCanvas.height = Math.ceil(sourceViewport.height);
-      const templateContext = templateCanvas.getContext('2d');
-      if (!templateContext) throw new Error('Tidak dapat menyiapkan halaman kop surat.');
-      await templatePage.render({ canvasContext: templateContext, viewport: sourceViewport }).promise;
-      const templateImage = templateCanvas.toDataURL('image/png');
-
-      // Clone only the body of the existing letter layout. The header is supplied
-      // by the original PDF above, so it is deliberately removed from this export.
-      const bodyElement = letterRef.current.cloneNode(true) as HTMLElement;
-      bodyElement.querySelector(':scope > div')?.remove();
-      bodyElement.style.paddingTop = '0px';
-      bodyElement.style.border = '0';
-      bodyElement.style.borderRadius = '0';
-      bodyElement.style.boxShadow = 'none';
-      bodyElement.style.maxWidth = '672px';
-      bodyElement.style.width = '672px';
-      bodyElement.style.background = '#ffffff';
-      bodyElement.style.margin = '0';
-      bodyElement.style.color = '#000000';
-      bodyElement.style.fontFamily = '"Times New Roman", Times, serif';
-
-      const canvas = await html2canvas(bodyElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: 672,
-        windowWidth: 768
+      const pdfBytes = await createLetterPdf(surat, undefined, (stage) => {
+        currentStage = stage;
       });
 
-      const pageWidthMm = sourceViewport.width / 2 * 25.4 / 72;
-      const pageHeightMm = sourceViewport.height / 2 * 25.4 / 72;
-      const contentX = 15;
-      const contentWidth = pageWidthMm - 30;
-      const contentTop = 39;
-      const bottomMargin = 14;
-      const contentHeightMm = pageHeightMm - contentTop - bottomMargin;
-      const contentPixelsPerPage = Math.floor(canvas.width * contentHeightMm / contentWidth);
-      const pdf = new jsPDF({
-        orientation: pageWidthMm > pageHeightMm ? 'landscape' : 'portrait',
-        unit: 'mm',
-        format: [pageWidthMm, pageHeightMm],
-        compress: true
+      const safeNumber = (surat.nomorUrut || 'Ambalan').replace(/[^a-zA-Z0-9_-]/g, '-');
+      const safeGudep = (surat.gudepType || '10-035').replace(/[^a-zA-Z0-9_-]/g, '-');
+      const fileName = `Surat_Pramuka_${safeNumber}_${safeGudep}.pdf`;
+
+      const delivery = await deliverPdfFile(pdfBytes, fileName, (stage) => {
+        currentStage = stage;
       });
 
-      let offsetY = 0;
-      let pageIndex = 0;
-      while (offsetY < canvas.height) {
-        if (pageIndex > 0) pdf.addPage([pageWidthMm, pageHeightMm]);
-        pdf.addImage(templateImage, 'PNG', 0, 0, pageWidthMm, pageHeightMm);
-
-        const sliceHeight = Math.min(contentPixelsPerPage, canvas.height - offsetY);
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceHeight;
-        const pageContext = pageCanvas.getContext('2d');
-        if (!pageContext) throw new Error('Tidak dapat menyiapkan isi halaman PDF.');
-        pageContext.drawImage(
-          canvas,
-          0, offsetY, canvas.width, sliceHeight,
-          0, 0, canvas.width, sliceHeight
-        );
-        const bodyImage = pageCanvas.toDataURL('image/jpeg', 0.96);
-        const bodyHeightMm = sliceHeight * contentWidth / canvas.width;
-        pdf.addImage(bodyImage, 'JPEG', contentX, contentTop, contentWidth, bodyHeightMm);
-        offsetY += sliceHeight;
-        pageIndex += 1;
-      }
-
-      const safeName = `Surat_Pramuka_${surat.nomorUrut || 'Ambalan'}_${(surat.gudepType || '10-035').replace('.', '-')}.pdf`;
-      const pdfBlob = pdf.output('blob');
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = blobUrl;
-      downloadLink.download = safeName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
+      setDownloadSuccessMessage(delivery.message);
       setDownloadSuccessToast(true);
-      window.setTimeout(() => setDownloadSuccessToast(false), 3500);
-      templateCanvas.width = 0;
-      templateCanvas.height = 0;
-      canvas.width = 0;
-      canvas.height = 0;
-      await templateDoc.destroy();
-    } catch (err) {
-      console.error('Error generating PDF from original letterhead:', err);
-      alert('PDF belum dapat dibuat. Periksa koneksi dan coba unduh kembali.');
+      window.setTimeout(() => setDownloadSuccessToast(false), 4500);
+    } catch (error) {
+      const details = error instanceof PdfExportStageError
+        ? error
+        : new PdfExportStageError(currentStage, error);
+      console.error('PDF export failed:', {
+        stage: details.stage,
+        errorName: details.originalName,
+        errorMessage: details.originalMessage,
+        savedPath: details.savedPath,
+      }, error);
+
+      const savedNotice = details.savedPath
+        ? `\nFile sudah tersimpan di: ${details.savedPath}`
+        : '';
+      alert(
+        `Gagal pada tahap: ${details.stage}\nerror.name: ${details.originalName}\nerror.message: ${details.originalMessage}${savedNotice}`
+      );
     } finally {
       setIsExportingPdf(false);
     }
@@ -662,7 +586,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {/* Download Success Notification Toast */}
       {downloadSuccessToast && (
         <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-150">
-          <span>✅ File dokumen PDF berhasil diunduh ke perangkat Anda!</span>
+          <span>✅ {downloadSuccessMessage || 'PDF siap diunduh.'}</span>
           <button type="button" onClick={() => setDownloadSuccessToast(false)} className="text-emerald-700 font-bold px-1.5">✕</button>
         </div>
       )}

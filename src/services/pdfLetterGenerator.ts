@@ -514,7 +514,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       title: surat.pembinaTambahanJabatan || 'Pembina Putri',
       name: surat.pembinaTambahanNama,
       id: surat.pembinaTambahanNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      qr: (surat.includeQrCode ?? surat.metodeTtd === 'digital') ? qrImage : undefined,
       stamp: surat.includeStempel,
     });
   }
@@ -539,7 +539,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const row = Math.floor(index / 2);
     const rowMembers = Math.min(2, signers.length - row * 2);
     const isLastSingle = rowMembers === 1;
-    const isPembinaPutri = /pembina\\s+putri/i.test(signer.title);
+    const isPembinaPutri = /pembina\s+putri/i.test(signer.title);
     const align: 'left' | 'right' | 'right-block-left' = isPembinaPutri ? 'right-block-left' : (rowMembers === 2 && index % 2 === 1 ? 'right' : 'left');
     let x = SIDE_MARGIN;
 

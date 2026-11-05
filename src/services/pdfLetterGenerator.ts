@@ -384,8 +384,7 @@ function drawSignerBlock(
   const titleSize = 10.5;
   let y = topY;
   if (approval) {
-    const approvalWidth = layout.fonts.regular.widthOfTextAtSize(cleanText(approval), 10.5);
-    layout.drawText(approval, x + Math.max(0, (columnWidth - approvalWidth) / 2), y, layout.fonts.regular, 10.5);
+    layout.drawText(approval, x, y, layout.fonts.regular, 10.5);
     y -= 13;
   }
   for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
@@ -450,7 +449,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       const members = group.slice(row * 2, row * 2 + 2);
       const y = startY - row * rowHeight;
       const xs = members.length === 1
-        ? [SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2]
+        ? [SIDE_MARGIN]
         : members.map((_, index) => SIDE_MARGIN + index * (columnWidth + gap));
       members.forEach((signer, index) => {
         const approval = group.length === 1 ? groupLabel || signer.approval : undefined;

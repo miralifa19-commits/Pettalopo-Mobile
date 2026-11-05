@@ -1188,7 +1188,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </button>
                   <div>
                     <label className="text-xs font-bold text-slate-800 block">
-                      Tanda Tangan Ketua Gugus Depan (Mengetahui)
+                      Tanda Tangan Kepala Sekolah (Kamabigus)
                     </label>
                     <span className="text-[10px] text-slate-500">
                       {includeKetuaGudep ? `${officials.ketuaGudep} (Kepala SMAN 9 Maros)` : 'Tidak disertakan'}
@@ -1508,7 +1508,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             {/* Isi Paragraf Surat */}
             <div className="pt-3 leading-relaxed text-justify space-y-3" style={{ fontSize: '12pt' }}>
-              <p>{activeSurat.isiParagraf}</p>
+              <p>{activeSurat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, '')}</p>
 
               {/* Rincian Poin-Poin Acara */}
               <div className="pl-6 space-y-1">
@@ -1656,10 +1656,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {activeSurat.includeKetuaGudep && (
                 <div className="pt-2 inline-block min-w-[280px]">
                   <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
-                  <p className="font-bold text-xs">Ketua Gugus Depan SMA Negeri 9 Maros</p>
+                  <p className="font-bold text-xs">Kepala SMA Negeri 9 Maros (Kamabigus)</p>
                   
                   <div className="my-2 h-16 flex items-center justify-center">
-                    {activeSurat.metodeTtd === 'digital' && activeSurat.digitalSigner === 'kepala_sekolah' && activeSurat.qrCodeDataUrl ? (
+                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
                       <div
                         onClick={() => setVerificationModalSurat(activeSurat)}
                         className="cursor-pointer text-center group"
@@ -1726,18 +1726,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-100 text-[#b71922]">
                         {surat.nomorSurat}
                       </span>
-                      <span className="text-[10px] text-slate-400">
-                        {surat.tanggalSurat}
-                      </span>
                     </div>
                     <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">
                       {surat.perihal}
                     </h4>
-                    {surat.includeKepadaYth && (
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Tujuan: {surat.penerimaNama}
-                      </p>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">

@@ -1,16 +1,8 @@
-import { PDFDocument, PDFPage, PDFFont, PDFImage, rgb } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
+import { PDFDocument, PDFPage, PDFFont, PDFImage, StandardFonts, rgb } from 'pdf-lib';
 import type { GeneratedSurat } from '../components/views/PersuratanAmbalanView';
 
 export const LETTERHEAD_ASSET =
   'assets/aistudio/Gerakan_Pramuka_Gugus_Depan_10-035__10-036_Pangkalan_SMA_Negeri_9_Maros_20261104_213457_0000_6f4fe1a9.pdf';
-
-const FONT_ASSETS = {
-  regular: 'assets/fonts/Tinos-Regular.ttf.b64',
-  bold: 'assets/fonts/Tinos-Bold.ttf.b64',
-  italic: 'assets/fonts/Tinos-Italic.ttf.b64',
-  boldItalic: 'assets/fonts/Tinos-BoldItalic.ttf.b64',
-};
 
 const PT_PER_CM = 72 / 2.54;
 const SIDE_MARGIN = 2.5 * PT_PER_CM;
@@ -52,20 +44,43 @@ async function loadLocalAsset(assetPath: string): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-function decodeBase64Font(data: Uint8Array): Uint8Array {
-  const base64 = new TextDecoder().decode(data).replace(/\s+/g, '');
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
 function cleanText(value: unknown): string {
-  return String(value ?? '')
+  const normalized = String(value ?? '')
     .replace(/\r\n?/g, '\n')
     .replace(/\u00a0/g, ' ')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '');
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[‐‑‒–—―]/g, '-')
+    .replace(/…/g, '...')
+    .replace(/•/g, '-');
+
+  // Standard PDF fonts use WinAnsi. Check each Unicode code point separately
+  // so one unsupported symbol cannot abort the complete export.
+  return Array.from(normalized, (character) => {
+    if (character === '\n' || character === '\t') return character;
+    // The standard Times Roman encoding is compatible with WinAnsi.
+    // Unsupported glyphs are replaced individually, never as a whole paragraph.
+    try {
+      STANDARD_FONT_PROBE.encodeText(character);
+      return character;
+    } catch {
+      return '?';
+    }
+  }).join('');
 }
+
+const STANDARD_FONT_PROBE = {
+  encodeText(value: string): Uint8Array {
+    // WinAnsi-compatible code point check. PDFDocEncoding covers the
+    // punctuation/Latin range accepted by the built-in standard fonts.
+    const code = value.codePointAt(0) ?? 0;
+    if (code <= 0xFF && ![0x81,0x8D,0x8F,0x90,0x9D].includes(code)) return new Uint8Array([code]);
+    const winAnsiExtras = new Set([0x20AC,0x201A,0x0192,0x201E,0x2026,0x2020,0x2021,0x02C6,0x2030,0x0160,0x2039,0x0152,0x017D,0x2018,0x2019,0x201C,0x201D,0x2022,0x2013,0x2014,0x02DC,0x2122,0x0161,0x203A,0x0153,0x017E,0x0178]);
+    if (winAnsiExtras.has(code)) return new Uint8Array([0]);
+    throw new Error(`Karakter U+${code.toString(16).toUpperCase()} tidak didukung font PDF bawaan.`);
+  },
+};
 
 function splitLongWord(word: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const pieces: string[] = [];
@@ -564,21 +579,14 @@ export async function createLetterPdf(
     stage = 'Menyiapkan dokumen dan menyalin halaman kop';
     onStage(stage);
     const outputPdf = await PDFDocument.create();
-    outputPdf.registerFontkit(fontkit);
 
-    stage = 'Memuat dan menanamkan font Tinos lokal';
+    stage = 'Menyiapkan font bawaan PDF (Times Roman)';
     onStage(stage);
-    const [regularAsset, boldAsset, italicAsset, boldItalicAsset] = await Promise.all([
-      assetLoader(FONT_ASSETS.regular),
-      assetLoader(FONT_ASSETS.bold),
-      assetLoader(FONT_ASSETS.italic),
-      assetLoader(FONT_ASSETS.boldItalic),
-    ]);
     const [regular, bold, italic, boldItalic] = await Promise.all([
-      outputPdf.embedFont(decodeBase64Font(regularAsset), { subset: true }),
-      outputPdf.embedFont(decodeBase64Font(boldAsset), { subset: true }),
-      outputPdf.embedFont(decodeBase64Font(italicAsset), { subset: true }),
-      outputPdf.embedFont(decodeBase64Font(boldItalicAsset), { subset: true }),
+      outputPdf.embedFont(StandardFonts.TimesRoman),
+      outputPdf.embedFont(StandardFonts.TimesRomanBold),
+      outputPdf.embedFont(StandardFonts.TimesRomanItalic),
+      outputPdf.embedFont(StandardFonts.TimesRomanBoldItalic),
     ]);
 
     const layout = new LetterLayout(

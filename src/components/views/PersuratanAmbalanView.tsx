@@ -55,6 +55,14 @@ export interface GeneratedSurat {
   dewanNta: string;
   
   includePembina: boolean;
+  includePembantuPutra?: boolean;
+  includePembantuPutri?: boolean;
+  pembantuPutraNama?: string;
+  pembantuPutraJabatan?: string;
+  pembantuPutriNama?: string;
+  pembantuPutriJabatan?: string;
+  pembantuPutraApprovalType?: 'Mengetahui' | 'Menyetujui';
+  pembantuPutriApprovalType?: 'Mengetahui' | 'Menyetujui';
   pembinaJabatan: string;
   pembinaNama: string;
   pembinaNip?: string;
@@ -167,15 +175,18 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [customSignerName, setCustomSignerName] = useState('');
 
   // Pembina (BISA DIPILIH: default aktif)
-  const [includePembina, setIncludePembina] = useState(true);
+  const [includePembina, setIncludePembina] = useState(false);
+  const [includePembinaPutri, setIncludePembinaPutri] = useState(false);
+  const [includePembantuPutra, setIncludePembantuPutra] = useState(false);
+  const [includePembantuPutri, setIncludePembantuPutri] = useState(false);
   const [selectedPembinaRole, setSelectedPembinaRole] = useState<'pembina_pa' | 'pembina_pi' | 'pembantu_pa' | 'pembantu_pi'>('pembina_pa');
-
-  // Ketua Gugus Depan (BISA DIPILIH: default aktif)
-  const [includeKetuaGudep, setIncludeKetuaGudep] = useState(true);
+  const [includeKetuaGudep, setIncludeKetuaGudep] = useState(false);
   const [approvalType, setApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [dewanApprovalType, setDewanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [pembinaApprovalType, setPembinaApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [pembinaTambahanApprovalType, setPembinaTambahanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [pembantuPutraApprovalType, setPembantuPutraApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [pembantuPutriApprovalType, setPembantuPutriApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [ketuaGudepApprovalType, setKetuaGudepApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [kotaPengesahan, setKotaPengesahan] = useState('Maros');
 
@@ -294,11 +305,20 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     e.preventDefault();
 
     // Resolve Dewan (Hanya jika includeDewan aktif)
-    const customSignerRoles: Record<string, string> = { ketua_sangga_kerja: 'Ketua Sangga Kerja', sekretaris_sangga_kerja: 'Sekretaris Sangga Kerja', ketua_panitia: 'Ketua Panitia', sekretaris_panitia: 'Sekretaris Panitia' };
-    const currentDewan = dewanList.find(d => d.id === selectedDewanId) || dewanList[0];
-    const dewanNama = customSignerRoles[selectedDewanId] ? customSignerName.trim() : (currentDewan?.memberName || '');
-    const dewanJabatan = customSignerRoles[selectedDewanId] || currentDewan?.jabatan || '';
-    const dewanNta = customSignerRoles[selectedDewanId] ? '' : (currentDewan?.satuan === 'Putra' ? 'NTA. 10.035.001' : 'NTA. 10.036.001');
+    const customSignerRoles: Record<string, string> = { ketua_sangga_kerja_pa: 'Ketua Sangga Kerja Putra', sekretaris_sangga_kerja_pa: 'Sekretaris Sangga Kerja Putra', ketua_sangga_kerja_pi: 'Ketua Sangga Kerja Putri', sekretaris_sangga_kerja_pi: 'Sekretaris Sangga Kerja Putri', ketua_panitia: 'Ketua Panitia', sekretaris_panitia: 'Sekretaris Panitia' };
+    const dewanOptions: Record<string, { title: string; member?: string; nta?: string }> = {
+      pradana_pa: { title: 'Pradana', member: dewanList.find(d => d.id === 'pradana_pa')?.memberName, nta: 'NTA. 10.035.001' },
+      pemangku_adat: { title: 'Pemangku Adat', member: dewanList.find(d => d.id === 'pemangku_adat_pa')?.memberName, nta: 'NTA. 10.035.001' },
+      kerani: { title: 'Kerani', member: dewanList.find(d => d.id === 'kerani_pa')?.memberName, nta: 'NTA. 10.035.001' },
+      bendahara: { title: 'Bendahara', member: dewanList.find(d => d.id === 'juru_uang_pa')?.memberName, nta: 'NTA. 10.035.001' },
+      ketua_sangga_kerja_pa: { title: 'Ketua Sangga Kerja Putra' }, sekretaris_sangga_kerja_pa: { title: 'Sekretaris Sangga Kerja Putra' },
+      ketua_sangga_kerja_pi: { title: 'Ketua Sangga Kerja Putri' }, sekretaris_sangga_kerja_pi: { title: 'Sekretaris Sangga Kerja Putri' },
+      ketua_panitia: { title: 'Ketua Panitia' }, sekretaris_panitia: { title: 'Sekretaris Panitia' }
+    };
+    const currentDewan = dewanOptions[selectedDewanId];
+    const dewanNama = currentDewan?.member || customSignerName.trim();
+    const dewanJabatan = currentDewan?.title || '';
+    const dewanNta = currentDewan?.nta || '';
 
     // Resolve Pembina
     let pembinaNama = officials.pembinaPutra;
@@ -331,7 +351,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     }
 
     if (!kotaPengesahan.trim()) { alert('Isi kota pengesahan terlebih dahulu.'); return; }
-    if (includeDewan && customSignerRoles[selectedDewanId] && !customSignerName.trim()) { alert('Nama penandatangan wajib diisi untuk jabatan yang dipilih.'); return; }
+    if (includeDewan && !dewanOptions[selectedDewanId]?.member && !customSignerName.trim()) { alert('Nama penandatangan wajib diisi untuk jabatan yang dipilih.'); return; }
     const createdList: GeneratedSurat[] = [];
 
     // If ceklis dua-dua is active: generate 2 letters (10.035 for Putra and 10.036 for Putri)
@@ -376,6 +396,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanNta: 'NTA. 10.035.001',
         approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
+        includePembantuPutra,
+        includePembantuPutri: false,
+        pembantuPutraNama: officials.pembantuPembinaPutra,
+        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutriNama: officials.pembantuPembinaPutri,
+        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutraApprovalType, pembantuPutriApprovalType,
         pembinaJabatan: 'Pembina Gugus Depan 10.035',
         pembinaNama: officials.pembinaPutra,
         pembinaNip: officials.nipPembinaPutra,
@@ -432,7 +459,15 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanNama: dewanList.find(d => d.id === 'pradana_pi')?.memberName || 'Nurhaliza Azzahra',
         dewanNta: 'NTA. 10.036.001',
         approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
-        includePembina,
+        includePembina: false,
+        includePembinaTambahan: includePembinaPutri,
+        includePembantuPutra: false,
+        includePembantuPutri,
+        pembantuPutraNama: officials.pembantuPembinaPutra,
+        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutriNama: officials.pembantuPembinaPutri,
+        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutraApprovalType, pembantuPutriApprovalType,
         pembinaJabatan: 'Pembina Gugus Depan 10.036',
         pembinaNama: officials.pembinaPutri,
         pembinaNip: officials.nipPembinaPutri,
@@ -490,13 +525,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanNta,
         approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
-        pembinaJabatan,
-        pembinaNama,
-        pembinaNip,
-        includePembinaTambahan: includePembina && gudepPilihan === '10.035-10.036',
-        pembinaTambahanJabatan: selectedPembinaRole === 'pembina_pi' ? 'Pembina Gugus Depan 10.035' : 'Pembina Gugus Depan 10.036',
-        pembinaTambahanNama: selectedPembinaRole === 'pembina_pi' ? officials.pembinaPutra : officials.pembinaPutri,
-        pembinaTambahanNip: selectedPembinaRole === 'pembina_pi' ? officials.nipPembinaPutra : officials.nipPembinaPutri,
+        includePembinaTambahan: includePembinaPutri,
+        includePembantuPutra,
+        includePembantuPutri,
+        pembantuPutraNama: officials.pembantuPembinaPutra,
+        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutriNama: officials.pembantuPembinaPutri,
+        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutraApprovalType, pembantuPutriApprovalType,
+        pembinaTambahanJabatan: 'Pembina Gugus Depan 10.036',
+        pembinaTambahanNama: officials.pembinaPutri,
+        pembinaTambahanNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
         ketuaGudepNip: officials.nipKetuaGudep,
@@ -523,7 +562,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
 
   const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
     const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
     const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
@@ -1055,122 +1094,21 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div className="space-y-1"><label className="text-[11px] font-bold text-slate-700">Kota pengesahan <span className="text-[#c81e28]">*</span></label><input type="text" value={kotaPengesahan} onChange={(e) => setKotaPengesahan(e.target.value)} required placeholder="Maros" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white" /></div></div>
 
-            {/* 1. DEWAN AMBALAN (OPSIONAL: jika dipilih, nama wajib lengkap) */}
-            <div className={`p-3.5 rounded-2xl border transition-all ${
-              includeDewan ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setIncludeDewan(!includeDewan)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      includeDewan ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
-                    }`}
-                  >
-                  </button>
-                  <div>
-                    <label className="text-xs font-bold text-slate-800 block">
-                      Penandatangan Ambalan / Sangga Kerja / Panitia <span className="text-[10px] text-slate-500 font-normal">(Opsional)</span>
-                    </label>
-                    <span className="text-[10px] text-slate-500">
-                      {includeDewan ? 'Aktif — Wajib pilih nama pada dropdown di bawah' : 'Tidak disertakan dalam surat'}
-                    </span>
-                  </div>
-                </div>
+            {/* Semua pilihan penandatangan bersifat opsional dan independen */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-xs font-bold">1. Dewan / Sangga Kerja (opsional)</label>
+                <label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeDewan} onChange={e=>setIncludeDewan(e.target.checked)}/> Sertakan penandatangan</label>
+                {includeDewan && <><select value={selectedDewanId} onChange={e=>setSelectedDewanId(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border">
+                  <option value="pradana_pa">Pradana</option><option value="pemangku_adat">Pemangku Adat</option><option value="kerani">Kerani</option><option value="bendahara">Bendahara</option><option value="ketua_sangga_kerja_pa">Ketua Sangga Kerja Putra</option><option value="sekretaris_sangga_kerja_pa">Sekretaris Sangga Kerja Putra</option><option value="ketua_sangga_kerja_pi">Ketua Sangga Kerja Putri</option><option value="sekretaris_sangga_kerja_pi">Sekretaris Sangga Kerja Putri</option><option value="ketua_panitia">Ketua Panitia</option><option value="sekretaris_panitia">Sekretaris Panitia</option>
+                </select><input value={customSignerName} onChange={e=>setCustomSignerName(e.target.value)} placeholder={dewanList.find(d=>d.id===selectedDewanId)?.memberName || 'Nama penandatangan'} className="w-full text-xs p-2.5 rounded-xl border"/><select value={dewanApprovalType} onChange={e=>setDewanApprovalType(e.target.value as any)} className="w-full text-xs p-2 rounded-lg border"><option>Mengetahui</option><option>Menyetujui</option></select></>}
               </div>
-
-              {includeDewan && (
-                <div className="mt-3 pt-3 border-t border-red-200 space-y-1">
-                  <label className="text-[11px] font-bold text-slate-800 block">Pilih Jabatan Penandatangan (Wajib) <span className="text-[#c81e28]">*</span></label>
-                  <select
-                    value={selectedDewanId}
-                    onChange={(e) => setSelectedDewanId(e.target.value)}
-                    required={includeDewan}
-                    className="w-full text-xs p-2.5 rounded-xl border border-red-300 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
-                  >
-                    {dewanList.map((d) => <option key={d.id} value={d.id}>{d.jabatan} — {d.memberName} ({d.satuan})</option>)}
-                    <option value="ketua_sangga_kerja">Ketua Sangga Kerja</option><option value="sekretaris_sangga_kerja">Sekretaris Sangga Kerja</option><option value="ketua_panitia">Ketua Panitia</option><option value="sekretaris_panitia">Sekretaris Panitia</option>
-                  </select>
-                  {['ketua_sangga_kerja', 'sekretaris_sangga_kerja', 'ketua_panitia', 'sekretaris_panitia'].includes(selectedDewanId) && <input type="text" value={customSignerName} onChange={(e) => setCustomSignerName(e.target.value)} required placeholder="Nama penandatangan" className="w-full mt-2 text-xs p-2.5 rounded-xl border border-red-300 bg-white text-slate-900" />}
-                  <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={dewanApprovalType} onChange={(e) => setDewanApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
-                </div>
-              )}
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">2. Pembantu Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutra} onChange={e=>setIncludePembantuPutra(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutra && <><p className="text-xs">{officials.pembantuPembinaPutra}</p><select value={pembantuPutraApprovalType} onChange={e=>setPembantuPutraApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">3. Pembantu Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutri} onChange={e=>setIncludePembantuPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutri && <><p className="text-xs">{officials.pembantuPembinaPutri}</p><select value={pembantuPutriApprovalType} onChange={e=>setPembantuPutriApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">4. Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembina} onChange={e=>setIncludePembina(e.target.checked)}/> Sertakan (opsional)</label>{includePembina && <><p className="text-xs">{officials.pembinaPutra}</p><select value={pembinaApprovalType} onChange={e=>setPembinaApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">5. Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembinaPutri} onChange={e=>setIncludePembinaPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembinaPutri && <><p className="text-xs">{officials.pembinaPutri}</p><select value={pembinaTambahanApprovalType} onChange={e=>setPembinaTambahanApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
             </div>
-
-            {/* 2. PEMBINA GUGUS DEPAN (BISA DIPILIH & WAJIB DROPDOWN) */}
-            <div className={`p-3.5 rounded-2xl border transition-all ${
-              includePembina ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setIncludePembina(!includePembina)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      includePembina ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
-                    }`}
-                  >
-                  </button>
-                  <div>
-                    <label className="text-xs font-bold text-slate-800 block">
-                      Tanda Tangan Pembina Gugus Depan
-                    </label>
-                    <span className="text-[10px] text-slate-500">
-                      {includePembina ? 'Aktif — Pilih penandatangan pada dropdown' : 'Tidak disertakan dalam surat'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {includePembina && (
-                <div className="mt-3 pt-3 border-t border-red-200 space-y-1">
-                  <label className="text-[11px] font-bold text-slate-800 block">
-                    Pilih Pembina Penandatangan <span className="text-[#c81e28]">*</span>
-                  </label>
-                  <select
-                    value={selectedPembinaRole}
-                    onChange={(e) => setSelectedPembinaRole(e.target.value as any)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold focus:border-[#c81e28]"
-                  >
-                    <option value="pembina_pa">Pembina Putra: {officials.pembinaPutra}</option>
-                    <option value="pembina_pi">Pembina Putri: {officials.pembinaPutri}</option>
-                    <option value="pembantu_pa">Pembantu Pembina Putra: {officials.pembantuPembinaPutra}</option>
-                    <option value="pembantu_pi">Pembantu Pembina Putri: {officials.pembantuPembinaPutri}</option>
-                  </select>
-                  <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={pembinaApprovalType} onChange={(e) => setPembinaApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
-                </div>
-              )}
-            </div>
-
-            {/* 3. KETUA GUGUS DEPAN (BISA DIPILIH) */}
-            <div className={`p-3.5 rounded-2xl border transition-all ${
-              includeKetuaGudep ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setIncludeKetuaGudep(!includeKetuaGudep)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      includeKetuaGudep ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs' : 'border-slate-300 bg-white'
-                    }`}
-                  >
-                  </button>
-                  <div>
-                    <label className="text-xs font-bold text-slate-800 block">
-                      Tanda Tangan Kepala Sekolah (Kamabigus)
-                    </label>
-                    <span className="text-[10px] text-slate-500">
-                      {includeKetuaGudep ? `${officials.ketuaGudep} (Kepala SMAN 9 Maros)` : 'Tidak disertakan'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={ketuaGudepApprovalType} onChange={(e) => setKetuaGudepApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
-            <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={pembinaTambahanApprovalType} onChange={(e) => setPembinaTambahanApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
 
             {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}
             <div className="space-y-2 pt-2 border-t border-slate-100">

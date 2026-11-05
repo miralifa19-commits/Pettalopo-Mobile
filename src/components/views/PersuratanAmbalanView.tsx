@@ -326,15 +326,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
 
   // Build Surat
-  const handleGenerateSurat = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Lindungi alur wizard: submit/Enter dari halaman 1 atau 2 hanya boleh
-    // berpindah ke langkah berikutnya, bukan langsung membuat pratinjau.
-    if (wizardStep < 3) {
-      setWizardStep((wizardStep + 1) as 2 | 3);
-      return;
-    }
+  const handleGenerateSurat = async () => {
 
     // Resolve Dewan (Hanya jika includeDewan aktif)
     const dewanOptions: Record<string, { title: string; member?: string; nta?: string }> = {
@@ -758,7 +750,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {/* 1. GOOGLE FORM STYLE: DUA BAGIAN (IDENTITAS & ISI SURAT)  */}
       {/* ======================================================== */}
       {viewMode === 'form' && (
-        <form onSubmit={handleGenerateSurat} className="space-y-4">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           
           <h2 className="text-sm font-bold text-slate-700">Buat Surat Baru</h2>
           <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
@@ -1418,12 +1410,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
           <div className="flex gap-2 pt-1">
             {wizardStep > 1 && (
-              <button type="button" onClick={() => setWizardStep((wizardStep - 1) as 1 | 2 | 3)} className="flex-1 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold">Kembali</button>
+              <button type="button" onClick={() => setWizardStep(wizardStep === 3 ? 2 : 1)} className="flex-1 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold">Kembali</button>
             )}
             {wizardStep < 3 ? (
-              <button type="button" onClick={() => setWizardStep((wizardStep + 1) as 2 | 3)} className="flex-1 py-3 rounded-xl bg-[#c81e28] text-white text-sm font-extrabold">Lanjutkan</button>
+              <button type="button" onClick={() => setWizardStep(wizardStep === 1 ? 2 : 3)} className="flex-1 py-3 rounded-xl bg-[#c81e28] text-white text-sm font-extrabold">Lanjutkan</button>
             ) : (
-              <button type="submit" className="flex-1 py-3 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-sm font-extrabold">Lanjut ke Pratinjau</button>
+              <button type="button" onClick={(e) => { const form = e.currentTarget.closest("form"); if (form && !form.reportValidity()) return; void handleGenerateSurat(); }} className="flex-1 py-3 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-sm font-extrabold">Lanjut ke Pratinjau</button>
             )}
           </div>
         </form>

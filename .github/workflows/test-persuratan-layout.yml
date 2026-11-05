@@ -1,0 +1,51 @@
+name: Uji Tata Letak Persuratan
+
+on:
+  push:
+    branches:
+      - fix/persuratan-signature-cap-tembusan
+    paths:
+      - "src/services/pdfLetterGenerator.ts"
+      - "src/components/views/PersuratanAmbalanView.tsx"
+      - "scripts/test-pdf-export.ts"
+      - "public/assets/aistudio/**"
+      - ".github/workflows/test-persuratan-layout.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-persuratan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: bun install
+      - name: TypeScript check
+        run: bun run lint
+      - name: Test PDF export
+        run: bun run test:pdf
+      - name: Render sample PDF to PNG
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          pdftoppm -f 1 -l 1 -png -r 120 -singlefile artifacts/contoh-tata-letak-persuratan.pdf artifacts/contoh-tata-letak-persuratan
+      - name: Build web preview
+        run: bun run build
+      - name: Upload PDF and rendered preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: hasil-uji-persuratan
+          path: |
+            artifacts/contoh-tata-letak-persuratan.pdf
+            artifacts/contoh-tata-letak-persuratan.png
+          if-no-files-found: error
+          retention-days: 14

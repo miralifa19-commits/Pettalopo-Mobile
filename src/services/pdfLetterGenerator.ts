@@ -556,39 +556,42 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   for (let row = 0; row < rows; row += 1) {
     const members = signers.slice(row * 2, row * 2 + 2);
     const y = startY - row * rowHeight;
-    const rightSigner = members.length === 2 ? members[0] : undefined;
-    const rightTitleLines = rightSigner
-      ? wrapPdfText(rightSigner.title, layout.fonts.bold, 10.5, layout.contentWidth - 8)
-      : [];
-    const rightTitleWidth = rightTitleLines.reduce(
-      (max, line) => Math.max(max, layout.fonts.bold.widthOfTextAtSize(cleanText(line), 10.5)),
-      0,
-    );
-    const rightNameWidth = rightSigner
-      ? layout.fonts.bold.widthOfTextAtSize(cleanText(rightSigner.name), 10.5)
-      : 0;
-    const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
-    const rightX = layout.width - SIDE_MARGIN - rightBlockWidth;
-
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
     if (sharedApproval) {
       layout.drawCentered(members[0].approval, layout.width / 2, y, layout.fonts.regular, 10.5);
     }
+
+    const isPembinaPutraPutriPair = members.length === 2
+      && members.some((member) => /pembina/i.test(member.title) && /putra/i.test(member.title))
+      && members.some((member) => /pembina/i.test(member.title) && /putri/i.test(member.title));
+
     members.forEach((signer, columnIndex) => {
-      const isRightColumn = members.length === 2 && columnIndex === 0;
-      const x = isRightColumn
-        ? rightX
-        : members.length === 2
-          ? SIDE_MARGIN
-          : SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
-      const signerWidth = isRightColumn ? rightBlockWidth : columnWidth;
+      const signerTitleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8);
+      const signerTitleWidth = signerTitleLines.reduce(
+        (max, line) => Math.max(max, layout.fonts.bold.widthOfTextAtSize(cleanText(line), 10.5)),
+        0,
+      );
+      const signerNameWidth = layout.fonts.bold.widthOfTextAtSize(cleanText(signer.name), 10.5);
+      const signerWidth = Math.min(columnWidth, Math.max(signerTitleWidth, signerNameWidth, 72));
+
+      let side: 'left' | 'right' = 'left';
+      if (members.length === 2) {
+        if (isPembinaPutraPutriPair) {
+          side = /putri/i.test(signer.title) ? 'right' : 'left';
+        } else {
+          side = columnIndex === 0 ? 'right' : 'left';
+        }
+      }
+      const x = side === 'right'
+        ? layout.width - SIDE_MARGIN - signerWidth
+        : SIDE_MARGIN;
+
       bottoms.push(drawSignerBlock(
         layout, x, signerWidth, sharedApproval ? y - 13 : y,
         sharedApproval ? undefined : signer.approval, signer.title, signer.name,
-        signer.id, signer.qr, Boolean(signer.stamp), 'left',
-        isRightColumn ? signerWidth : undefined,
+        signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth,
       ));
-    });
+
   }
   layout.y = Math.min(...bottoms) - 5;
 }
@@ -717,6 +720,13 @@ export async function createLetterPdf(
       layout.y -= 8;
     }
 
+    await layout.paragraph("Assalamu'alaikum Warahmatullahi Wabarakatuh", {
+      size: 12, font: italic, lineHeight: 16, spacingAfter: 2,
+    });
+    await layout.paragraph('Salam Pramuka,', {
+      size: 12, font: regular, lineHeight: 16, spacingAfter: 9,
+    });
+
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
     await layout.richParagraph(surat.isiParagraf, {
@@ -755,6 +765,9 @@ export async function createLetterPdf(
     layout.y -= 7;
     await layout.richParagraph(surat.penutupParagraf, {
       size: 12, lineHeight: 18, spacingAfter: 8,
+    });
+    await layout.paragraph("Wassalamu'alaikum Warahmatullahi Wabarakatuh", {
+      size: 12, font: italic, lineHeight: 16, spacingAfter: 8,
     });
 
     stage = 'Menata tanggal pengesahan';

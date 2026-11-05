@@ -1114,28 +1114,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {/* ======================================================== */}
       {viewMode === 'preview' && activeSurat && (
         <div className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-sm font-extrabold text-slate-900 text-center">Pratinjau Surat</h2>
-          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><h2 className="text-sm font-extrabold text-slate-900 text-center">Pratinjau Surat</h2></div>
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center gap-2">
-              {previewSuratList.length > 1 && (
-                <div className="flex items-center gap-1">
-                  {previewSuratList.map((s, idx) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setActivePreviewIndex(idx)}
-                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                        activePreviewIndex === idx ? 'bg-[#c81e28] text-white shadow-xs' : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      Surat {idx + 1} ({s.gudepType})
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -1144,7 +1126,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 onClick={handleSaveDraft}
                 className="py-2 px-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold"
               >
-                Simpan sebagai Draf
+                Simpan Draft
               </button>
               <button
                 type="button"
@@ -1152,7 +1134,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 disabled={isExportingPdf}
                 className="py-2 px-4 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <span>{isExportingPdf ? '⏳ Memproses PDF...' : '📥 Unduh Dokumen PDF'}</span>
+                <span>{isExportingPdf ? '⏳ Memproses PDF...' : '📥 Unduh PDF'}</span>
               </button>
             </div>
           </div>

@@ -425,8 +425,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         metodeTtd,
         includeTtdBiasa,
         includeQrCode,
-        includeTtdBiasa,
-        includeQrCode,
         digitalSigner: 'pembina_putra',
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',

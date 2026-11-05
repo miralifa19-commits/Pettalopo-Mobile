@@ -30,10 +30,13 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: bun install
+        run: npm install --legacy-peer-deps --no-package-lock
+
+      - name: Test PDF export with original letterhead and multi-page text
+        run: npm run test:pdf
 
       - name: Build web preview
-        run: bun run build
+        run: npm run build
         env:
           GITHUB_PAGES: 'true'
 

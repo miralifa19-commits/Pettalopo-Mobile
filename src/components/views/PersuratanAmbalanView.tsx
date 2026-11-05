@@ -235,7 +235,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Metode Pengesahan
   const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
-  const [includeStempel, setIncludeStempel] = useState(true);
+  const [includeStempel, setIncludeStempel] = useState(false);
 
   // Tembusan
   const [includeTembusan, setIncludeTembusan] = useState(true);
@@ -443,7 +443,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
         qrCodeDataUrl: qrDataUrlPa,
-        includeStempel,
+        includeStempel: false,
         includeTembusan,
         tembusanList,
         signatureGapCm,
@@ -638,7 +638,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
     setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
-    setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
+    setIncludeStempel(false); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setWizardStep(1); setViewMode('form');
   };
   const handleDeleteDraft = (id: string) => {
@@ -1288,8 +1288,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 {[
                   { id: 'digital', title: 'Ttd Digital (QR)', sub: 'Barcode Verifikasi' },
                   { id: 'biasa', title: 'Ttd Biasa', sub: 'Ruang Tanda Tangan' },
-                  { id: 'stempel', title: 'Stempel Basah', sub: 'Cap Lingkaran' }
-                ].map((item) => (
+                                  ].map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -1342,18 +1341,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               )}
 
-              {/* Checkbox Stempel Basah */}
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-800">Sertakan Stempel Basah Ambalan</span>
-                <button
-                  type="button"
-                  onClick={() => setIncludeStempel(!includeStempel)}
-                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${
-                    includeStempel ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-              </div>
             </div>
 
             {/* Tembusan (Ketik + tombol tambah) */}

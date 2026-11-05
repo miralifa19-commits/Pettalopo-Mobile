@@ -94,6 +94,7 @@ export interface GeneratedSurat {
   digitalSignerTitle: string;
   
   qrCodeDataUrl?: string;
+  digitalSignerIds?: string[];
   includeStempel: boolean;
   
   includeTembusan: boolean;
@@ -190,7 +191,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   const [includeKepadaYth, setIncludeKepadaYth] = useState(true);
   const [penerimaNama, setPenerimaNama] = useState('Kepala SMA Negeri 9 Maros');
-  const [penerimaTempat, setPenerimaTempat] = useState('di - Tempat');
+  const [penerimaTempat, setPenerimaTempat] = useState('Tempat,');
 
   // --- BAGIAN 2: ISI SURAT ---
   const [isiParagraf, setIsiParagraf] = useState(
@@ -237,6 +238,26 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Metode Pengesahan
   const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' >('digital');
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
+  const [digitalSignerIds, setDigitalSignerIds] = useState<string[]>(['pembina_putra']);
+  const toggleDigitalSigner = (id: string, checked: boolean) => setDigitalSignerIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
+  const isiTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const applyIsiFormat = (marker: '**' | '*') => {
+    const el = isiTextareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart, end = el.selectionEnd;
+    const selected = isiParagraf.slice(start, end);
+    if (!selected) return;
+    setIsiParagraf(`${isiParagraf.slice(0, start)}${marker}${selected}${marker}${isiParagraf.slice(end)}`);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start + marker.length, end + marker.length); });
+  };
+  const insertIsiBullet = () => {
+    const el = isiTextareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const lineStart = isiParagraf.lastIndexOf('\n', start - 1) + 1;
+    setIsiParagraf(`${isiParagraf.slice(0, lineStart)}• ${isiParagraf.slice(lineStart)}`);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start + 2, start + 2); });
+  };
 
   // Tembusan
   const [includeTembusan, setIncludeTembusan] = useState(true);
@@ -442,6 +463,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
+        digitalSignerIds,
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
         qrCodeDataUrl: qrDataUrlPa,
@@ -511,6 +533,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
+        digitalSignerIds,
         digitalSignerName: officials.pembinaPutri,
         digitalSignerTitle: 'Pembina Putri Gugus Depan 10.036',
         qrCodeDataUrl: qrDataUrlPi,
@@ -582,6 +605,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,
+        digitalSignerIds,
         digitalSignerName: signerName,
         digitalSignerTitle: signerTitle,
         qrCodeDataUrl: qrDataUrl,
@@ -604,7 +628,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
 
 
-  const currentDraftData = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeTembusan, tembusanList };
+  const currentDraftData = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, digitalSignerIds, includeTembusan, tembusanList };
   const persistDraftSnapshot = () => {
     const id = editingDraftId || `draft_${Date.now()}`;
     const draft: FormDraft = { id, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data: currentDraftData };
@@ -640,7 +664,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setIncludeKeteranganDetail(d.includeKeteranganDetail ?? false); setRincianKeteranganDetail(d.rincianKeteranganDetail ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
-    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
+    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra'); setDigitalSignerIds(d.digitalSignerIds ?? ['pembina_putra']);
     setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setWizardStep(1); setViewMode('form');
   };
@@ -1022,7 +1046,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       type="text"
                       value={penerimaTempat}
                       onChange={(e) => setPenerimaTempat(e.target.value)}
-                      placeholder="di - Tempat"
+                      placeholder="Tempat,"
                       className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
                     />
                   </div>
@@ -1064,8 +1088,15 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   ✨ Bantu Buat Paragraf
                 </button>
               </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button type="button" onClick={() => applyIsiFormat('**')} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-black" title="Tebal">B</button>
+                <button type="button" onClick={() => applyIsiFormat('*')} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs italic" title="Miring">I</button>
+                <button type="button" onClick={insertIsiBullet} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs" title="Sisipkan poin">• Poin</button>
+                <span className="text-[10px] text-slate-400">Pilih teks lalu tekan B atau I untuk memformat.</span>
+              </div>
               <textarea
-                rows={3}
+                ref={isiTextareaRef}
+                rows={5}
                 value={isiParagraf}
                 onChange={(e) => setIsiParagraf(e.target.value)}
                 placeholder="Tuliskan isi surat secara ringkas dan lugas..."
@@ -1282,69 +1313,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
             </div>
 
-            {/* Pilihan Metode Pengesahan: Ttd Biasa atau Ttd Digital */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-xs font-bold text-slate-800 block">
-                Pilihan Format Tanda Tangan
-              </label>
-              
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'digital', title: 'Ttd Digital (QR)', sub: 'Barcode Verifikasi' },
-                  { id: 'biasa', title: 'Ttd Biasa', sub: 'Ruang Tanda Tangan' },
-                                  ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setMetodeTtd(item.id as any)}
-                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                      metodeTtd === item.id
-                        ? 'border-[#c81e28] bg-red-50 text-[#b71922] font-black'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <p className="text-xs">{item.title}</p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">{item.sub}</p>
-                  </button>
-                ))}
-              </div>
-
-              {/* Jika Ttd Digital dipilih: Opsi 3 Otoritas */}
-              {metodeTtd === 'digital' && (
-                <div className="p-3 bg-red-50 rounded-xl border border-red-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#b71922]">
-                      Otoritas Penandatangan Digital (3 Pilihan)
-                    </span>
-                    <span className="text-[9px] text-slate-500">Scan QR untuk verifikasi</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'kepala_sekolah', label: '1. Kepala Sekolah', name: officials.ketuaGudep },
-                      { id: 'pembina_putra', label: '2. Pembina Putra', name: officials.pembinaPutra },
-                      { id: 'pembina_putri', label: '3. Pembina Putri', name: officials.pembinaPutri }
-                    ].map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setDigitalSigner(s.id as DigitalSignerType)}
-                        className={`p-2 rounded-xl text-left border text-xs transition-all cursor-pointer ${
-                          digitalSigner === s.id
-                            ? 'bg-[#c81e28] text-white border-[#c81e28] font-bold'
-                            : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <p className="font-bold">{s.label}</p>
-                        <p className={`text-[10px] truncate ${digitalSigner === s.id ? 'text-red-100' : 'text-slate-500'}`}>
-                          {s.name}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600">
+              Atur TTD digital secara terpisah pada masing-masing penandatangan. Yang tidak dicentang akan menggunakan ruang tanda tangan biasa.
             </div>
 
             {/* Tembusan (Ketik + tombol tambah) */}
@@ -1466,7 +1436,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {activeSurat.metodeTtd === 'digital' && (
+              {Boolean(activeSurat.digitalSignerIds?.length) && (
                 <button
                   type="button"
                   onClick={() => setVerificationModalSurat(activeSurat)}
@@ -1483,15 +1453,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               >
                 Simpan sebagai Draf
               </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer"
-                title="Cetak lewat dialog browser"
-              >
-                🖨️ Cetak
-              </button>
-
               <button
                 type="button"
                 onClick={() => handleDownloadPdf(activeSurat)}

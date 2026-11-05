@@ -458,7 +458,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     id?: string;
     qr?: PDFImage;
     stamp?: boolean;
-    handwritten?: boolean;
   };
 
   const fallback = surat.approvalType || 'Mengetahui';
@@ -505,7 +504,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       title: surat.pembinaJabatan || 'Pembina Putra',
       name: surat.pembinaNama,
       id: surat.pembinaNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      qr: (surat.includeQrCode ?? surat.metodeTtd === 'digital') ? qrImage : undefined,
       stamp: surat.includeStempel,
     });
   }

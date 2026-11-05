@@ -205,6 +205,7 @@ jobs:
               <cache-path name="cache" path="." />
               <external-files-path name="external-files" path="." />
               <external-cache-path name="external-cache" path="." />
+              <external-path name="pettalopo-documents" path="Documents/Pettalopo/" />
           </paths>
           XML
           python - <<'PY'

@@ -19,6 +19,7 @@ export type DigitalSignerType = 'kepala_sekolah' | 'pembina_putra' | 'pembina_pu
 
 const STORAGE_KEY_SETTINGS = 'pettalopo_pengaturan_surat_v1';
 const DEFAULT_SURAT_SETTINGS = {
+  ketuaMabigus: 'Kepala Sekolah / Ketua Mabigus',
   pembinaPutra: 'Pembina Putra',
   pembinaPutri: 'Pembina Putri',
   pembantuPutra: 'Pembantu Pembina Putra',
@@ -437,7 +438,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutra,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: officials.ketuaGudepJabatan,
+        ketuaGudepJabatan: suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
@@ -506,6 +507,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepJabatan: suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
@@ -743,6 +745,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             <p className="text-xs text-slate-500 mt-1">Ubah kalimat jabatan yang akan tampil pada bagian pengesahan surat. Perubahan disimpan otomatis.</p>
           </div>
           {([
+            ['ketuaMabigus', 'Jabatan Kepala Sekolah / Ketua Mabigus'],
             ['pembinaPutra', 'Jabatan Pembina Putra'],
             ['pembinaPutri', 'Jabatan Pembina Putri'],
             ['pembantuPutra', 'Jabatan Pembantu Pembina Putra'],

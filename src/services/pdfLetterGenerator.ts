@@ -493,35 +493,50 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const startY = layout.y;
   const bottoms: number[] = [];
 
-  signers.forEach((signer, index) => {
-    const row = Math.floor(index / 2);
-    const rowMembers = Math.min(2, signers.length - row * 2);
-    const isLastSingle = rowMembers === 1;
-    const align: 'left' | 'right' = rowMembers === 2 && index % 2 === 1 ? 'right' : 'left';
-    let x = SIDE_MARGIN;
+  for (let row = 0; row < rows; row += 1) {
+    const rowStart = row * 2;
+    const members = signers.slice(rowStart, rowStart + 2);
+    const y = startY - row * rowHeight;
+    const sharedApproval = members.length === 2
+      && members[0].approval.trim().toLocaleLowerCase('id')
+        === members[1].approval.trim().toLocaleLowerCase('id');
 
-    if (rowMembers === 2) {
-      x = SIDE_MARGIN + (index % 2) * (columnWidth + gap);
-    } else if (signers.length > 1 && isLastSingle) {
-      // Penandatangan ketiga/kelima dan seterusnya berada di tengah baris.
-      x = SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
+    // Bila satu baris memiliki dua pengesahan yang sama, tampilkan sekali
+    // tepat di tengah baris, bukan mengulanginya pada kedua blok.
+    if (sharedApproval) {
+      layout.drawCentered(
+        members[0].approval,
+        layout.width / 2,
+        y,
+        layout.fonts.regular,
+        10.5,
+      );
     }
 
-    const y = startY - row * rowHeight;
-    bottoms.push(drawSignerBlock(
-      layout,
-      x,
-      columnWidth,
-      y,
-      signer.approval,
-      signer.title,
-      signer.name,
-      signer.id,
-      signer.qr,
-      Boolean(signer.stamp),
-      align,
-    ));
-  });
+    members.forEach((signer, columnIndex) => {
+      // Batas awal setiap kolom adalah koordinat tetap. Kolom kanan tidak
+      // lagi menggeser teks ke kanan berdasarkan panjang masing-masing baris.
+      const x = members.length === 2
+        ? SIDE_MARGIN + columnIndex * (columnWidth + gap)
+        : (signers.length > 1
+          ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
+          : SIDE_MARGIN);
+
+      bottoms.push(drawSignerBlock(
+        layout,
+        x,
+        columnWidth,
+        y,
+        sharedApproval ? undefined : signer.approval,
+        signer.title,
+        signer.name,
+        signer.id,
+        signer.qr,
+        Boolean(signer.stamp),
+        'left',
+      ));
+    });
+  }
 
   layout.y = Math.min(...bottoms) - 5;
 }

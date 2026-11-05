@@ -380,6 +380,7 @@ function drawSignerBlock(
   layout: LetterLayout, x: number, columnWidth: number, topY: number,
   approval: string | undefined, title: string, name: string, identifier: string | undefined,
   qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
+  textWidthLimit = columnWidth - 8,
 ): number {
   const titleSize = 10.5;
   let y = topY;
@@ -392,7 +393,7 @@ function drawSignerBlock(
     drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
-  for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
+  for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit)) {
     drawAligned(line, layout.fonts.bold, titleSize, y);
     y -= 13;
   }
@@ -402,7 +403,7 @@ function drawSignerBlock(
   y -= 42;
   const safeName = cleanText(name);
   const nameSize = 10.5;
-  const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
+  const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
   const nameX = align === 'right' ? x + columnWidth - nameWidth : x;
   layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
   layout.page.drawLine({ start: { x: nameX, y: y - 1.5 }, end: { x: nameX + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
@@ -558,6 +559,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         signer.qr,
         Boolean(signer.stamp),
         'left',
+        isRightColumn ? signerWidth : undefined,
       ));
     });
   }

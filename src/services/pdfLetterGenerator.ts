@@ -524,14 +524,14 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const gap = 18;
   const columnWidth = (layout.contentWidth - gap) / 2;
   const rows = Math.ceil(signers.length / 2);
-  const rowHeight = 140;
+  const rowHeight = 120;
   const tembusanHeight = surat.includeTembusan && surat.tembusanList?.length
     ? 12 + surat.tembusanList.reduce((sum, item, index) => sum + wrapPdfText(`${index + 1}. ${item}`, layout.fonts.regular, 8.5, layout.contentWidth).length * 9, 0)
     : 0;
 
   // Sisakan ruang untuk SELURUH kelompok tanda tangan. Jika tidak cukup,
   // pindahkan semuanya ke halaman kop berikutnya, bukan memecah kelompok.
-  await layout.ensureSpace(rows * rowHeight + tembusanHeight + 34);
+  await layout.ensureSpace(rows * rowHeight + tembusanHeight + 24);
   const startY = layout.y;
   const bottoms: number[] = [];
 

@@ -429,7 +429,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
     signers.push({
       approval: surat.ketuaGudepApprovalType ?? fallback,
-      title: 'Kepala Sekolah / Ketua Mabigus',
+      title: surat.ketuaGudepJabatan || 'Kepala Sekolah / Ketua Mabigus',
       name: surat.ketuaGudepNama,
       id: surat.ketuaGudepNip,
       qr: surat.metodeTtd === 'digital' ? qrImage : undefined,

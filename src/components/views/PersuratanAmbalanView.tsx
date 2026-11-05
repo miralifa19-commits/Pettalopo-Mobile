@@ -147,8 +147,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     const handleBack = () => {
       if (viewMode === 'preview') {
         setViewMode('form');
-        setWizardStep(3);
-      } else if (wizardStep > 1) {
+        setWizardStep(3);      } else if (wizardStep > 1) {
         setWizardStep((current) => (current === 3 ? 2 : 1));
       } else {
         setViewMode('dashboard');
@@ -297,8 +296,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState('');
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
-  const [isPreparingPreview, setIsPreparingPreview] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');  const [isPreparingPreview, setIsPreparingPreview] = useState(false);
   const [previewPdfError, setPreviewPdfError] = useState('');
   
   // AI Generation Progress State (0 - 100%)
@@ -447,8 +445,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         gudepType: '10.035',
         includeNomor: true,
         includeTanggal: true,
-        includePerihal: true,
-        includeLampiran: true,
+        includePerihal: true,        includeLampiran: true,
         includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
         includeKepadaYth: Boolean(penerimaNama.trim()),
         penerimaNama,
@@ -482,7 +479,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutra,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: suratSettings.ketuaMabigus,
+        ketuaGudepJabatan: officials.ketuaGudepJabatan || suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
@@ -552,7 +549,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: suratSettings.ketuaMabigus,
+        ketuaGudepJabatan: officials.ketuaGudepJabatan || suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
@@ -597,8 +594,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         rincianHariTanggal,
         rincianWaktu,
         includeTempat: true,
-        rincianTempat,
-        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
+        rincianTempat,        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
         rincianKeteranganAcara: rincianKeteranganDetail,
         includeKeteranganDetail: false,
         rincianKeteranganDetail: '',
@@ -625,6 +621,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaTambahanNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepJabatan: officials.ketuaGudepJabatan || suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,
@@ -747,8 +744,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const activeSurat = previewSuratList[activePreviewIndex] || previewSuratList[0];
 
   useEffect(() => {
-    if (viewMode !== 'preview' || !activeSurat) {
-      setPdfPreviewUrl('');
+    if (viewMode !== 'preview' || !activeSurat) {      setPdfPreviewUrl('');
       setPreviewPdfError('');
       setIsPreparingPreview(false);
       return;
@@ -897,8 +893,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   Rincian Kegiatan
                 </span>
               </div>
-              {/* Hari / Tanggal (Wajib) */}
-              <div className="flex items-start gap-2">
+              {/* Hari / Tanggal (Wajib) */}              <div className="flex items-start gap-2">
                 <span className="w-6 text-center text-xs font-bold text-[#c81e28] pt-2.5">
                   
                 </span>
@@ -1047,8 +1042,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       type="button"
                       onClick={handleAddTembusan}
                       className="px-4 py-2.5 rounded-xl bg-[#c81e28] text-white font-black text-sm hover:bg-[#a91b24] transition-all cursor-pointer"
-                    >
-                      +
+                    >                      +
                     </button>
                   </div>
 
@@ -1197,8 +1191,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                         setPreviewSuratList([surat]);
                         setActivePreviewIndex(0);
                         setWizardStep(4);
-                        setViewMode('preview');
-                      }}
+                        setViewMode('preview');                      }}
                       className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                     >
                       Buka

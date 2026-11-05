@@ -84,6 +84,7 @@ export interface GeneratedSurat {
 
   includeKetuaGudep: boolean; // Pilihan
   ketuaGudepNama: string;
+  ketuaGudepJabatan?: string;
   ketuaGudepNip?: string;
 
   metodeTtd: 'biasa' | 'digital';
@@ -436,6 +437,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutra,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepJabatan: officials.ketuaGudepJabatan,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',

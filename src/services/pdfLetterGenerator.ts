@@ -561,20 +561,20 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       return { signer, signerWidth, textWidthLimit, headerHeight };
     });
     const headerHeight = Math.max(...entries.map((entry) => entry.headerHeight));
-    const signatureAreaHeight = members.some((signer) => signer.qr) ? 42 : 15;
+    // Area tanda tangan selalu sama untuk digital maupun basah agar jarak jabatan-nama konsisten.
+    const signatureAreaHeight = 42;
     const height = (sharedApproval ? 13 : 0) + headerHeight + signatureAreaHeight + 13
       + (members.some((signer) => signer.id) ? 11 : 0) + 6;
     return { entries, sharedApproval, headerHeight, signatureAreaHeight, height };
   });
 
-  await layout.ensureSpace(
-    signerRows.reduce((sum, row) => sum + row.height, 0) + Math.max(0, rows.length - 1) * 5 + 10,
-  );
-  let rowY = layout.y;
+  // Periksa ruang per baris, bukan untuk seluruh blok sekaligus. Jika baris
+  // berikutnya tidak muat, baris itu pindah ke halaman kop baru.
   const bottoms: number[] = [];
 
-  signerRows.forEach((row) => {
-    const y = rowY;
+  for (const row of signerRows) {
+    await layout.ensureSpace(row.height + 5);
+    const y = layout.y;
     const rowBottoms: number[] = [];
     if (row.sharedApproval) {
       layout.drawCentered(row.entries[0].signer.approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
@@ -606,9 +606,9 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       bottoms.push(bottom);
       rowBottoms.push(bottom);
     });
-    rowY = Math.min(...rowBottoms) - 5;
-  });
-  layout.y = Math.min(...bottoms) - 5;
+    layout.y = Math.min(...rowBottoms) - 5;
+  }
+  if (bottoms.length) layout.y = Math.min(...bottoms) - 5;
 }
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {

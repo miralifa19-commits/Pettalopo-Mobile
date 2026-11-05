@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - perbaikan-pdf
 
 permissions:
   contents: write
@@ -48,14 +48,30 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install Dependencies
+      - name: Install Dependencies and refresh bun.lock
         run: bun install
+
+      - name: Commit resolved bun.lock on feature branch
+        run: |
+          if ! git diff --quiet -- bun.lock; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add bun.lock
+            git commit -m "Update bun lockfile for PDF export"
+            git push
+          fi
+
+      - name: TypeScript check
+        run: bun run lint
+
+      - name: Test PDF export with short and multi-page letters
+        run: bun run test:pdf
 
       - name: Build Web Application
         run: bun run build
 
       - name: Create Android Project
-        run: bunx cap add android
+        run: npx cap add android
 
       - name: Apply Pettalopo Mobile App Icon
         run: |
@@ -121,7 +137,22 @@ jobs:
           PY
 
       - name: Sync Capacitor
-        run: bunx cap sync android
+        run: npx cap sync android
+
+      - name: Configure Capacitor FileProvider paths for PDF opening
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+              <files-path name="files" path="." />
+              <cache-path name="cache" path="." />
+              <external-files-path name="external-files" path="." />
+              <external-cache-path name="external-cache" path="." />
+              <external-path name="pettalopo-documents" path="Documents/Pettalopo/" />
+              <external-path name="pettalopo-documents" path="Documents/Pettalopo/" />
+          </paths>
+          XML
 
       - name: Keep Android system splash styling without Capacitor splash plugin
         run: |

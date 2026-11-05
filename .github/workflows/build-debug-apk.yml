@@ -3,7 +3,7 @@ name: Build Pettalopo Android APK (Debug)
 on:
   push:
     branches:
-      - main
+      - perbaikan-pdf
     paths:
       - ".github/workflows/build-debug-apk.yml"
       - "src/**"
@@ -48,14 +48,34 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: TypeScript check
+        run: bun run lint
+
+      - name: Test PDF export with short and multi-page letters
+        run: bun run test:pdf
+
       - name: Build web application
         run: bun run build
 
       - name: Create Android project
-        run: bunx cap add android
+        run: npx cap add android
 
       - name: Sync Capacitor
-        run: bunx cap sync android
+        run: npx cap sync android
+
+      - name: Configure Capacitor FileProvider paths for PDF opening
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+              <files-path name="files" path="." />
+              <cache-path name="cache" path="." />
+              <external-files-path name="external-files" path="." />
+              <external-cache-path name="external-cache" path="." />
+              <external-path name="pettalopo-documents" path="Documents/Pettalopo/" />
+          </paths>
+          XML
 
       - name: Keep Android system splash styling without Capacitor splash plugin
         run: |

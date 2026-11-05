@@ -107,6 +107,7 @@ const namePutri = items.find(item => 'str' in item && item.str === 'Pembina Putr
 const nipPutri = items.find(item => 'str' in item && item.str.includes('19820101 200601 2 002'));
 assert.ok(titlePutri && namePutri && nipPutri, 'Blok Pembina Putri harus memuat jabatan, nama, dan NIP pada halaman yang sama');
 assert.ok(Math.abs(titlePutri.transform[4] - namePutri.transform[4]) < 0.5, 'Jabatan dan nama Pembina Putri harus rata kiri pada blok yang sama');
+console.log('DEBUG_PUTRI_X', { title: titlePutri && {str:titlePutri.str,x:titlePutri.transform[4],y:titlePutri.transform[5]}, name:namePutri && {str:namePutri.str,x:namePutri.transform[4],y:namePutri.transform[5]}, nip:nipPutri && {str:nipPutri.str,x:nipPutri.transform[4],y:nipPutri.transform[5]}, items:items.filter(item => 'str' in item && (item.str.includes('Pembina Putri') || item.str.includes('19820101') || item.str === 'Mengetahui')).map(item => ({str:item.str,x:item.transform[4],y:item.transform[5]})) });
 assert.ok(Math.abs(titlePutri.transform[4] - nipPutri.transform[4]) < 0.5, 'NIP Pembina Putri harus rata kiri pada blok yang sama');
 assert.ok(items.some(item => 'str' in item && item.str === 'Mengetahui' && Math.abs(item.transform[4] - titlePutri.transform[4]) < 0.5), 'Mengetahui Pembina Putri harus sejajar dengan jabatan');
 assert.ok(signatureText.items.some(item => 'str' in item && item.str === 'Tembusan:'), 'Tembusan harus berada di halaman terakhir bersama tanda tangan');

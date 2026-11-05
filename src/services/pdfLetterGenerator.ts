@@ -526,7 +526,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         layout,
         x,
         columnWidth,
-        y,
+        y - (sharedApproval ? 13 : 0),
         sharedApproval ? undefined : signer.approval,
         signer.title,
         signer.name,

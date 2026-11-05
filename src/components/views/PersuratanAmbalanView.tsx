@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { createLetterPdf, PdfExportStageError } from '../../services/pdfLetterGenerator';
+import { createLetterPdf, PdfExportStageError, LETTERHEAD_ASSET } from '../../services/pdfLetterGenerator';
 import { deliverPdfFile } from '../../services/pdfFileDelivery';
 import { UserAccount, ProgramKerjaItem } from '../../types';
 import { askKakCikalAI } from '../../services/aiChatService';
@@ -87,6 +87,8 @@ export interface GeneratedSurat {
   ketuaGudepNip?: string;
 
   metodeTtd: 'biasa' | 'digital' | 'stempel';
+  includeTtdBiasa?: boolean;
+  includeQrCode?: boolean;
   digitalSigner: DigitalSignerType;
   digitalSignerName: string;
   digitalSignerTitle: string;
@@ -213,6 +215,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   // Metode Pengesahan
   const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
+  const [includeTtdBiasa, setIncludeTtdBiasa] = useState(true);
+  const [includeQrCode, setIncludeQrCode] = useState(true);
   const [digitalSigner, setDigitalSigner] = useState<DigitalSignerType>('pembina_putra');
   const [includeStempel, setIncludeStempel] = useState(true);
 
@@ -419,6 +423,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNama: officials.ketuaGudep,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
+        includeTtdBiasa,
+        includeQrCode,
         digitalSigner: 'pembina_putra',
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
@@ -1187,82 +1193,41 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
             </div>
 
-            {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-xs font-bold text-slate-800 block">
-                Pilihan Format Tanda Tangan
+            {/* Format tanda tangan dapat dipilih secara independen dan digabungkan */}
+            <div className="space-y-3 pt-3 border-t border-slate-100">
+              <label className="text-xs font-bold text-slate-800 block">Pilih Format Pengesahan (boleh pilih ketiganya)</label>
+              <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white">
+                <span><span className="block text-xs font-bold text-slate-800">Tanda tangan biasa</span><span className="block text-[10px] text-slate-500">Sediakan garis tanda tangan manual</span></span>
+                <input type="checkbox" checked={includeTtdBiasa} onChange={e => setIncludeTtdBiasa(e.target.checked)} />
               </label>
-              
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'digital', title: 'Ttd Digital (QR)', sub: 'Barcode Verifikasi' },
-                  { id: 'biasa', title: 'Ttd Biasa', sub: 'Ruang Tanda Tangan' },
-                  { id: 'stempel', title: 'Stempel Basah', sub: 'Cap Lingkaran' }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setMetodeTtd(item.id as any)}
-                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                      metodeTtd === item.id
-                        ? 'border-[#c81e28] bg-red-50 text-[#b71922] font-black'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <p className="text-xs">{item.title}</p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">{item.sub}</p>
-                  </button>
-                ))}
-              </div>
-
-              {/* Jika Ttd Digital dipilih: Opsi 3 Otoritas */}
-              {metodeTtd === 'digital' && (
+              <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white">
+                <span><span className="block text-xs font-bold text-slate-800">QR Code</span><span className="block text-[10px] text-slate-500">Sertakan kode untuk verifikasi digital</span></span>
+                <input type="checkbox" checked={includeQrCode} onChange={e => setIncludeQrCode(e.target.checked)} />
+              </label>
+              {includeQrCode && (
                 <div className="p-3 bg-red-50 rounded-xl border border-red-200 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#b71922]">
-                      Otoritas Penandatangan Digital (3 Pilihan)
-                    </span>
+                    <span className="text-xs font-bold text-[#b71922]">Otoritas Penandatangan QR</span>
                     <span className="text-[9px] text-slate-500">Scan QR untuk verifikasi</span>
                   </div>
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
                       { id: 'kepala_sekolah', label: '1. Kepala Sekolah', name: officials.ketuaGudep },
                       { id: 'pembina_putra', label: '2. Pembina Putra', name: officials.pembinaPutra },
                       { id: 'pembina_putri', label: '3. Pembina Putri', name: officials.pembinaPutri }
                     ].map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setDigitalSigner(s.id as DigitalSignerType)}
-                        className={`p-2 rounded-xl text-left border text-xs transition-all cursor-pointer ${
-                          digitalSigner === s.id
-                            ? 'bg-[#c81e28] text-white border-[#c81e28] font-bold'
-                            : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <p className="font-bold">{s.label}</p>
-                        <p className={`text-[10px] truncate ${digitalSigner === s.id ? 'text-red-100' : 'text-slate-500'}`}>
-                          {s.name}
-                        </p>
+                      <button key={s.id} type="button" onClick={() => setDigitalSigner(s.id as DigitalSignerType)}
+                        className="p-2 rounded-xl text-left border border-slate-200 bg-white text-xs">
+                        <p className="font-bold">{s.label}</p><p className="text-[10px] text-slate-500 truncate">{s.name}</p>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Checkbox Stempel Basah */}
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-800">Sertakan Stempel Basah Ambalan</span>
-                <button
-                  type="button"
-                  onClick={() => setIncludeStempel(!includeStempel)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                    includeStempel ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-              </div>
+              <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white">
+                <span><span className="block text-xs font-bold text-slate-800">Stempel / cap ambalan</span><span className="block text-[10px] text-slate-500">Cap ditempatkan agar tidak menutup QR dan nama</span></span>
+                <input type="checkbox" checked={includeStempel} onChange={e => setIncludeStempel(e.target.checked)} />
+              </label>
             </div>
 
             {/* Tembusan (Ketik + tombol tambah) */}

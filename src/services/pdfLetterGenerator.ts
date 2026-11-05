@@ -147,8 +147,7 @@ interface FontSet {
   regular: PDFFont;
   bold: PDFFont;
   italic: PDFFont;
-  boldItalic: PDFFont;
-}
+  boldItalic: PDFFont;}
 class LetterLayout {
   readonly pages: PDFPage[] = [];
   readonly width: number;
@@ -297,8 +296,7 @@ class LetterLayout {
           mode = mode === 'bold' ? 'regular' : 'bold';
           index += 2;
         } else if (rawLine[index] === '*') {
-          flush();
-          mode = mode === 'italic' ? 'regular' : 'italic';          index += 1;
+          flush();          mode = mode === 'italic' ? 'regular' : 'italic';          index += 1;
         } else {
           buffer += rawLine[index];
           index += 1;
@@ -445,10 +443,11 @@ function drawStamp(
 }
 
 function drawSignerBlock(
-  layout: LetterLayout, x: number, columnWidth: number, topY: number,  approval: string | undefined, title: string, name: string, identifier: string | undefined,
+  layout: LetterLayout, x: number, columnWidth: number, topY: number,
+  approval: string | undefined, title: string, name: string, identifier: string | undefined,
   qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
-  textWidthLimit = columnWidth - 8,  reservedHeaderHeight = 0,
-): number {
+  textWidthLimit = columnWidth - 8,
+  reservedHeaderHeight = 0,): number {
   const titleSize = 10.5;
   let y = topY;
   const drawAligned = (text: string, font: PDFFont, size: number, baseline: number) => {
@@ -597,8 +596,7 @@ async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promis
   const lineHeight = 9;
   const entries = surat.tembusanList.map((item, index) => `${index + 1}. ${item}`);
   const headingLines = wrapPdfText('Tembusan:', layout.fonts.regular, fontSize, layout.contentWidth);  const entryLineCount = entries.reduce(
-    (total, entry) => total + wrapPdfText(entry, layout.fonts.regular, fontSize, layout.contentWidth).length,
-    0,
+    (total, entry) => total + wrapPdfText(entry, layout.fonts.regular, fontSize, layout.contentWidth).length,    0,
   );
   const totalLines = headingLines.length + entryLineCount;
   const blockHeight = totalLines * lineHeight;
@@ -747,8 +745,7 @@ export async function createLetterPdf(
         x: SIDE_MARGIN,
         labelWidth: 78,        maxWidth: layout.contentWidth,
         size: 12,
-        lineHeight: 17,
-        labelFont: regular,
+        lineHeight: 17,        labelFont: regular,
         valueFont: regular,
         rowGap: 2,
       });

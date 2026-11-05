@@ -42,13 +42,6 @@ const base: GeneratedSurat = {
   dewanNama: 'Amiruddin S.',
   dewanNta: 'NTA. 10.035.001',
   includePembina: true,
-  includePembinaTambahan: true,
-  pembinaTambahanJabatan: 'Pembina Putri',
-  pembinaTambahanNama: 'Pembina Putri',
-  pembinaTambahanNip: 'NIP. 19820101 200601 2 002',
-  includeTtdBiasa: true,
-  includeQrCode: true,
-  qrCodeDataUrl: '',
   pembinaJabatan: 'Pembina Gugus Depan 10.035',
   pembinaNama: 'Pembina Putra',
   pembinaNip: 'NIP. 19800101 200501 1 001',
@@ -89,22 +82,35 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
 
 base.qrCodeDataUrl = await QRCode.toDataURL('Pettalopo Mobile - Uji QR - 001/10.035/C/2026', { width: 240, margin: 2 });
 const shortBytes = await createLetterPdf(base, loadTestAsset);
-await mkdir('artifacts', { recursive: true });
-await writeFile('artifacts/contoh-tata-letak-persuratan.pdf', shortBytes);
 await inspectPdf(shortBytes, 1, 'Surat pendek');
-const shortParsed = await pdfjsLib.getDocument({ data: shortBytes }).promise;
-const shortPage = await shortParsed.getPage(1);
-const shortText = await shortPage.getTextContent();
-const items = shortText.items.filter((item): item is typeof item & { str: string; transform: number[] } => 'str' in item && 'transform' in item);
-const titlePutri = items.find(item => item.str.includes('Pembina Putri'));
-const namePutri = items.find(item => item.str === 'Pembina Putri');
-const nipPutri = items.find(item => item.str.includes('19820101 200601 2 002'));
-assert.ok(titlePutri && namePutri && nipPutri, 'Blok Pembina Putri harus memuat jabatan, nama, dan NIP');
+
+const visualSample = {
+  ...base,
+  includePembinaTambahan: true,
+  pembinaTambahanJabatan: 'Pembina Putri',
+  pembinaTambahanNama: 'Pembina Putri',
+  pembinaTambahanNip: 'NIP. 19820101 200601 2 002',
+  includeTtdBiasa: true,
+  includeQrCode: true,
+  metodeTtd: 'biasa' as const,
+};
+const visualBytes = await createLetterPdf(visualSample, loadTestAsset);
+const visualDocument = await PDFDocument.load(visualBytes);
+await mkdir('artifacts', { recursive: true });
+await writeFile('artifacts/contoh-tata-letak-persuratan.pdf', visualBytes);
+const visualParsed = await pdfjsLib.getDocument({ data: visualBytes }).promise;
+const signaturePage = await visualParsed.getPage(visualParsed.numPages);
+const signatureText = await signaturePage.getTextContent();
+const items = signatureText.items.filter(item => 'str' in item && 'transform' in item);
+const titlePutri = items.find(item => 'str' in item && item.str.includes('Pembina Putri'));
+const namePutri = items.find(item => 'str' in item && item.str === 'Pembina Putri');
+const nipPutri = items.find(item => 'str' in item && item.str.includes('19820101 200601 2 002'));
+assert.ok(titlePutri && namePutri && nipPutri, 'Blok Pembina Putri harus memuat jabatan, nama, dan NIP pada halaman yang sama');
 assert.ok(Math.abs(titlePutri.transform[4] - namePutri.transform[4]) < 0.5, 'Jabatan dan nama Pembina Putri harus rata kiri pada blok yang sama');
 assert.ok(Math.abs(titlePutri.transform[4] - nipPutri.transform[4]) < 0.5, 'NIP Pembina Putri harus rata kiri pada blok yang sama');
-assert.ok(items.some(item => item.str === 'Mengetahui' && Math.abs(item.transform[4] - titlePutri.transform[4]) < 0.5), 'Mengetahui Pembina Putri harus sejajar dengan jabatan');
-console.log('PASS Tata letak Pembina Putri: Mengetahui, jabatan, nama, dan NIP sejajar kiri pada kolom kanan.');
-
+assert.ok(items.some(item => 'str' in item && item.str === 'Mengetahui' && Math.abs(item.transform[4] - titlePutri.transform[4]) < 0.5), 'Mengetahui Pembina Putri harus sejajar dengan jabatan');
+assert.ok(signatureText.items.some(item => 'str' in item && item.str === 'Tembusan:'), 'Tembusan harus berada di halaman terakhir bersama tanda tangan');
+console.log('PASS Tata letak Pembina Putri dan tembusan: satu halaman tanda tangan, seluruh teks rata kiri di kolom kanan.');
 
 // Test unsupported characters in fields that are drawn directly (date,
 // recipient, signer names), not only in wrapped body paragraphs.

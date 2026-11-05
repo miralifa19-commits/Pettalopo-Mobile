@@ -421,36 +421,27 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     qr?: PDFImage;
     stamp?: boolean;
   };
-
   const fallback = surat.approvalType || 'Mengetahui';
+  const digital = new Set(surat.digitalSignerIds || []);
   const signers: Signer[] = [];
 
-  // Urutan pengesahan dipertahankan: Kepala Sekolah, Dewan, lalu Pembina.
-  if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
-    signers.push({
-      approval: surat.ketuaGudepApprovalType ?? fallback,
-      title: surat.ketuaGudepJabatan || 'Kepala Sekolah / Ketua Mabigus',
-      name: surat.ketuaGudepNama,
-      id: surat.ketuaGudepNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
-      stamp: surat.includeStempel,
-    });
-  }
-
+  // Urutan visual: Dewan, Pembantu Pembina, Pembina, lalu Kepala Sekolah.
+  // Dalam setiap baris, penandatangan pertama ditempatkan di kanan.
   if (surat.includeDewan && surat.dewanNama) {
     signers.push({
-      approval: 'Hormat Kami',
+      approval: surat.dewanApprovalType ?? fallback,
       title: surat.dewanJabatan,
       name: surat.dewanNama,
       id: surat.dewanNta,
+      qr: digital.has('dewan') ? qrImage : undefined,
     });
   }
-
   if (surat.includePembantuPutra && surat.pembantuPutraNama) {
     signers.push({
       approval: surat.pembantuPutraApprovalType ?? fallback,
       title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra',
       name: surat.pembantuPutraNama,
+      qr: digital.has('pembantu_putra') ? qrImage : undefined,
     });
   }
   if (surat.includePembantuPutri && surat.pembantuPutriNama) {
@@ -458,6 +449,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       approval: surat.pembantuPutriApprovalType ?? fallback,
       title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri',
       name: surat.pembantuPutriNama,
+      qr: digital.has('pembantu_putri') ? qrImage : undefined,
     });
   }
   if (surat.includePembina && surat.pembinaNama) {
@@ -466,7 +458,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       title: surat.pembinaJabatan || 'Pembina Putra',
       name: surat.pembinaNama,
       id: surat.pembinaNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      qr: digital.has('pembina_putra') ? qrImage : undefined,
       stamp: surat.includeStempel,
     });
   }
@@ -476,32 +468,33 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       title: surat.pembinaTambahanJabatan || 'Pembina Putri',
       name: surat.pembinaTambahanNama,
       id: surat.pembinaTambahanNip,
-      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      qr: digital.has('pembina_putri') ? qrImage : undefined,
+      stamp: surat.includeStempel,
+    });
+  }
+  if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
+    signers.push({
+      approval: surat.ketuaGudepApprovalType ?? fallback,
+      title: surat.ketuaGudepJabatan || 'Kepala Sekolah / Ketua Mabigus',
+      name: surat.ketuaGudepNama,
+      id: surat.ketuaGudepNip,
+      qr: digital.has('kepala_sekolah') ? qrImage : undefined,
       stamp: surat.includeStempel,
     });
   }
 
   if (!signers.length) return;
-
   const columnWidth = (layout.contentWidth - 18) / 2;
   const rows = Math.ceil(signers.length / 2);
   const rowHeight = 105;
-
-  // Sisakan ruang untuk SELURUH kelompok tanda tangan. Jika tidak cukup,
-  // pindahkan semuanya ke halaman kop berikutnya, bukan memecah kelompok.
   await layout.ensureSpace(rows * rowHeight + 24);
   const startY = layout.y;
   const bottoms: number[] = [];
 
   for (let row = 0; row < rows; row += 1) {
-    const rowStart = row * 2;
-    const members = signers.slice(rowStart, rowStart + 2);
+    const members = signers.slice(row * 2, row * 2 + 2);
     const y = startY - row * rowHeight;
-    // Ujung kanan blok TTD mengikuti teks terpanjang antara jabatan
-    // dan nama. Isi blok tetap rata kiri, sementara ujung teks terpanjang
-    // tepat menyentuh batas kanan area isi surat.
-    const rightEdge = layout.width - SIDE_MARGIN;
-    const rightSigner = members.length === 2 ? members[1] : undefined;
+    const rightSigner = members.length === 2 ? members[0] : undefined;
     const rightTitleLines = rightSigner
       ? wrapPdfText(rightSigner.title, layout.fonts.bold, 10.5, layout.contentWidth - 8)
       : [];
@@ -513,44 +506,25 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       ? layout.fonts.bold.widthOfTextAtSize(cleanText(rightSigner.name), 10.5)
       : 0;
     const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
-    const rightX = rightEdge - rightBlockWidth;
+    const rightX = layout.width - SIDE_MARGIN - rightBlockWidth;
 
     members.forEach((signer, columnIndex) => {
-      // Batas awal setiap kolom adalah koordinat tetap. Kolom kanan tidak
-      // lagi menggeser teks ke kanan berdasarkan panjang masing-masing baris.
-      const isRightColumn = members.length === 2 && columnIndex === 1;
-      // Kolom kiri tetap. Kolom kanan berpatokan pada huruf W pada
-      // "Wabarakatuh", lalu dapat digeser sesuai pengaturan jarak TTD.
-      const leftX = SIDE_MARGIN;
+      const isRightColumn = members.length === 2 && columnIndex === 0;
       const x = isRightColumn
         ? rightX
         : members.length === 2
-          ? leftX
-          : (signers.length > 1
-            ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
-            : SIDE_MARGIN);
+          ? SIDE_MARGIN
+          : SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
       const signerWidth = isRightColumn ? rightBlockWidth : columnWidth;
-
       bottoms.push(drawSignerBlock(
-        layout,
-        x,
-        signerWidth,
-        y,
-        signer.approval,
-        signer.title,
-        signer.name,
-        signer.id,
-        signer.qr,
-        Boolean(signer.stamp),
-        'left',
+        layout, x, signerWidth, y, signer.approval, signer.title, signer.name,
+        signer.id, signer.qr, Boolean(signer.stamp), 'left',
         isRightColumn ? signerWidth : undefined,
       ));
     });
   }
-
   layout.y = Math.min(...bottoms) - 5;
 }
-
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;
 
@@ -664,12 +638,14 @@ export async function createLetterPdf(
     stage = 'Menata penerima dan salam pembuka';
     onStage(stage);
     if (surat.includeKepadaYth) {
-      await layout.paragraph('Kepada Yth.', { size: 12, lineHeight: 16, spacingAfter: 0 });
+      await layout.paragraph('Yang Terhormat,', { size: 12, lineHeight: 16, spacingAfter: 0 });
       await layout.paragraph(surat.penerimaNama, {
         size: 12, font: bold, lineHeight: 16, spacingAfter: 0,
       });
-      await layout.paragraph(surat.penerimaTempat, {
-        size: 12, lineHeight: 16, spacingAfter: 0,
+      await layout.paragraph('di-', { size: 12, lineHeight: 16, spacingAfter: 0 });
+      const tempatTujuan = cleanText(surat.penerimaTempat).replace(/^di\\s*-?\\s*/i, '') || 'Tempat,';
+      await layout.paragraph(tempatTujuan, {
+        x: SIDE_MARGIN + 22, size: 12, lineHeight: 16, spacingAfter: 0,
       });
       layout.y -= 8;
     }

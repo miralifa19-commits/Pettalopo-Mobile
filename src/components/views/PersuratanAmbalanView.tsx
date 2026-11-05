@@ -72,8 +72,8 @@ export interface GeneratedSurat {
   pembantuPutraJabatan?: string;
   pembantuPutriNama?: string;
   pembantuPutriJabatan?: string;
-  pembantuPutraApprovalType?: 'Mengetahui' | 'Menyetujui';
-  pembantuPutriApprovalType?: 'Mengetahui' | 'Menyetujui';
+  pembantuPutraApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
+  pembantuPutriApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
   pembinaJabatan: string;
   pembinaNama: string;
   pembinaNip?: string;
@@ -97,11 +97,11 @@ export interface GeneratedSurat {
   includeTembusan: boolean;
   tembusanList: string[];
   signatureGapCm?: number;
-  approvalType?: 'Mengetahui' | 'Menyetujui';
-  dewanApprovalType?: 'Mengetahui' | 'Menyetujui';
-  pembinaApprovalType?: 'Mengetahui' | 'Menyetujui';
-  pembinaTambahanApprovalType?: 'Mengetahui' | 'Menyetujui';
-  ketuaGudepApprovalType?: 'Mengetahui' | 'Menyetujui';
+  approvalType?: 'Mengetahui' | 'Menyetujui' | '';
+  dewanApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
+  pembinaApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
+  pembinaTambahanApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
+  ketuaGudepApprovalType?: 'Mengetahui' | 'Menyetujui' | '';
   kotaPengesahan?: string;
   createdAt: string;
 }
@@ -222,13 +222,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [includePembantuPutri, setIncludePembantuPutri] = useState(false);
   const [selectedPembinaRole, setSelectedPembinaRole] = useState<'pembina_pa' | 'pembina_pi' | 'pembantu_pa' | 'pembantu_pi'>('pembina_pa');
   const [includeKetuaGudep, setIncludeKetuaGudep] = useState(false);
-  const [approvalType, setApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [dewanApprovalType, setDewanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [pembinaApprovalType, setPembinaApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [pembinaTambahanApprovalType, setPembinaTambahanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [pembantuPutraApprovalType, setPembantuPutraApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [pembantuPutriApprovalType, setPembantuPutriApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
-  const [ketuaGudepApprovalType, setKetuaGudepApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [approvalType, setApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [dewanApprovalType, setDewanApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [pembinaApprovalType, setPembinaApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [pembinaTambahanApprovalType, setPembinaTambahanApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [pembantuPutraApprovalType, setPembantuPutraApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [pembantuPutriApprovalType, setPembantuPutriApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
+  const [ketuaGudepApprovalType, setKetuaGudepApprovalType] = useState<'Mengetahui' | 'Menyetujui' | ''>('Mengetahui');
   const [kotaPengesahan, setKotaPengesahan] = useState('Maros');
   const [signatureGapCm, setSignatureGapCm] = useState(0);
 
@@ -1281,13 +1281,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeDewan} onChange={e=>setIncludeDewan(e.target.checked)}/> Sertakan penandatangan</label>
                 {includeDewan && <><select value={selectedDewanId} onChange={e=>setSelectedDewanId(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border">
                   <option value="pradana_pa">Pradana</option><option value="pemangku_adat">Pemangku Adat</option><option value="kerani">Kerani</option><option value="bendahara">Bendahara</option><option value="ketua_sangga_kerja_pa">Ketua Sangga Kerja Putra</option><option value="sekretaris_sangga_kerja_pa">Sekretaris Sangga Kerja Putra</option><option value="ketua_sangga_kerja_pi">Ketua Sangga Kerja Putri</option><option value="sekretaris_sangga_kerja_pi">Sekretaris Sangga Kerja Putri</option><option value="ketua_panitia">Ketua Panitia</option><option value="sekretaris_panitia">Sekretaris Panitia</option>
-                </select><input value={customSignerName} onChange={e=>setCustomSignerName(e.target.value)} placeholder={dewanList.find(d=>d.id===selectedDewanId)?.memberName || 'Nama penandatangan'} className="w-full text-xs p-2.5 rounded-xl border"/><select value={dewanApprovalType} onChange={e=>setDewanApprovalType(e.target.value as any)} className="w-full text-xs p-2 rounded-lg border"><option>Mengetahui</option><option>Menyetujui</option></select></>}
+                </select><input value={customSignerName} onChange={e=>setCustomSignerName(e.target.value)} placeholder={dewanList.find(d=>d.id===selectedDewanId)?.memberName || 'Nama penandatangan'} className="w-full text-xs p-2.5 rounded-xl border"/><select value={dewanApprovalType} onChange={e=>setDewanApprovalType(e.target.value as any)} className="w-full text-xs p-2 rounded-lg border"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}
               </div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">2. Pembantu Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutra} onChange={e=>setIncludePembantuPutra(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutra && <><p className="text-xs">{officials.pembantuPembinaPutra}</p><select value={pembantuPutraApprovalType} onChange={e=>setPembantuPutraApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">3. Pembantu Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutri} onChange={e=>setIncludePembantuPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutri && <><p className="text-xs">{officials.pembantuPembinaPutri}</p><select value={pembantuPutriApprovalType} onChange={e=>setPembantuPutriApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">4. Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembina} onChange={e=>setIncludePembina(e.target.checked)}/> Sertakan (opsional)</label>{includePembina && <><p className="text-xs">{officials.pembinaPutra}</p><select value={pembinaApprovalType} onChange={e=>setPembinaApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">5. Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembinaPutri} onChange={e=>setIncludePembinaPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembinaPutri && <><p className="text-xs">{officials.pembinaPutri}</p><select value={pembinaTambahanApprovalType} onChange={e=>setPembinaTambahanApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">2. Pembantu Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutra} onChange={e=>setIncludePembantuPutra(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutra && <><p className="text-xs">{officials.pembantuPembinaPutra}</p><select value={pembantuPutraApprovalType} onChange={e=>setPembantuPutraApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">3. Pembantu Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutri} onChange={e=>setIncludePembantuPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutri && <><p className="text-xs">{officials.pembantuPembinaPutri}</p><select value={pembantuPutriApprovalType} onChange={e=>setPembantuPutriApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">4. Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembina} onChange={e=>setIncludePembina(e.target.checked)}/> Sertakan (opsional)</label>{includePembina && <><p className="text-xs">{officials.pembinaPutra}</p><select value={pembinaApprovalType} onChange={e=>setPembinaApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">5. Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembinaPutri} onChange={e=>setIncludePembinaPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembinaPutri && <><p className="text-xs">{officials.pembinaPutri}</p><select value={pembinaTambahanApprovalType} onChange={e=>setPembinaTambahanApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
             </div>
 
             {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}

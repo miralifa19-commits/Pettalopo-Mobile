@@ -509,10 +509,10 @@ async function drawKetuaGudep(
   let y = topY - 4;
   layout.drawCentered(`${surat.approvalType || 'Mengetahui'},`, centerX, y, layout.fonts.bold, 11);
   y -= 14;
-  layout.drawCentered('Ketua Gugus Depan SMA Negeri 9 Maros', centerX, y, layout.fonts.bold, 10);
+  layout.drawCentered('Kepala SMA Negeri 9 Maros (Kamabigus)', centerX, y, layout.fonts.bold, 10);
 
   y -= 48;
-  if (surat.metodeTtd === 'digital' && surat.digitalSigner === 'kepala_sekolah' && qrImage) {
+  if (surat.metodeTtd === 'digital' && qrImage) {
     const qrSize = 38;
     layout.page.drawImage(qrImage, {
       x: centerX - qrSize / 2,
@@ -655,7 +655,7 @@ export async function createLetterPdf(
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
-    await layout.paragraph(surat.isiParagraf, {
+    await layout.paragraph(surat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''), {
       size: 12, lineHeight: 18, align: 'justify', spacingAfter: 9,
     });
 

@@ -470,9 +470,10 @@ function drawSignerBlock(
   y -= 3;
   if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
   if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
-  // QR membutuhkan ruang vertikal penuh; stempel berada di sisi kanan blok
-  // sehingga tidak perlu menghabiskan ruang tanda tangan sebesar QR.
-  y -= qrImage ? 42 : 15;
+  // Samakan tinggi area tanda tangan digital dan basah agar nama,
+  // garis tanda tangan, serta NIP sejajar dalam satu baris.
+  // Pada tanda tangan basah, ruang ini dibiarkan kosong untuk tanda tangan manual.
+  y -= 42;
   const safeName = cleanText(name);
   const nameSize = 10.5;
   const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
@@ -543,7 +544,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   // Hitung kebutuhan ruang berdasarkan tinggi nyata tiap blok (termasuk QR/NIP).
   const rowHeights = rows.map((members) => Math.max(...members.map((signer) => {
     const titleLineCount = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8).length;
-    return 13 + titleLineCount * 13 + 3 + (signer.qr ? 42 : 30) + 13 + (signer.id ? 11 : 0) + 6;
+    return 13 + titleLineCount * 13 + 3 + 42 + 13 + (signer.id ? 11 : 0) + 6;
   })));
   await layout.ensureSpace(rowHeights.reduce((sum, height) => sum + height, 0) + Math.max(0, rows.length - 1) * 5 + 10);
   let rowY = layout.y;

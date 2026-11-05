@@ -749,7 +749,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           ] as const).map(([key, label]) => (
             <label key={key} className="block space-y-1">
               <span className="text-xs font-bold text-slate-700">{label}</span>
-              <input value={suratSettings[key]} onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))} className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white" />
+              {key === 'pembinaPutra' ? (
+                <textarea
+                  rows={3}
+                  value={suratSettings[key]}
+                  onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))}
+                  placeholder="Masukkan jabatan Pembina Putra. Tekan Enter untuk baris baru."
+                  className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white resize-y"
+                />
+              ) : (
+                <input value={suratSettings[key]} onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))} className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white" />
+              )}
             </label>
           ))}
           <button type="button" onClick={() => setViewMode('dashboard')} className="w-full py-3 rounded-xl bg-[#c81e28] text-white text-sm font-bold">Selesai</button>

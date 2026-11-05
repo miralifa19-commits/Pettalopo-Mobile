@@ -96,6 +96,7 @@ export interface GeneratedSurat {
   
   includeTembusan: boolean;
   tembusanList: string[];
+  signatureGapCm?: number;
   approvalType?: 'Mengetahui' | 'Menyetujui';
   dewanApprovalType?: 'Mengetahui' | 'Menyetujui';
   pembinaApprovalType?: 'Mengetahui' | 'Menyetujui';
@@ -210,6 +211,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [pembantuPutriApprovalType, setPembantuPutriApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [ketuaGudepApprovalType, setKetuaGudepApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [kotaPengesahan, setKotaPengesahan] = useState('Maros');
+  const [signatureGapCm, setSignatureGapCm] = useState(0);
 
   // Metode Pengesahan
   const [metodeTtd, setMetodeTtd] = useState<'biasa' | 'digital' | 'stempel'>('digital');
@@ -426,6 +428,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeStempel,
         includeTembusan,
         tembusanList,
+        signatureGapCm,
         createdAt: new Date().toISOString()
       });
 
@@ -493,6 +496,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeStempel,
         includeTembusan,
         tembusanList,
+        signatureGapCm,
         createdAt: new Date().toISOString()
       });
     } else {
@@ -563,6 +567,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includeStempel,
         includeTembusan,
         tembusanList,
+        signatureGapCm,
         createdAt: new Date().toISOString()
       });
     }
@@ -578,7 +583,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
 
   const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, signatureGapCm, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
     const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
     const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
@@ -595,7 +600,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setIncludeKeteranganDetail(d.includeKeteranganDetail ?? false); setRincianKeteranganDetail(d.rincianKeteranganDetail ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
-    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
+    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
     setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setViewMode('form');
   };
@@ -1170,6 +1175,26 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div className="space-y-1"><label className="text-[11px] font-bold text-slate-700">Kota pengesahan <span className="text-[#c81e28]">*</span></label><input type="text" value={kotaPengesahan} onChange={(e) => setKotaPengesahan(e.target.value)} required placeholder="Maros" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white" /></div></div>
+
+            {/* Jarak hanya diatur ketika tepat dua penandatangan dipilih */}
+            { [includeDewan, includePembantuPutra, includePembantuPutri, includePembina, includePembinaPutri, includeKetuaGudep].filter(Boolean).length === 2 && (
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-700">Jarak antara dua TTD</label>
+                  <span className="text-xs font-bold text-[#c81e28]">{signatureGapCm.toFixed(1)} cm</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="8"
+                  step="0.5"
+                  value={signatureGapCm}
+                  onChange={(e) => setSignatureGapCm(Number(e.target.value))}
+                  className="w-full accent-[#c81e28]"
+                />
+                <p className="text-[10px] text-slate-500">Geser untuk mengatur posisi TTD kanan. Tulisan Mengetahui/Menyetujui otomatis tetap berada di titik tengah kedua TTD.</p>
+              </div>
+            )}
 
             {/* Semua pilihan penandatangan bersifat opsional dan independen */}
             <div className="space-y-3">

@@ -49,13 +49,16 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install Dependencies
-        run: bun install
+        run: npm install --legacy-peer-deps --no-package-lock
+
+      - name: Test PDF export with original letterhead and multi-page text
+        run: npm run test:pdf
 
       - name: Build Web Application
-        run: bun run build
+        run: npm run build
 
       - name: Create Android Project
-        run: bunx cap add android
+        run: npx cap add android
 
       - name: Apply Pettalopo Mobile App Icon
         run: |
@@ -121,7 +124,7 @@ jobs:
           PY
 
       - name: Sync Capacitor
-        run: bunx cap sync android
+        run: npx cap sync android
 
       - name: Keep Android system splash styling without Capacitor splash plugin
         run: |

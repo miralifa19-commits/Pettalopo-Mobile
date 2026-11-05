@@ -539,18 +539,31 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const row = Math.floor(index / 2);
     const rowMembers = Math.min(2, signers.length - row * 2);
     const isLastSingle = rowMembers === 1;
-    const isPembinaPutri = /pembina\s+putri/i.test(signer.title);
-    const align: 'left' | 'right' | 'right-block-left' = isPembinaPutri ? 'right-block-left' : (rowMembers === 2 && index % 2 === 1 ? 'right' : 'left');
+    const isPembinaPutra = /pembina\s+putra/i.test(signer.title) && !/pembantu/i.test(signer.title);
+    const isPembinaPutri = /pembina\s+putri/i.test(signer.title) && !/pembantu/i.test(signer.title);
+    const rowSigners = signers.slice(row * 2, row * 2 + rowMembers);
+    const rowHasPutra = rowSigners.some(item => /pembina\s+putra/i.test(item.title) && !/pembantu/i.test(item.title));
+    const rowHasPutri = rowSigners.some(item => /pembina\s+putri/i.test(item.title) && !/pembantu/i.test(item.title));
+    const rightColumnX = SIDE_MARGIN + columnWidth + gap;
     let x = SIDE_MARGIN;
-
-    if (rowMembers === 2) {
-      x = SIDE_MARGIN + (index % 2) * (columnWidth + gap);
-    } else if (isPembinaPutri) {
-      x = SIDE_MARGIN + columnWidth + gap;
+    if (isPembinaPutri) {
+      x = rightColumnX;
+    } else if (isPembinaPutra) {
+      x = SIDE_MARGIN;
+    } else if (rowMembers === 2 && rowHasPutra) {
+      x = rightColumnX;
+    } else if (rowMembers === 2 && rowHasPutri) {
+      x = SIDE_MARGIN;
+    } else if (rowMembers === 2 && index % 2 === 1) {
+      x = rightColumnX;
     } else if (signers.length > 1 && isLastSingle) {
-      // Penandatangan ketiga/kelima dan seterusnya berada di tengah baris.
+      // Penandatangan tunggal di baris terakhir berada di tengah.
       x = SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
     }
+    const isRightColumn = Math.abs(x - rightColumnX) < 0.5;
+    const align: 'left' | 'right' | 'right-block-left' = isPembinaPutri
+      ? 'right-block-left'
+      : (rowMembers === 2 && isRightColumn ? 'right' : 'left');
 
     const y = startY - row * rowHeight;
     bottoms.push(drawSignerBlock(

@@ -1,6 +1,6 @@
 import { SkuItem, SkkItem, AgendaEvent, UserProfile, LogbookEntry, AttendanceRecord } from '../types';
 
-export const LOGO_IMAGE_PATH = '/assets/pettalopo-logo.png';
+export const LOGO_IMAGE_PATH = `${import.meta.env.BASE_URL}assets/pettalopo-logo.png`;
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
   name: 'Amiruddin S.',

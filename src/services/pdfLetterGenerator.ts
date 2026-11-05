@@ -407,8 +407,10 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const signers: Array<{ approval: string; title: string; name: string; id?: string; qr?: PDFImage; stamp?: boolean }> = [];
   const fallback = surat.approvalType || 'Mengetahui';
   if (surat.includeDewan && surat.dewanNama) signers.push({ approval: surat.dewanApprovalType || fallback, title: surat.dewanJabatan, name: surat.dewanNama, id: surat.dewanNta });
-  if (surat.includePembina && surat.pembinaNama) signers.push({ approval: surat.pembinaApprovalType || fallback, title: surat.pembinaJabatan, name: surat.pembinaNama, id: surat.pembinaNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
-  if (surat.includePembinaTambahan && surat.pembinaTambahanJabatan && surat.pembinaTambahanNama) signers.push({ approval: surat.pembinaTambahanApprovalType || fallback, title: surat.pembinaTambahanJabatan, name: surat.pembinaTambahanNama, id: surat.pembinaTambahanNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+  if (surat.includePembantuPutra && surat.pembantuPutraNama) signers.push({ approval: surat.pembantuPutraApprovalType || fallback, title: surat.pembantuPutraJabatan || 'Pembantu Pembina Gugus Depan 10.035', name: surat.pembantuPutraNama });
+  if (surat.includePembantuPutri && surat.pembantuPutriNama) signers.push({ approval: surat.pembantuPutriApprovalType || fallback, title: surat.pembantuPutriJabatan || 'Pembantu Pembina Gugus Depan 10.036', name: surat.pembantuPutriNama });
+  if (surat.includePembina && surat.pembinaNama) signers.push({ approval: surat.pembinaApprovalType || fallback, title: surat.pembinaJabatan || 'Pembina Gugus Depan 10.035', name: surat.pembinaNama, id: surat.pembinaNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+  if (surat.includePembinaTambahan && surat.pembinaTambahanNama) signers.push({ approval: surat.pembinaTambahanApprovalType || fallback, title: surat.pembinaTambahanJabatan || 'Pembina Gugus Depan 10.036', name: surat.pembinaTambahanNama, id: surat.pembinaTambahanNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
   if (surat.includeKetuaGudep && surat.ketuaGudepNama) signers.push({ approval: surat.ketuaGudepApprovalType || fallback, title: 'Ketua Mabigus UPT SMA Negeri 9 Maros', name: surat.ketuaGudepNama, id: surat.ketuaGudepNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
   if (!signers.length) return;
   const gap = 18;
@@ -421,7 +423,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   for (let row = 0; row < rows; row += 1) {
     const group = signers.slice(row * 2, row * 2 + 2);
     const y = startY - row * rowHeight;
-    const xs = group.length === 1 && signers.length === 3
+    const xs = group.length === 1 && signers.length % 2 === 1
       ? [SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2]
       : group.map((_, index) => SIDE_MARGIN + index * (columnWidth + gap));
     group.forEach((signer, index) => bottoms.push(drawSignerBlock(layout, xs[index], columnWidth, y, signer.approval, signer.title, signer.name, signer.id, signer.qr, Boolean(signer.stamp))));

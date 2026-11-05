@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import QRCode from 'qrcode';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { GeneratedSurat } from '../src/components/views/PersuratanAmbalanView';
@@ -40,6 +42,13 @@ const base: GeneratedSurat = {
   dewanNama: 'Amiruddin S.',
   dewanNta: 'NTA. 10.035.001',
   includePembina: true,
+  includePembinaTambahan: true,
+  pembinaTambahanJabatan: 'Pembina Putri',
+  pembinaTambahanNama: 'Pembina Putri',
+  pembinaTambahanNip: 'NIP. 19820101 200601 2 002',
+  includeTtdBiasa: true,
+  includeQrCode: true,
+  qrCodeDataUrl: '',
   pembinaJabatan: 'Pembina Gugus Depan 10.035',
   pembinaNama: 'Pembina Putra',
   pembinaNip: 'NIP. 19800101 200501 1 001',
@@ -78,8 +87,24 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
   console.log('PASS ' + label + ': ' + expectedPages + ' halaman, kop asli ada di setiap halaman, ukuran tetap, teks dapat diseleksi/diekstrak.');
 }
 
+base.qrCodeDataUrl = await QRCode.toDataURL('Pettalopo Mobile - Uji QR - 001/10.035/C/2026', { width: 240, margin: 2 });
 const shortBytes = await createLetterPdf(base, loadTestAsset);
+await mkdir('artifacts', { recursive: true });
+await writeFile('artifacts/contoh-tata-letak-persuratan.pdf', shortBytes);
 await inspectPdf(shortBytes, 1, 'Surat pendek');
+const shortParsed = await pdfjsLib.getDocument({ data: shortBytes }).promise;
+const shortPage = await shortParsed.getPage(1);
+const shortText = await shortPage.getTextContent();
+const items = shortText.items.filter((item): item is typeof item & { str: string; transform: number[] } => 'str' in item && 'transform' in item);
+const titlePutri = items.find(item => item.str.includes('Pembina Putri'));
+const namePutri = items.find(item => item.str === 'Pembina Putri');
+const nipPutri = items.find(item => item.str.includes('19820101 200601 2 002'));
+assert.ok(titlePutri && namePutri && nipPutri, 'Blok Pembina Putri harus memuat jabatan, nama, dan NIP');
+assert.ok(Math.abs(titlePutri.transform[4] - namePutri.transform[4]) < 0.5, 'Jabatan dan nama Pembina Putri harus rata kiri pada blok yang sama');
+assert.ok(Math.abs(titlePutri.transform[4] - nipPutri.transform[4]) < 0.5, 'NIP Pembina Putri harus rata kiri pada blok yang sama');
+assert.ok(items.some(item => item.str === 'Mengetahui' && Math.abs(item.transform[4] - titlePutri.transform[4]) < 0.5), 'Mengetahui Pembina Putri harus sejajar dengan jabatan');
+console.log('PASS Tata letak Pembina Putri: Mengetahui, jabatan, nama, dan NIP sejajar kiri pada kolom kanan.');
+
 
 // Test unsupported characters in fields that are drawn directly (date,
 // recipient, signer names), not only in wrapped body paragraphs.

@@ -454,12 +454,12 @@ async function drawSignatures(
     const rightCenter = SIDE_MARGIN + columnWidth + gap + columnWidth / 2;
     bottomYs.push(drawSignerBlock(
       layout, leftCenter, columnWidth, topY,
-      surat.dewanJabatan, surat.dewanNama, surat.dewanNta,
+      `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
       undefined, false,
     ));
     bottomYs.push(drawSignerBlock(
       layout, rightCenter, columnWidth, topY,
-      surat.pembinaJabatan, surat.pembinaNama, surat.pembinaNip,
+      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
       surat.metodeTtd === 'digital' ? qrImage : undefined,
       surat.includeStempel,
     ));
@@ -468,13 +468,13 @@ async function drawSignatures(
     if (hasDewan) {
       bottomYs.push(drawSignerBlock(
         layout, centerX, columnWidth, topY,
-        surat.dewanJabatan, surat.dewanNama, surat.dewanNta,
+        `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
         undefined, false,
       ));
     } else {
       bottomYs.push(drawSignerBlock(
         layout, centerX, columnWidth, topY,
-        surat.pembinaJabatan, surat.pembinaNama, surat.pembinaNip,
+        `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaJabatan}`, surat.pembinaNama, surat.pembinaNip,
         surat.metodeTtd === 'digital' ? qrImage : undefined,
         surat.includeStempel,
       ));
@@ -482,6 +482,19 @@ async function drawSignatures(
   }
 
   layout.y = Math.min(...bottomYs);
+
+  if (surat.includePembinaTambahan && surat.pembinaTambahanJabatan && surat.pembinaTambahanNama) {
+    await layout.ensureSpace(145);
+    const leftCenter = SIDE_MARGIN + columnWidth / 2;
+    layout.y = drawSignerBlock(
+      layout, leftCenter, columnWidth, layout.y - 10,
+      `${surat.approvalType || 'Mengetahui'},\n${surat.pembinaTambahanJabatan}`,
+      surat.pembinaTambahanNama,
+      surat.pembinaTambahanNip,
+      surat.metodeTtd === 'digital' ? qrImage : undefined,
+      surat.includeStempel,
+    );
+  }
 }
 
 async function drawKetuaGudep(
@@ -595,7 +608,6 @@ export async function createLetterPdf(
 
     stage = 'Menata identitas surat dan tanggal';
     onStage(stage);
-    const identityTop = layout.y;
     const identityRows: Array<{ label: string; value: string; bold?: boolean }> = [];
     if (surat.includeNomor) identityRows.push({ label: 'Nomor', value: surat.nomorSurat });
     if (surat.includeLampiran) identityRows.push({ label: 'Lampiran', value: surat.lampiran });

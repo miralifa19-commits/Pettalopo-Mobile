@@ -65,7 +65,7 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
     assert.ok(Math.abs(size.height - 828) < 0.1, label + ': tinggi halaman berubah');
   }
 
-  const parsed = await pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+  const parsed = await pdfjsLib.getDocument({ data: bytes }).promise;
   const pageTexts: string[] = [];
   for (let pageNumber = 1; pageNumber <= parsed.numPages; pageNumber += 1) {
     const page = await parsed.getPage(pageNumber);

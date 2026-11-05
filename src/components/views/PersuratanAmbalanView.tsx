@@ -86,7 +86,7 @@ export interface GeneratedSurat {
   ketuaGudepNama: string;
   ketuaGudepNip?: string;
 
-  metodeTtd: 'biasa' | 'digital' | 'stempel';
+  metodeTtd: 'biasa' | 'digital';
   digitalSigner: DigitalSignerType;
   digitalSignerName: string;
   digitalSignerTitle: string;
@@ -581,7 +581,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         digitalSignerName: signerName,
         digitalSignerTitle: signerTitle,
         qrCodeDataUrl: qrDataUrl,
-        includeStempel,
+        includeStempel: false,
         includeTembusan,
         tembusanList,
         signatureGapCm,
@@ -637,7 +637,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
     setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
-    setIncludeStempel(false); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
+    setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setWizardStep(1); setViewMode('form');
   };
   const handleDeleteDraft = (id: string) => {
@@ -1277,7 +1277,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select></>}</div>
             </div>
 
-            {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}
+            {/* Pilihan Metode Pengesahan: Ttd Biasa atau Ttd Digital */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <label className="text-xs font-bold text-slate-800 block">
                 Pilihan Format Tanda Tangan

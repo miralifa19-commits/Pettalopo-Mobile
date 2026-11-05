@@ -1541,12 +1541,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             {/* TANDA TANGAN PENGESAHAN DENGAN ADAPTASI DINAMIS */}
             <div className="pt-4 text-left font-sans" style={{ fontSize: '11pt' }}>
-              <p className="font-bold mb-2">{activeSurat.approvalType || 'Mengetahui'},</p>
               
               {/* Jika Dewan DAN Pembina aktif: Render 2 kolom (Dewan Kiri, Pembina Kanan) */}
               {activeSurat.includeDewan && activeSurat.includePembina && (
                 <div className="grid grid-cols-2 gap-4 pb-6">
                   <div>
+                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
                     <div className="h-16 flex items-center justify-center">
                       {/* Spasi TTD Dewan */}
@@ -1556,6 +1556,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </div>
 
                   <div>
+                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
                     <div className="h-16 flex items-center justify-center relative">
                       {activeSurat.includeStempel && (
@@ -1591,6 +1592,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {activeSurat.includeDewan && !activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
                   <div className="min-w-[220px] text-center">
+                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
                     <div className="h-16 flex items-center justify-center">
                       {/* Spasi TTD Dewan */}
@@ -1605,6 +1607,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {!activeSurat.includeDewan && activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
                   <div className="min-w-[240px] text-center">
+                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
                     <div className="h-16 flex items-center justify-center relative">
                       {activeSurat.includeStempel && (
@@ -1639,6 +1642,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
               {activeSurat.includePembinaTambahan && (
                 <div className="pt-2 min-w-[240px]">
+                  <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                   <p className="font-bold">{activeSurat.pembinaTambahanJabatan}</p>
                   <div className="my-2 h-16 flex items-center justify-start">
                     {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR Code tanda tangan digital" className="w-14 h-14" />}

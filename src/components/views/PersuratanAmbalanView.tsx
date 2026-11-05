@@ -329,6 +329,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const handleGenerateSurat = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Lindungi alur wizard: submit/Enter dari halaman 1 atau 2 hanya boleh
+    // berpindah ke langkah berikutnya, bukan langsung membuat pratinjau.
+    if (wizardStep < 3) {
+      setWizardStep((wizardStep + 1) as 2 | 3);
+      return;
+    }
+
     // Resolve Dewan (Hanya jika includeDewan aktif)
     const dewanOptions: Record<string, { title: string; member?: string; nta?: string }> = {
       pradana_pa: { title: 'Pradana', member: dewanList.find(d => d.id === 'pradana_pa')?.memberName, nta: 'NTA. 10.035.001' },

@@ -540,15 +540,18 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   else if (pembinaPutri) rows.push([pembinaPutri]);
   if (kepalaSekolah) rows.push([kepalaSekolah]);
 
-  // Jarak antarbaris disesuaikan dengan tinggi blok tanda tangan yang dipadatkan.
-  // Ini menjaga hierarki vertikal tanpa memaksa surat pendek pindah halaman.
-  const rowHeight = 92;
-  await layout.ensureSpace(rows.length * rowHeight + 24);
+  // Hitung kebutuhan ruang berdasarkan tinggi nyata tiap blok (termasuk QR/NIP).
+  const rowHeights = rows.map((members) => Math.max(...members.map((signer) => {
+    const titleLineCount = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8).length;
+    return 13 + titleLineCount * 13 + 3 + (signer.qr ? 42 : 30) + 13 + (signer.id ? 11 : 0) + 6;
+  })));
+  await layout.ensureSpace(rowHeights.reduce((sum, height) => sum + height, 0) + Math.max(0, rows.length - 1) * 5 + 24);
   let rowY = layout.y;
   const bottoms: number[] = [];
 
-  rows.forEach((members) => {
+  rows.forEach((members, rowIndex) => {
     const y = rowY;
+    const rowBottoms: number[] = [];
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
     if (sharedApproval) layout.drawCentered(members[0].approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
 
@@ -565,16 +568,17 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         else side = columnIndex === 0 ? 'right' : 'left';
       }
       const x = side === 'right' ? layout.width - SIDE_MARGIN - signerWidth : SIDE_MARGIN;
-      bottoms.push(drawSignerBlock(
+      const bottom = drawSignerBlock(
         layout, x, signerWidth, sharedApproval ? y - 13 : y,
         sharedApproval ? undefined : signer.approval + ',', signer.title, signer.name,
         signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth,
-      ));
+      );
+      bottoms.push(bottom);
+      rowBottoms.push(bottom);
     });
-    rowY = Math.min(...bottoms) - (rowHeight - 5);
+    rowY = Math.min(...rowBottoms) - 5;
   });
-  layout.y = Math.min(...bottoms) - 5;
-}
+
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;
 

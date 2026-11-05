@@ -460,12 +460,25 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   };
 
   // Kepala sekolah ditempatkan di bagian paling atas kelompok pengesahan.
-  await drawGroup(kepala, kepala.length === 1 ? kepala[0].approval : kepala[0]?.approval);
-  await drawGroup(dewan, 'Hormat Kami');
+  await drawGroup(kepala, kepala[0]?.approval);
   const pembinaApproval = pembina.length > 1
     ? (pembina.every((signer) => signer.approval === pembina[0].approval) ? pembina[0].approval : 'Mengetahui / Menyetujui')
     : pembina[0]?.approval;
-  await drawGroup(pembina, pembinaApproval);
+
+  // Jika dewan dan satu pembina sama-sama menandatangani, letakkan sejajar
+  // agar surat pendek tetap satu halaman dan kedua kalimat pengesahan jelas.
+  if (dewan.length === 1 && pembina.length === 1) {
+    await layout.ensureSpace(130);
+    const xs = [SIDE_MARGIN, SIDE_MARGIN + columnWidth + gap];
+    const bottoms = [
+      drawSignerBlock(layout, xs[0], columnWidth, layout.y, 'Hormat Kami', dewan[0].title, dewan[0].name, dewan[0].id, dewan[0].qr, Boolean(dewan[0].stamp)),
+      drawSignerBlock(layout, xs[1], columnWidth, layout.y, pembinaApproval, pembina[0].title, pembina[0].name, pembina[0].id, pembina[0].qr, Boolean(pembina[0].stamp)),
+    ];
+    layout.y = Math.min(...bottoms) - 5;
+  } else {
+    await drawGroup(dewan, 'Hormat Kami');
+    await drawGroup(pembina, pembinaApproval);
+  }
 }
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {

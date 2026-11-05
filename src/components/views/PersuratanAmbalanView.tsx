@@ -1448,146 +1448,26 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             <div className="pt-3 text-center" style={{ fontSize: '12pt' }}><p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p></div>
 
-            {/* TANDA TANGAN PENGESAHAN DENGAN ADAPTASI DINAMIS */}
-            <div className="pt-4 text-left font-sans" style={{ fontSize: '11pt' }}>
-              
-              {/* Jika Dewan DAN Pembina aktif: Render 2 kolom (Dewan Kiri, Pembina Kanan) */}
-              {activeSurat.includeDewan && activeSurat.includePembina && (
-                <div className="grid grid-cols-2 gap-4 pb-6">
-                  <div>
-                    <p className="font-bold">{activeSurat.dewanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                    <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                    <div className="h-16 flex items-center justify-start">
-                      {/* Spasi TTD Dewan */}
-                    </div>
-                    <p className="font-bold underline">{activeSurat.dewanNama}</p>
-                    <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
+            {/* Pratinjau penandatangan: hanya yang dipilih yang ditampilkan */}
+            <div className="pt-4 grid grid-cols-2 gap-x-5 gap-y-8 text-left font-sans" style={{fontSize:'11pt'}}>
+              {[
+                {show:activeSurat.includeDewan, approval:activeSurat.dewanApprovalType || activeSurat.approvalType, title:activeSurat.dewanJabatan, name:activeSurat.dewanNama, id:activeSurat.dewanNta},
+                {show:activeSurat.includePembantuPutra, approval:activeSurat.pembantuPutraApprovalType, title:activeSurat.pembantuPutraJabatan || 'Pembantu Pembina Gugus Depan 10.035', name:activeSurat.pembantuPutraNama},
+                {show:activeSurat.includePembantuPutri, approval:activeSurat.pembantuPutriApprovalType, title:activeSurat.pembantuPutriJabatan || 'Pembantu Pembina Gugus Depan 10.036', name:activeSurat.pembantuPutriNama},
+                {show:activeSurat.includePembina, approval:activeSurat.pembinaApprovalType, title:activeSurat.pembinaJabatan || 'Pembina Gugus Depan 10.035', name:activeSurat.pembinaNama, id:activeSurat.pembinaNip},
+                {show:activeSurat.includePembinaTambahan, approval:activeSurat.pembinaTambahanApprovalType, title:activeSurat.pembinaTambahanJabatan || 'Pembina Gugus Depan 10.036', name:activeSurat.pembinaTambahanNama, id:activeSurat.pembinaTambahanNip},
+                {show:activeSurat.includeKetuaGudep, approval:activeSurat.ketuaGudepApprovalType, title:'Ketua Mabigus UPT SMA Negeri 9 Maros', name:activeSurat.ketuaGudepNama, id:activeSurat.ketuaGudepNip}
+              ].filter(signer => signer.show && signer.name).map((signer, index, list) => (
+                <div key={index} className={list.length % 2 === 1 && index === list.length - 1 ? 'col-span-2 mx-auto w-1/2' : ''}>
+                  <p className="font-bold">{signer.approval || activeSurat.approvalType || 'Mengetahui'},</p>
+                  <p className="font-bold">{signer.title},</p>
+                  <div className="h-16 flex items-center justify-start">
+                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}
                   </div>
-
-                  <div>
-                    <p className="font-bold">{activeSurat.pembinaApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                    <p className="font-bold">{activeSurat.pembinaJabatan},</p>
-                    <div className="h-16 flex items-center justify-start relative">
-                      {activeSurat.includeStempel && (
-                        <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-start text-[7px] font-black uppercase text-left p-1 pointer-events-none rotate-[-8deg] opacity-80">
-                          <span>GERAKAN PRAMUKA</span>
-                          <span>GUDEP 10-035/10-036</span>
-                          <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
-                        </div>
-                      )}
-
-                      {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
-                        <div
-                          onClick={() => setVerificationModalSurat(activeSurat)}
-                          className="cursor-pointer text-left group"
-                          title="Klik untuk verifikasi keaslian dokumen"
-                        >
-                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 " />
-                          <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
-                        </div>
-                      ) : (
-                        <div className="h-16"></div>
-                      )}
-                    </div>
-                    <p className="font-bold underline">{activeSurat.pembinaNama}</p>
-                    {activeSurat.pembinaNip && (
-                      <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
-                    )}
-                  </div>
+                  <p className="font-bold underline">{signer.name}</p>
+                  {signer.id && <p className="text-[10px] text-slate-500">{signer.id}</p>}
                 </div>
-              )}
-
-              {/* Jika HANYA Dewan yang aktif (Pembina tidak aktif) */}
-              {activeSurat.includeDewan && !activeSurat.includePembina && (
-                <div className="flex justify-start pb-6">
-                  <div className="min-w-[220px] text-left">
-                    <p className="font-bold">{activeSurat.dewanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                    <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                    <div className="h-16 flex items-center justify-start">
-                      {/* Spasi TTD Dewan */}
-                    </div>
-                    <p className="font-bold underline">{activeSurat.dewanNama}</p>
-                    <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Jika HANYA Pembina yang aktif (Dewan TIDAK diceklis - Opsional) */}
-              {!activeSurat.includeDewan && activeSurat.includePembina && (
-                <div className="flex justify-start pb-6">
-                  <div className="min-w-[240px] text-left">
-                    <p className="font-bold">{activeSurat.pembinaApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                    <p className="font-bold">{activeSurat.pembinaJabatan},</p>
-                    <div className="h-16 flex items-center justify-start relative">
-                      {activeSurat.includeStempel && (
-                        <div className="absolute -top-1 right-2 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-start text-[7px] font-black uppercase text-left p-1 pointer-events-none rotate-[-8deg] opacity-80">
-                          <span>GERAKAN PRAMUKA</span>
-                          <span>GUDEP 10-035/10-036</span>
-                          <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
-                        </div>
-                      )}
-
-                      {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
-                        <div
-                          onClick={() => setVerificationModalSurat(activeSurat)}
-                          className="cursor-pointer text-left group"
-                          title="Klik untuk verifikasi keaslian dokumen"
-                        >
-                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 " />
-                          <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
-                        </div>
-                      ) : (
-                        <div className="h-16"></div>
-                      )}
-                    </div>
-                    <p className="font-bold underline">{activeSurat.pembinaNama}</p>
-                    {activeSurat.pembinaNip && (
-                      <p className="text-[10px] text-slate-500 font-mono">{activeSurat.pembinaNip}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-
-              {activeSurat.includePembinaTambahan && (
-                <div className="pt-2 min-w-[240px]">
-                  <p className="font-bold">{activeSurat.pembinaTambahanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                  <p className="font-bold">{activeSurat.pembinaTambahanJabatan}</p>
-                  <div className="my-2 h-16 flex items-center justify-start">
-                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR Code tanda tangan digital" className="w-14 h-14" />}
-                  </div>
-                  <p className="font-bold underline">{activeSurat.pembinaTambahanNama}</p>
-                  {activeSurat.pembinaTambahanNip && <p className="text-[10px] text-slate-500">{activeSurat.pembinaTambahanNip}</p>}
-                </div>
-              )}
-
-              {/* Ketua Gugus Depan */}
-              {activeSurat.includeKetuaGudep && (
-                <div className="pt-2 inline-block min-w-[280px]">
-                  <p className="font-bold">{activeSurat.ketuaGudepApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                  <p className="font-bold text-xs">Kepala SMA Negeri 9 Maros (Kamabigus)</p>
-                  
-                  <div className="my-2 h-16 flex items-center justify-start">
-                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
-                      <div
-                        onClick={() => setVerificationModalSurat(activeSurat)}
-                        className="cursor-pointer text-left group"
-                        title="Klik untuk verifikasi keaslian dokumen"
-                      >
-                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-14 h-14 " />
-                        <span className="text-[7px] font-mono text-slate-400 block">Scan Dokumen Asli</span>
-                      </div>
-                    ) : (
-                      <div className="h-12"></div>
-                    )}
-                  </div>
-
-                  <p className="font-bold underline text-sm">{activeSurat.ketuaGudepNama}</p>
-                  {activeSurat.ketuaGudepNip && (
-                    <p className="text-[10px] text-slate-500 font-mono">{activeSurat.ketuaGudepNip}</p>
-                  )}
-                </div>
-              )}
+              ))}
             </div>
 
             {/* Tembusan (Opsional) */}

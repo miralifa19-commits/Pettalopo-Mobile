@@ -464,7 +464,7 @@ async function drawSignatures(
       surat.includeStempel,
     ));
   } else {
-    const centerX = layout.width - SIDE_MARGIN - columnWidth / 2;
+    const centerX = SIDE_MARGIN + columnWidth / 2;
     if (hasDewan) {
       bottomYs.push(drawSignerBlock(
         layout, centerX, columnWidth, topY,
@@ -492,17 +492,10 @@ async function drawKetuaGudep(
   if (!surat.includeKetuaGudep) return;
   await layout.ensureSpace(126);
 
-  const centerX = layout.width / 2;
+  const centerX = SIDE_MARGIN + 125;
   const topY = layout.y;
-  layout.page.drawLine({
-    start: { x: centerX - 125, y: topY - 2 },
-    end: { x: centerX + 125, y: topY - 2 },
-    thickness: 0.5,
-    color: rgb(0.82, 0.84, 0.87),
-  });
-
-  let y = topY - 17;
-  layout.drawCentered('Mengetahui,', centerX, y, layout.fonts.bold, 11);
+  let y = topY - 4;
+  layout.drawCentered(`${surat.approvalType || 'Mengetahui'},`, centerX, y, layout.fonts.bold, 11);
   y -= 14;
   layout.drawCentered('Ketua Gugus Depan SMA Negeri 9 Maros', centerX, y, layout.fonts.bold, 10);
 
@@ -541,12 +534,6 @@ async function drawKetuaGudep(
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
   if (!surat.includeTembusan || !surat.tembusanList?.length) return;
   await layout.ensureSpace(30);
-  layout.page.drawLine({
-    start: { x: SIDE_MARGIN, y: layout.y + 7 },
-    end: { x: layout.width - SIDE_MARGIN, y: layout.y + 7 },
-    thickness: 0.5,
-    color: rgb(0.82, 0.84, 0.87),
-  });
   layout.y -= 5;
   await layout.paragraph('TEMBUSAN KEPADA YTH :', {
     size: 8.5,
@@ -617,9 +604,7 @@ export async function createLetterPdf(
       identityRows.push({ label: 'Keterangan', value: surat.keteranganIdentitas });
     }
 
-    if (surat.includeTanggal) {
-      layout.drawRight(`Maros, ${surat.tanggalSurat}`, identityTop, regular, 12);
-    }
+    // Tanggal pengesahan ditampilkan sekali di sisi kiri, dekat blok tanda tangan.
 
     for (const row of identityRows) {
       await layout.labelValueRow({
@@ -654,7 +639,7 @@ export async function createLetterPdf(
       size: 12, font: italic, lineHeight: 16, spacingAfter: 0,
     });
     await layout.paragraph('Salam Pramuka,', {
-      size: 12, font: bold, lineHeight: 16, spacingAfter: 8,
+      size: 12, font: regular, lineHeight: 16, align: 'center', spacingAfter: 8,
     });
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
@@ -664,14 +649,14 @@ export async function createLetterPdf(
     });
 
     const bulletRows = [
-      { label: `${bulletPrefix(surat.bulletStyle, 0)} Hari / Tanggal`, value: surat.rincianHariTanggal },
-      { label: `${bulletPrefix(surat.bulletStyle, 1)} Waktu`, value: surat.rincianWaktu },
+      { label: 'Hari / Tanggal', value: surat.rincianHariTanggal },
+      { label: 'Waktu', value: surat.rincianWaktu },
     ];
     if (surat.includeTempat) {
-      bulletRows.push({ label: `${bulletPrefix(surat.bulletStyle, 2)} Tempat`, value: surat.rincianTempat });
+      bulletRows.push({ label: 'Tempat', value: surat.rincianTempat });
     }
     if (surat.includeKeteranganAcara) {
-      bulletRows.push({ label: `${bulletPrefix(surat.bulletStyle, 3)} Keterangan`, value: surat.rincianKeteranganAcara });
+      bulletRows.push({ label: 'Agenda', value: surat.rincianKeteranganAcara });
     }
 
     for (const row of bulletRows) {
@@ -699,11 +684,8 @@ export async function createLetterPdf(
     await layout.paragraph('Wassalamu’alaikum Warahmatullahi Wabarakatuh', {
       size: 12, font: italic, lineHeight: 16, spacingAfter: 0,
     });
-    await layout.paragraph('Salam Pramuka.', {
-      size: 12, font: bold, lineHeight: 16, spacingAfter: 8,
-    });
     await layout.ensureSpace(18);
-    layout.drawRight(`Ditetapkan di Maros pada tanggal ${surat.tanggalSurat}`, layout.y, regular, 12);
+    layout.drawText(`${surat.kotaPengesahan || 'Maros'}, ${surat.tanggalSurat}`, SIDE_MARGIN, layout.y, regular, 12);
     layout.y -= 20;
 
     stage = 'Menyematkan QR dan menata tanda tangan';

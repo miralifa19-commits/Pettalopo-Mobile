@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { createLetterPdf, PdfExportStageError } from '../../services/pdfLetterGenerator';
 import { deliverPdfFile } from '../../services/pdfFileDelivery';
@@ -231,6 +231,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState('');
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
+  const [isPreparingPreview, setIsPreparingPreview] = useState(false);
+  const [previewPdfError, setPreviewPdfError] = useState('');
   
   // AI Generation Progress State (0 - 100%)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -239,8 +242,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   
   // Verification Modal State
   const [verificationModalSurat, setVerificationModalSurat] = useState<GeneratedSurat | null>(null);
-
-  const letterRef = useRef<HTMLDivElement | null>(null);
 
   // Helpers for bullet indicators
   const getBulletPrefix = (style: 'titik' | 'nomor' | 'abcd' | 'strip', index: number) => {
@@ -652,6 +653,34 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
 
   const activeSurat = previewSuratList[activePreviewIndex] || previewSuratList[0];
+
+  useEffect(() => {
+    if (viewMode !== 'preview' || !activeSurat) {
+      setPdfPreviewUrl('');
+      setPreviewPdfError('');
+      setIsPreparingPreview(false);
+      return;
+    }
+    let cancelled = false;
+    let objectUrl = '';
+    setIsPreparingPreview(true);
+    setPreviewPdfError('');
+    setPdfPreviewUrl('');
+    createLetterPdf(activeSurat).then((bytes) => {
+      if (cancelled) return;
+      const blob = new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: 'application/pdf' });
+      objectUrl = URL.createObjectURL(blob);
+      setPdfPreviewUrl(objectUrl);
+    }).catch((error) => {
+      if (!cancelled) setPreviewPdfError(error instanceof Error ? error.message : String(error));
+    }).finally(() => {
+      if (!cancelled) setIsPreparingPreview(false);
+    });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [viewMode, activeSurat?.id, activeSurat?.createdAt]);
 
   return (
     <div className="space-y-4 pb-28 font-sans">
@@ -1373,176 +1402,24 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
           </div>
 
-          {/* KERTAS RESMI SURAT (STANDAR A4 GERAKAN PRAMUKA) */}
-          <div
-            ref={letterRef}
-            className="bg-white w-full max-w-[794px] min-h-[1123px] mx-auto px-7 py-9 sm:px-14 sm:py-14 rounded-none border border-slate-300 shadow-sm text-black font-serif leading-normal select-text"
-            style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt' }}
-          >
-            {/* KOP SURAT ASLI MENGGUNAKAN INLINE BASE64 LOGO (100% BEBAS DARI MASALAH CORS / JARINGAN) */}
-            <div className="border-b-[3px] border-black pb-1">
-              <div className="flex items-center justify-between gap-3">
-                {/* Logo Tunas Kelapa Kiri */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
-                  <img
-                    src={TUNAS_KELAPA_BASE64}
-                    alt="Logo Tunas Kelapa"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                {/* Teks Kop Tengah */}
-                <div className="text-center flex-1 leading-tight px-1" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                  <h2 className="text-base sm:text-xl font-black uppercase tracking-wider text-black">
-                    GERAKAN PRAMUKA
-                  </h2>
-                  <h3 className="text-sm sm:text-lg font-black uppercase tracking-wide text-black mt-0.5">
-                    GUGUS DEPAN {activeSurat.gudepType === '10.035' ? '10-035' : activeSurat.gudepType === '10.036' ? '10-036' : '10-035 / 10-036'}
-                  </h3>
-                  <h1 className="text-base sm:text-xl font-extrabold uppercase tracking-tight text-black mt-0.5">
-                    PANGKALAN SMA NEGERI 9 MAROS
-                  </h1>
-                  <p className="text-[9px] sm:text-[10px] text-black mt-1 italic font-sans font-normal leading-tight">
-                    ( sekretariat : Jl. Pattene, Desa Pa&apos;bentengang, Dusun ujung bulo, Kec. Marusu, Kab Maros )
-                  </p>
-                </div>
-
-                {/* Logo WOSM Kanan */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
-                  <img
-                    src={WOSM_BASE64}
-                    alt="Logo WOSM Pramuka Dunia"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-
-              {/* Garis Ganda Pembatas Kop */}
-              <div className="w-full mt-2">
-                <div className="w-full border-t-[2.5px] border-black"></div>
-                <div className="w-full border-t-[1px] border-black mt-[1.5px]"></div>
-              </div>
-            </div>
-
-            {/* Identitas Surat: Nomor, Lampiran, Perihal, Keterangan (Kiri) & Tanggal (Kanan Sejajar Nomor) */}
-            <div className="pt-4 flex justify-between items-start" style={{ fontSize: '12pt' }}>
-              <div className="space-y-1">
-                {activeSurat.includeNomor && (
-                  <p>
-                    <span className="inline-block w-24">Nomor</span> : {activeSurat.nomorSurat}
-                  </p>
-                )}
-                {activeSurat.includeLampiran && (
-                  <p>
-                    <span className="inline-block w-24">Lampiran</span> : {activeSurat.lampiran}
-                  </p>
-                )}
-                {activeSurat.includePerihal && (
-                  <p>
-                    <span className="inline-block w-24 font-bold">Perihal</span> : <strong>{activeSurat.perihal}</strong>
-                  </p>
-                )}
-                {activeSurat.includeKeteranganIdentitas && (
-                  <p>
-                    <span className="inline-block w-24">Keterangan</span> : {activeSurat.keteranganIdentitas}
-                  </p>
-                )}
-              </div>
-              {activeSurat.includeTanggal && <div className="text-right whitespace-nowrap">{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</div>}
-            </div>
-
-            {/* Kepada Yth. (Opsional) */}
-            {activeSurat.includeKepadaYth && (
-              <div className="pt-4 leading-snug" style={{ fontSize: '12pt' }}>
-                <p>Kepada Yth.</p>
-                <p className="font-bold">{activeSurat.penerimaNama}</p>
-                <p>{activeSurat.penerimaTempat}</p>
+          {/* Pratinjau memakai PDF yang sama persis dengan hasil unduhan dan kop surat asli */}
+          <div className="w-full max-w-[900px] mx-auto bg-slate-100 border border-slate-200 rounded-2xl p-2 sm:p-3">
+            {isPreparingPreview && (
+              <div className="min-h-[60vh] flex items-center justify-center text-sm text-slate-500">
+                Menyusun pratinjau surat asli...
               </div>
             )}
-
-            {/* Salam Pembuka */}
-            <div className="pt-4 space-y-1" style={{ fontSize: '12pt' }}>
-              <p className="italic text-center">Assalamu&apos;alaikum warahmatullahi wabarakatuh</p>
-              <p className="text-left">Salam Pramuka,</p>
-            </div>
-
-            {/* Isi Paragraf Surat */}
-            <div className="pt-3 leading-relaxed text-justify space-y-3" style={{ fontSize: '12pt' }}>
-              <p>{activeSurat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, '')}</p>
-
-              {/* Rincian Poin-Poin Acara */}
-              <div className="space-y-1 text-left">
-                <p><span className="inline-block w-36">Hari / Tanggal</span> : {activeSurat.rincianHariTanggal}</p>
-                <p><span className="inline-block w-36">Waktu</span> : {activeSurat.rincianWaktu}</p>
-                {activeSurat.includeTempat && <p><span className="inline-block w-36">Tempat</span> : {activeSurat.rincianTempat}</p>}
-                {activeSurat.includeKeteranganAcara && <p><span className="inline-block w-36">Agenda</span> : {activeSurat.rincianKeteranganAcara}</p>}
-                {activeSurat.includeKeteranganDetail && <p><span className="inline-block w-36">Keterangan</span> : {activeSurat.rincianKeteranganDetail}</p>}
+            {previewPdfError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                Pratinjau PDF belum dapat ditampilkan: {previewPdfError}
               </div>
-
-              {/* Penutup */}
-              <p>{activeSurat.penutupParagraf}</p>
-            </div>
-
-            <div className="pt-3 text-center" style={{ fontSize: '12pt' }}><p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p></div>
-
-            {/* Pengesahan: kepala sekolah di atas; kelompok dewan dan pembina di bawah */}
-            <div className="pt-4 space-y-7 text-left font-sans" style={{fontSize:'11pt'}}>
-              {activeSurat.includeKetuaGudep && activeSurat.ketuaGudepNama && (
-                <div className="w-full text-left">
-                  <p>{activeSurat.ketuaGudepApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
-                  <p className="font-bold">Kepala Mabigus UPT SMA Negeri 9 Maros,</p>
-                  <div className="h-16 flex items-center justify-center">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
-                  <p className="font-bold underline">{activeSurat.ketuaGudepNama}</p>
-                  {activeSurat.ketuaGudepNip && <p className="text-[10px] text-slate-500">{activeSurat.ketuaGudepNip}</p>}
-                </div>
-              )}
-              {activeSurat.includeDewan && activeSurat.dewanNama && (
-                <div className="w-full text-left">
-                  <p>Hormat Kami,</p>
-                  <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                  <div className="h-16"></div>
-                  <p className="font-bold underline">{activeSurat.dewanNama}</p>
-                  {activeSurat.dewanNta && <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>}
-                </div>
-              )}
-              {(() => {
-                const signers = [
-                  {show:activeSurat.includePembantuPutra, approval:activeSurat.pembantuPutraApprovalType, title:activeSurat.pembantuPutraJabatan || 'Pembantu Pembina Putra', name:activeSurat.pembantuPutraNama},
-                  {show:activeSurat.includePembantuPutri, approval:activeSurat.pembantuPutriApprovalType, title:activeSurat.pembantuPutriJabatan || 'Pembantu Pembina Putri', name:activeSurat.pembantuPutriNama},
-                  {show:activeSurat.includePembina, approval:activeSurat.pembinaApprovalType, title:activeSurat.pembinaJabatan || 'Pembina Putra', name:activeSurat.pembinaNama, id:activeSurat.pembinaNip},
-                  {show:activeSurat.includePembinaTambahan, approval:activeSurat.pembinaTambahanApprovalType, title:activeSurat.pembinaTambahanJabatan || 'Pembina Putri', name:activeSurat.pembinaTambahanNama, id:activeSurat.pembinaTambahanNip},
-                ].filter(signer => signer.show && signer.name);
-                if (!signers.length) return null;
-                const sharedApproval = signers.length > 1
-                  ? (signers.every(signer => signer.approval === signers[0].approval) ? signers[0].approval : 'Mengetahui / Menyetujui')
-                  : '';
-                return <div>
-                  {signers.length > 1 && <p className="text-center mb-2">{sharedApproval || activeSurat.approvalType || 'Mengetahui'}</p>}
-                  <div className="grid grid-cols-2 gap-x-5 gap-y-8">
-                    {signers.map((signer, index) => (
-                      <div key={index} className={signers.length === 1 ? 'col-span-2 w-full text-left' : 'text-left'}>
-                        {signers.length === 1 && <p>{signer.approval || activeSurat.approvalType || 'Mengetahui'}</p>}
-                        <p className="font-bold">{signer.title},</p>
-                        <div className="h-16 flex items-center justify-start">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
-                        <p className="font-bold underline">{signer.name}</p>
-                        {signer.id && <p className="text-[10px] text-slate-500">{signer.id}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>;
-              })()}
-            </div>
-
-            {/* Tembusan (Opsional) */}
-            {activeSurat.includeTembusan && activeSurat.tembusanList.length > 0 && (
-              <div className="pt-6 text-[10px] sm:text-xs font-sans">
-                <p className="font-normal">Tembusan:</p>
-                <ol className="list-decimal pl-0 space-y-0.5 mt-0.5 list-inside">
-                  {activeSurat.tembusanList.map((t, idx) => (
-                    <li key={idx}>{t}</li>
-                  ))}
-                </ol>
-              </div>
+            )}
+            {pdfPreviewUrl && !isPreparingPreview && (
+              <iframe
+                title={`Pratinjau surat ${activeSurat.perihal}`}
+                src={pdfPreviewUrl}
+                className="w-full h-[78vh] min-h-[620px] bg-white border border-slate-300"
+              />
             )}
           </div>
         </div>

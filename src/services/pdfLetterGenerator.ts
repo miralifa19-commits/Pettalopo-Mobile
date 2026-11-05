@@ -278,6 +278,42 @@ class LetterLayout {
     this.y -= options.spacingAfter ?? 0;
   }
 
+  async richParagraph(value: string, options: { x?: number; size?: number; lineHeight?: number; spacingAfter?: number } = {}): Promise<void> {
+    const size = options.size ?? 12;
+    const x = options.x ?? SIDE_MARGIN;
+    const lineHeight = options.lineHeight ?? 18;
+    for (const rawLine of cleanText(value).split('\n')) {
+      const parts = rawLine.split(' ');
+      let cursorX = x;
+      let lineWords: Array<{ text: string; font: PDFFont }> = [];
+      let lineWidth = 0;
+      const flush = async () => {
+        await this.ensureSpace(lineHeight);
+        let drawX = x;
+        for (const part of lineWords) {
+          this.drawText(part.text, drawX, this.y, part.font, size);
+          drawX += part.font.widthOfTextAtSize(part.text, size);
+        }
+        this.y -= lineHeight;
+        lineWords = [];
+        lineWidth = 0;
+      };
+      for (const rawWord of parts) {
+        const bold = rawWord.startsWith('**') && rawWord.endsWith('**');
+        const italic = rawWord.startsWith('*') && rawWord.endsWith('*') && !bold;
+        const text = bold ? rawWord.slice(2, -2) : italic ? rawWord.slice(1, -1) : rawWord;
+        const font = bold ? this.fonts.bold : italic ? this.fonts.italic : this.fonts.regular;
+        const width = font.widthOfTextAtSize(text + ' ', size);
+        if (lineWords.length && lineWidth + width > this.contentWidth) await flush();
+        lineWords.push({ text: text + ' ', font });
+        lineWidth += width;
+      }
+      if (lineWords.length) await flush();
+      else await this.ensureSpace(lineHeight);
+    }
+    this.y -= options.spacingAfter ?? 0;
+  }
+
   async labelValueRow(options: {
     label: string;
     value: string;
@@ -655,7 +691,7 @@ export async function createLetterPdf(
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
-    await layout.paragraph(surat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''), {
+    await layout.richParagraph(surat.isiParagraf.replace(/^Salam Pramuka[,.]?\s*/i, ''), {
       size: 12, lineHeight: 18, align: 'justify', spacingAfter: 9,
     });
 

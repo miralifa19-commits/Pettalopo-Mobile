@@ -476,6 +476,7 @@ function drawSignerBlock(
 
 async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage): Promise<void> {
   type Signer = {
+    role: string;
     approval: string;
     title: string;
     name: string;
@@ -487,112 +488,69 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   const digital = new Set(surat.digitalSignerIds || []);
   const signers: Signer[] = [];
 
-  // Urutan visual: Dewan, Pembantu Pembina, Pembina, lalu Kepala Sekolah.
-  // Dalam setiap baris, penandatangan pertama ditempatkan di kanan.
   if (surat.includeDewan && surat.dewanNama) {
-    signers.push({
-      approval: 'Hormat kami',
-      title: surat.dewanJabatan,
-      name: surat.dewanNama,
-      id: surat.dewanNta,
-      qr: digital.has('dewan') ? qrImage : undefined,
-    });
+    signers.push({ role: 'dewan', approval: 'Hormat kami', title: surat.dewanJabatan, name: surat.dewanNama, id: surat.dewanNta, qr: digital.has('dewan') ? qrImage : undefined });
   }
   if (surat.includePembantuPutra && surat.pembantuPutraNama) {
-    signers.push({
-      approval: surat.pembantuPutraApprovalType ?? fallback,
-      title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra',
-      name: surat.pembantuPutraNama,
-      qr: digital.has('pembantu_putra') ? qrImage : undefined,
-    });
+    signers.push({ role: 'pembantu_putra', approval: surat.pembantuPutraApprovalType ?? fallback, title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra', name: surat.pembantuPutraNama, qr: digital.has('pembantu_putra') ? qrImage : undefined });
   }
   if (surat.includePembantuPutri && surat.pembantuPutriNama) {
-    signers.push({
-      approval: surat.pembantuPutriApprovalType ?? fallback,
-      title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri',
-      name: surat.pembantuPutriNama,
-      qr: digital.has('pembantu_putri') ? qrImage : undefined,
-    });
+    signers.push({ role: 'pembantu_putri', approval: surat.pembantuPutriApprovalType ?? fallback, title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri', name: surat.pembantuPutriNama, qr: digital.has('pembantu_putri') ? qrImage : undefined });
   }
   if (surat.includePembina && surat.pembinaNama) {
-    signers.push({
-      approval: surat.pembinaApprovalType ?? fallback,
-      title: surat.pembinaJabatan || 'Pembina Putra',
-      name: surat.pembinaNama,
-      id: surat.pembinaNip,
-      qr: digital.has('pembina_putra') ? qrImage : undefined,
-      stamp: surat.includeStempel,
-    });
+    signers.push({ role: 'pembina_putra', approval: surat.pembinaApprovalType ?? fallback, title: surat.pembinaJabatan || 'Pembina Putra', name: surat.pembinaNama, id: surat.pembinaNip, qr: digital.has('pembina_putra') ? qrImage : undefined, stamp: surat.includeStempel });
   }
   if (surat.includePembinaTambahan && surat.pembinaTambahanNama) {
-    signers.push({
-      approval: surat.pembinaTambahanApprovalType ?? fallback,
-      title: surat.pembinaTambahanJabatan || 'Pembina Putri',
-      name: surat.pembinaTambahanNama,
-      id: surat.pembinaTambahanNip,
-      qr: digital.has('pembina_putri') ? qrImage : undefined,
-      stamp: surat.includeStempel,
-    });
+    signers.push({ role: 'pembina_putri', approval: surat.pembinaTambahanApprovalType ?? fallback, title: surat.pembinaTambahanJabatan || 'Pembina Putri', name: surat.pembinaTambahanNama, id: surat.pembinaTambahanNip, qr: digital.has('pembina_putri') ? qrImage : undefined, stamp: surat.includeStempel });
   }
   if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
-    signers.push({
-      approval: surat.ketuaGudepApprovalType ?? fallback,
-      title: surat.ketuaGudepJabatan || 'Kepala Sekolah / Ketua Mabigus',
-      name: surat.ketuaGudepNama,
-      id: surat.ketuaGudepNip,
-      qr: digital.has('kepala_sekolah') ? qrImage : undefined,
-      stamp: surat.includeStempel,
-    });
+    signers.push({ role: 'kepala_sekolah', approval: surat.ketuaGudepApprovalType ?? fallback, title: surat.ketuaGudepJabatan || 'Kepala Sekolah / Ketua Mabigus', name: surat.ketuaGudepNama, id: surat.ketuaGudepNip, qr: digital.has('kepala_sekolah') ? qrImage : undefined, stamp: surat.includeStempel });
   }
 
   if (!signers.length) return;
+
+  // Jika kedua pembina dipilih, pasangkan keduanya pada satu baris:
+  // Pembina Putra selalu kiri dan Pembina Putri selalu kanan.
+  const putra = signers.find((signer) => signer.role === 'pembina_putra');
+  const putri = signers.find((signer) => signer.role === 'pembina_putri');
+  let ordered = signers.filter((signer) => signer.role !== 'pembina_putra' && signer.role !== 'pembina_putri');
+  if (putra && putri) ordered = [...ordered, putra, putri];
+  else if (putra) ordered.push(putra);
+  else if (putri) ordered.push(putri);
+
   const columnWidth = (layout.contentWidth - 18) / 2;
-  const rows = Math.ceil(signers.length / 2);
+  const rows: Signer[][] = [];
+  for (let index = 0; index < ordered.length; index += 2) rows.push(ordered.slice(index, index + 2));
   const rowHeight = 105;
-  await layout.ensureSpace(rows * rowHeight + 24);
+  await layout.ensureSpace(rows.length * rowHeight + 24);
   const startY = layout.y;
   const bottoms: number[] = [];
 
-  for (let row = 0; row < rows; row += 1) {
-    const members = signers.slice(row * 2, row * 2 + 2);
-    const y = startY - row * rowHeight;
+  rows.forEach((members, rowIndex) => {
+    const y = startY - rowIndex * rowHeight;
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
-    if (sharedApproval) {
-      layout.drawCentered(members[0].approval, layout.width / 2, y, layout.fonts.regular, 10.5);
-    }
-
-    const isPembinaPutraPutriPair = members.length === 2
-      && members.some((member) => /pembina/i.test(member.title) && /putra/i.test(member.title))
-      && members.some((member) => /pembina/i.test(member.title) && /putri/i.test(member.title));
+    if (sharedApproval) layout.drawCentered(members[0].approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
 
     members.forEach((signer, columnIndex) => {
-      const signerTitleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8);
-      const signerTitleWidth = signerTitleLines.reduce(
-        (max, line) => Math.max(max, layout.fonts.bold.widthOfTextAtSize(cleanText(line), 10.5)),
-        0,
-      );
-      const signerNameWidth = layout.fonts.bold.widthOfTextAtSize(cleanText(signer.name), 10.5);
-      const signerWidth = Math.min(columnWidth, Math.max(signerTitleWidth, signerNameWidth, 72));
+      const titleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8);
+      const titleWidth = titleLines.reduce((max, line) => Math.max(max, layout.fonts.bold.widthOfTextAtSize(cleanText(line), 10.5)), 0);
+      const nameWidth = layout.fonts.bold.widthOfTextAtSize(cleanText(signer.name), 10.5);
+      const signerWidth = Math.min(columnWidth, Math.max(titleWidth, nameWidth, 72));
 
       let side: 'left' | 'right' = 'left';
       if (members.length === 2) {
-        if (isPembinaPutraPutriPair) {
-          side = /putri/i.test(signer.title) ? 'right' : 'left';
-        } else {
-          side = columnIndex === 0 ? 'right' : 'left';
-        }
+        if (signer.role === 'pembina_putra') side = 'left';
+        else if (signer.role === 'pembina_putri') side = 'right';
+        else side = columnIndex === 0 ? 'right' : 'left';
       }
-      const x = side === 'right'
-        ? layout.width - SIDE_MARGIN - signerWidth
-        : SIDE_MARGIN;
-
+      const x = side === 'right' ? layout.width - SIDE_MARGIN - signerWidth : SIDE_MARGIN;
       bottoms.push(drawSignerBlock(
         layout, x, signerWidth, sharedApproval ? y - 13 : y,
-        sharedApproval ? undefined : signer.approval, signer.title, signer.name,
+        sharedApproval ? undefined : signer.approval + ',', signer.title, signer.name,
         signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth,
       ));
-
-  }
+    });
+  });
   layout.y = Math.min(...bottoms) - 5;
 }
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
@@ -707,20 +665,20 @@ export async function createLetterPdf(
 
     stage = 'Menata penerima dan salam pembuka';
     onStage(stage);
-    if (surat.includeKepadaYth) {
+    if (surat.includeKepadaYth && surat.penerimaNama?.trim()) {
       await layout.paragraph('Kepada Yth.', { size: 12, lineHeight: 16, spacingAfter: 0 });
       await layout.richParagraph(surat.penerimaNama.split('\n').map((line) => `**${line}**`).join('\n'), {
         size: 12, lineHeight: 16, spacingAfter: 0,
       });
       await layout.paragraph('di-', { size: 12, lineHeight: 16, spacingAfter: 0 });
-      const tempatTujuan = cleanText(surat.penerimaTempat).replace(/^di\\s*-?\\s*/i, '') || 'Tempat,';
+      const tempatTujuan = cleanText(surat.penerimaTempat).replace(/^di\\s*-?\\s*/i, '').replace(/[,\\s]+$/, '') || 'Tempat';
       await layout.paragraph(tempatTujuan, {
         x: SIDE_MARGIN + 22, size: 12, lineHeight: 16, spacingAfter: 0,
       });
       layout.y -= 8;
     }
 
-    await layout.paragraph("Assalamu'alaikum Warahmatullahi Wabarakatuh", {
+    await layout.paragraph("Assalamu'alaikum warahmatullahi wabarakatuh", {
       size: 12, font: italic, lineHeight: 16, spacingAfter: 2,
     });
     await layout.paragraph('Salam Pramuka,', {
@@ -766,7 +724,7 @@ export async function createLetterPdf(
     await layout.richParagraph(surat.penutupParagraf, {
       size: 12, lineHeight: 18, spacingAfter: 8,
     });
-    await layout.paragraph("Wassalamu'alaikum Warahmatullahi Wabarakatuh", {
+    await layout.paragraph("Wassalamu'alaikum warahmatullahi wabarakatuh", {
       size: 12, font: italic, lineHeight: 16, spacingAfter: 8,
     });
 

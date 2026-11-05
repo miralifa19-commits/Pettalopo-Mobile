@@ -483,8 +483,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   if (!signers.length) return;
 
   const columnWidth = (layout.contentWidth - 18) / 2;
-  const configuredGap = Math.max(0, Math.min(8, Number(surat.signatureGapCm ?? 0)));
-  const adjustableOffset = configuredGap * PT_PER_CM;
   const rows = Math.ceil(signers.length / 2);
   const rowHeight = 105;
 
@@ -502,14 +500,23 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       && members[0].approval.trim().toLocaleLowerCase('id')
         === members[1].approval.trim().toLocaleLowerCase('id');
 
-    // Posisi blok kanan dimulai tepat dari huruf W pada "Wabarakatuh"
-    // saat slider 0 cm. Lebar kedua kolom dibuat sama agar titik tengah
-    // Mengetahui/Menyetujui benar-benar berada di antara kedua blok TTD.
-    const maxRightX = layout.width - SIDE_MARGIN - columnWidth;
-    const rightX = Math.max(SIDE_MARGIN, Math.min(
-      (rightBlockStartX ?? (SIDE_MARGIN + columnWidth + 18)) + adjustableOffset,
-      maxRightX,
-    ));
+    // Ujung kanan blok TTD mengikuti teks terpanjang antara jabatan
+    // dan nama. Isi blok tetap rata kiri, sementara ujung teks terpanjang
+    // tepat menyentuh batas kanan area isi surat.
+    const rightEdge = layout.width - SIDE_MARGIN;
+    const rightSigner = members.length === 2 ? members[1] : undefined;
+    const rightTitleLines = rightSigner
+      ? wrapPdfText(rightSigner.title, layout.fonts.bold, 10.5, layout.contentWidth - 8)
+      : [];
+    const rightTitleWidth = rightTitleLines.reduce(
+      (max, line) => Math.max(max, layout.fonts.bold.widthOfTextAtSize(cleanText(line), 10.5)),
+      0,
+    );
+    const rightNameWidth = rightSigner
+      ? layout.fonts.bold.widthOfTextAtSize(cleanText(rightSigner.name), 10.5)
+      : 0;
+    const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
+    const rightX = rightEdge - rightBlockWidth;
 
     if (sharedApproval) {
       const leftCenterX = SIDE_MARGIN + columnWidth / 2;
@@ -537,7 +544,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
           : (signers.length > 1
             ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
             : SIDE_MARGIN);
-      const signerWidth = columnWidth;
+      const signerWidth = isRightColumn ? rightBlockWidth : columnWidth;
 
       bottoms.push(drawSignerBlock(
         layout,

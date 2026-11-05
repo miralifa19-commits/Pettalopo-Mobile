@@ -3,7 +3,7 @@ name: Build Pettalopo Android APK (Debug)
 on:
   push:
     branches:
-      - main
+      - perbaikan-pdf
     paths:
       - ".github/workflows/build-debug-apk.yml"
       - "src/**"
@@ -46,13 +46,16 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps --no-package-lock
+        run: bun install --save-text-lockfile
 
-      - name: Test PDF export with original letterhead and multi-page text
-        run: npm run test:pdf
+      - name: TypeScript check
+        run: bun run lint
+
+      - name: Test PDF export with short and multi-page letters
+        run: bun run test:pdf
 
       - name: Build web application
-        run: npm run build
+        run: bun run build
 
       - name: Create Android project
         run: npx cap add android

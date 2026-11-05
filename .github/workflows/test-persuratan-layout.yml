@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
-          pdftoppm -f 1 -l 1 -png -r 120 -singlefile artifacts/contoh-tata-letak-persuratan.pdf artifacts/contoh-tata-letak-persuratan
+          pdftoppm -png -r 120 artifacts/contoh-tata-letak-persuratan.pdf artifacts/contoh-tata-letak-persuratan
       - name: Build web preview
         run: bun run build
       - name: Upload PDF and rendered preview
@@ -46,6 +46,6 @@ jobs:
           name: hasil-uji-persuratan
           path: |
             artifacts/contoh-tata-letak-persuratan.pdf
-            artifacts/contoh-tata-letak-persuratan.png
+            artifacts/contoh-tata-letak-persuratan-*.png
           if-no-files-found: error
           retention-days: 14

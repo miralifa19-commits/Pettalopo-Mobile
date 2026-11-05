@@ -452,6 +452,7 @@ function drawSignerBlock(
   qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
   textWidthLimit = columnWidth - 8,
   reservedHeaderHeight = 0,
+  signatureAreaHeight = qrImage ? 42 : 15,
 ): number {
   const titleSize = 10.5;
   let y = topY;
@@ -474,8 +475,8 @@ function drawSignerBlock(
   y -= Math.max(0, reservedHeaderHeight - usedHeaderHeight);
   if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
   if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
-  // QR digital dan ruang tanda tangan basah memakai tinggi yang sama.
-  y -= 42;
+  // Semua penanda tangan dalam baris yang sama memakai tinggi area yang sama.
+  y -= signatureAreaHeight;
   const safeName = cleanText(name);
   const nameSize = 10.5;
   const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
@@ -560,9 +561,10 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       return { signer, signerWidth, textWidthLimit, headerHeight };
     });
     const headerHeight = Math.max(...entries.map((entry) => entry.headerHeight));
-    const height = (sharedApproval ? 13 : 0) + headerHeight + 42 + 13
+    const signatureAreaHeight = members.some((signer) => signer.qr) ? 42 : 15;
+    const height = (sharedApproval ? 13 : 0) + headerHeight + signatureAreaHeight + 13
       + (members.some((signer) => signer.id) ? 11 : 0) + 6;
-    return { entries, sharedApproval, headerHeight, height };
+    return { entries, sharedApproval, headerHeight, signatureAreaHeight, height };
   });
 
   await layout.ensureSpace(
@@ -599,6 +601,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         'left',
         textWidthLimit,
         row.headerHeight,
+        row.signatureAreaHeight,
       );
       bottoms.push(bottom);
       rowBottoms.push(bottom);

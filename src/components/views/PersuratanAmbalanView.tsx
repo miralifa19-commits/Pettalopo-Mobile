@@ -183,7 +183,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [includePerihal, setIncludePerihal] = useState(true);
   const [perihal, setPerihal] = useState('Permohonan Izin Kegiatan & Bantuan');
 
-  const [includeLampiran, setIncludeLampiran] = useState(false);
+  const [includeLampiran, setIncludeLampiran] = useState(true);
   const [lampiran, setLampiran] = useState('1 (Satu) Berkas Proposal');
 
   const [includeKeteranganIdentitas, setIncludeKeteranganIdentitas] = useState(false);
@@ -426,11 +426,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         keteranganIdentitas,
         tanggalSurat,
         gudepType: '10.035',
-        includeNomor,
-        includeTanggal,
-        includePerihal,
-        includeLampiran,
-        includeKeteranganIdentitas,
+        includeNomor: true,
+        includeTanggal: true,
+        includePerihal: true,
+        includeLampiran: true,
+        includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
@@ -438,12 +438,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
-        includeTempat,
+        includeTempat: true,
         rincianTempat,
-        includeKeteranganAcara,
-        rincianKeteranganAcara,
-        includeKeteranganDetail,
-        rincianKeteranganDetail,
+        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
+        rincianKeteranganAcara: rincianKeteranganDetail,
+        includeKeteranganDetail: false,
+        rincianKeteranganDetail: '',
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -495,11 +495,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         keteranganIdentitas,
         tanggalSurat,
         gudepType: '10.036',
-        includeNomor,
-        includeTanggal,
-        includePerihal,
-        includeLampiran,
-        includeKeteranganIdentitas,
+        includeNomor: true,
+        includeTanggal: true,
+        includePerihal: true,
+        includeLampiran: true,
+        includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
@@ -507,12 +507,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
-        includeTempat,
+        includeTempat: true,
         rincianTempat,
-        includeKeteranganAcara,
-        rincianKeteranganAcara,
-        includeKeteranganDetail,
-        rincianKeteranganDetail,
+        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
+        rincianKeteranganAcara: rincianKeteranganDetail,
+        includeKeteranganDetail: false,
+        rincianKeteranganDetail: '',
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -565,11 +565,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         keteranganIdentitas,
         tanggalSurat,
         gudepType: gudepPilihan,
-        includeNomor,
-        includeTanggal,
-        includePerihal,
-        includeLampiran,
-        includeKeteranganIdentitas,
+        includeNomor: true,
+        includeTanggal: true,
+        includePerihal: true,
+        includeLampiran: true,
+        includeKeteranganIdentitas: Boolean(keteranganIdentitas.trim()),
         includeKepadaYth,
         penerimaNama,
         penerimaTempat,
@@ -577,12 +577,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         bulletStyle,
         rincianHariTanggal,
         rincianWaktu,
-        includeTempat,
+        includeTempat: true,
         rincianTempat,
-        includeKeteranganAcara,
-        rincianKeteranganAcara,
-        includeKeteranganDetail,
-        rincianKeteranganDetail,
+        includeKeteranganAcara: Boolean(rincianKeteranganDetail.trim()),
+        rincianKeteranganAcara: rincianKeteranganDetail,
+        includeKeteranganDetail: false,
+        rincianKeteranganDetail: '',
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -659,9 +659,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   };
   const handleOpenDraft = (draft: FormDraft) => {
     const d = draft.data as any;
-    setIncludeNomor(d.includeNomor ?? true); setNomorUrut(d.nomorUrut ?? '024'); setGudepPilihan(d.gudepPilihan ?? '10.035-10.036'); setCeklisDuaDua(d.ceklisDuaDua ?? false);
+    setIncludeNomor(d.includeNomor ?? true); setNomorUrut(d.nomorUrut ?? '024'); setGudepPilihan(d.gudepPilihan ?? '10.035-10.036'); setCeklisDuaDua(false);
     setIncludeTanggal(d.includeTanggal ?? true); setTanggalSurat(d.tanggalSurat ?? ''); setIncludePerihal(d.includePerihal ?? true); setPerihal(d.perihal ?? draft.perihal);
-    setIncludeLampiran(d.includeLampiran ?? false); setLampiran(d.lampiran ?? ''); setIncludeKeteranganIdentitas(d.includeKeteranganIdentitas ?? false); setKeteranganIdentitas(d.keteranganIdentitas ?? '');
+    setIncludeLampiran(true); setLampiran(d.lampiran ?? ''); setIncludeKeteranganIdentitas(d.includeKeteranganIdentitas ?? false); setKeteranganIdentitas(d.keteranganIdentitas ?? '');
     setIncludeKepadaYth(d.includeKepadaYth ?? true); setPenerimaNama(d.penerimaNama ?? ''); setPenerimaTempat(d.penerimaTempat ?? '');
     setIsiParagraf(String(d.isiParagraf ?? '').replace(/^Salam Pramuka[,.]?\s*/i, '')); setBulletStyle(d.bulletStyle ?? 'titik');
     setRincianHariTanggal(d.rincianHariTanggal ?? ''); setRincianWaktu(d.rincianWaktu ?? ''); setIncludeTempat(d.includeTempat ?? true); setRincianTempat(d.rincianTempat ?? '');
@@ -757,7 +757,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   return (
     <div className="space-y-4 pb-28 font-sans">
-      <div className="flex items-center gap-3 py-1"><button type="button" onClick={() => { if (viewMode === 'form') persistDraftSnapshot(); if (viewMode === 'dashboard') onBack?.(); else setViewMode('dashboard'); }} className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold" aria-label="Kembali">←</button><h1 className="text-lg font-extrabold text-slate-900">Kelola Surat Ambalan</h1></div>
+      <div className="flex items-center justify-center py-2"><h1 className="text-lg font-extrabold text-slate-900 text-center">Kelola Surat Ambalan</h1></div>
       {viewMode === 'dashboard' && (
         <div className="grid grid-cols-1 gap-3">
           <button type="button" onClick={() => { setEditingDraftId(null); setWizardStep(1); setViewMode('form'); }} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-red-50 text-[#b71922] flex items-center justify-center text-2xl">＋</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Buat Surat Baru</strong><span className="block text-xs text-slate-500 mt-1">Isi, generate, dan simpan surat ke bundel keluar</span></span><span className="ml-auto text-slate-400">›</span></button>
@@ -802,6 +802,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         </div>
       )}
 
+      {(viewMode === 'form' || viewMode === 'preview') && (<div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 space-y-2"><div className="flex items-center justify-between gap-2">{[{step:1,title:'Identitas'},{step:2,title:'Isi Surat'},{step:3,title:'Penandatanganan'},{step:4,title:'Pratinjau'}].map(item=><button type="button" key={item.step} onClick={()=>{if(item.step===4)return;setWizardStep(item.step as 1|2|3);setViewMode('form');}} className="flex-1 min-w-0 text-center"><div className={`mx-auto w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${wizardStep===item.step?'bg-[#c81e28] text-white':wizardStep>item.step?'bg-red-100 text-[#b71922]':'bg-slate-100 text-slate-400'}`}>{item.step}</div><p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep===item.step?'text-[#b71922]':'text-slate-500'}`}>{item.title}</p></button>)}</div><div className="h-1 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-[#c81e28] transition-all" style={{width:`${wizardStep/4*100}%`}} /></div></div>)}
       {/* ======================================================== */}
       {/* 1. GOOGLE FORM STYLE: DUA BAGIAN (IDENTITAS & ISI SURAT)  */}
       {/* ======================================================== */}
@@ -838,12 +839,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               </button>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
-                    Tujuan Surat (Kepada Yth.) <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-500">
-                    {includeKepadaYth ? 'Dimasukkan ke surat' : 'Dilewati'}
-                  </span>
+                  <label className="text-xs font-bold text-slate-800">Kepada Yth.</label>
                 </div>
                 {includeKepadaYth && (
                   <textarea rows={3} value={penerimaNama} onChange={(e) => setPenerimaNama(e.target.value)} placeholder="Nama / Instansi Penerima (bisa beberapa baris)" className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28] resize-y" />
@@ -1011,37 +1007,23 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             <div className="space-y-3">
               <div className="space-y-2">
                 <label className="text-xs font-bold">1. Dewan / Sangga Kerja (opsional)</label>
-                <label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeDewan} onChange={e=>setIncludeDewan(e.target.checked)}/> Sertakan penandatangan</label>
+                <label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includeDewan} onChange={e=>setIncludeDewan(e.target.checked)}/> Sertakan penandatangan</label>
                 {includeDewan && <><select value={selectedDewanId} onChange={e=>setSelectedDewanId(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border">
                   <option value="pradana_pa">Pradana</option><option value="pemangku_adat">Pemangku Adat</option><option value="kerani">Kerani</option><option value="bendahara">Bendahara</option><option value="ketua_sangga_kerja_pa">Ketua Sangga Kerja Putra</option><option value="sekretaris_sangga_kerja_pa">Sekretaris Sangga Kerja Putra</option><option value="ketua_sangga_kerja_pi">Ketua Sangga Kerja Putri</option><option value="sekretaris_sangga_kerja_pi">Sekretaris Sangga Kerja Putri</option><option value="ketua_panitia">Ketua Panitia</option><option value="sekretaris_panitia">Sekretaris Panitia</option>
-                </select><input value={customSignerName} onChange={e=>setCustomSignerName(e.target.value)} placeholder={dewanList.find(d=>d.id===selectedDewanId)?.memberName || 'Nama penandatangan'} className="w-full text-xs p-2.5 rounded-xl border"/><select value={dewanApprovalType} onChange={e=>setDewanApprovalType(e.target.value as any)} className="w-full text-xs p-2 rounded-lg border"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('dewan')} onChange={e=>toggleDigitalSigner('dewan',e.target.checked)}/> TTD digital (QR)</label></>}
+                </select><input value={customSignerName} onChange={e=>setCustomSignerName(e.target.value)} placeholder={dewanList.find(d=>d.id===selectedDewanId)?.memberName || 'Nama penandatangan'} className="w-full text-xs p-2.5 rounded-xl border"/><select value={dewanApprovalType} onChange={e=>setDewanApprovalType(e.target.value as any)} className="w-full text-xs p-2 rounded-lg border"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('dewan')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('dewan',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}
               </div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">2. Pembantu Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutra} onChange={e=>setIncludePembantuPutra(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutra && <><p className="text-xs">{officials.pembantuPembinaPutra}</p><select value={pembantuPutraApprovalType} onChange={e=>setPembantuPutraApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('pembantu_putra')} onChange={e=>toggleDigitalSigner('pembantu_putra',e.target.checked)}/> TTD digital (QR)</label></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">3. Pembantu Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembantuPutri} onChange={e=>setIncludePembantuPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutri && <><p className="text-xs">{officials.pembantuPembinaPutri}</p><select value={pembantuPutriApprovalType} onChange={e=>setPembantuPutriApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('pembantu_putri')} onChange={e=>toggleDigitalSigner('pembantu_putri',e.target.checked)}/> TTD digital (QR)</label></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">4. Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembina} onChange={e=>setIncludePembina(e.target.checked)}/> Sertakan (opsional)</label>{includePembina && <><p className="text-xs">{officials.pembinaPutra}</p><select value={pembinaApprovalType} onChange={e=>setPembinaApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('pembina_putra')} onChange={e=>toggleDigitalSigner('pembina_putra',e.target.checked)}/> TTD digital (QR)</label></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">5. Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includePembinaPutri} onChange={e=>setIncludePembinaPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembinaPutri && <><p className="text-xs">{officials.pembinaPutri}</p><select value={pembinaTambahanApprovalType} onChange={e=>setPembinaTambahanApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('pembina_putri')} onChange={e=>toggleDigitalSigner('pembina_putri',e.target.checked)}/> TTD digital (QR)</label></>}</div>
-              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="text-[10px] flex items-center gap-2"><input type="checkbox" checked={digitalSignerIds.includes('kepala_sekolah')} onChange={e=>toggleDigitalSigner('kepala_sekolah',e.target.checked)}/> TTD digital (QR)</label></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">2. Pembantu Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includePembantuPutra} onChange={e=>setIncludePembantuPutra(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutra && <><p className="text-xs">{officials.pembantuPembinaPutra}</p><select value={pembantuPutraApprovalType} onChange={e=>setPembantuPutraApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('pembantu_putra')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('pembantu_putra',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">3. Pembantu Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includePembantuPutri} onChange={e=>setIncludePembantuPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembantuPutri && <><p className="text-xs">{officials.pembantuPembinaPutri}</p><select value={pembantuPutriApprovalType} onChange={e=>setPembantuPutriApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('pembantu_putri')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('pembantu_putri',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">4. Pembina Gugus Depan 10.035 (Putra)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includePembina} onChange={e=>setIncludePembina(e.target.checked)}/> Sertakan (opsional)</label>{includePembina && <><p className="text-xs">{officials.pembinaPutra}</p><select value={pembinaApprovalType} onChange={e=>setPembinaApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('pembina_putra')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('pembina_putra',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">5. Pembina Gugus Depan 10.036 (Putri)</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includePembinaPutri} onChange={e=>setIncludePembinaPutri(e.target.checked)}/> Sertakan (opsional)</label>{includePembinaPutri && <><p className="text-xs">{officials.pembinaPutri}</p><select value={pembinaTambahanApprovalType} onChange={e=>setPembinaTambahanApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('pembina_putri')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('pembina_putri',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}</div>
+              <div className="border-t pt-3 space-y-2"><label className="text-xs font-bold">6. Ketua Mabigus UPT SMA Negeri 9 Maros</label><label className="text-[10px] flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 shrink-0 appearance-none rounded-full border border-[#c81e28] checked:bg-[#c81e28] checked:ring-2 checked:ring-red-100" checked={includeKetuaGudep} onChange={e=>setIncludeKetuaGudep(e.target.checked)}/> Sertakan (opsional)</label>{includeKetuaGudep && <><p className="text-xs">{officials.ketuaGudep}</p><select value={ketuaGudepApprovalType} onChange={e=>setKetuaGudepApprovalType(e.target.value as any)} className="w-full text-xs p-2 border rounded"><option value="">Tanpa keterangan</option><option>Mengetahui</option><option>Menyetujui</option></select><label className="block text-[10px] font-semibold text-slate-600">Format TTD</label><select value={digitalSignerIds.includes('kepala_sekolah')?'digital':'biasa'} onChange={e=>toggleDigitalSigner('kepala_sekolah',e.target.value==='digital')} className="w-full text-xs p-2 border border-slate-200 rounded-lg bg-white"><option value="biasa">Biasa (tanda tangan basah)</option><option value="digital">Digital (QR)</option></select></>}</div>
             </div>
 
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600">
-              Atur TTD digital secara terpisah pada masing-masing penandatangan. Yang tidak dicentang akan menggunakan ruang tanda tangan biasa.
-            </div>
+            <p className="text-[10px] text-slate-500">Tentukan format tanda tangan masing-masing penandatangan.</p>
 
             {/* Tembusan (Ketik + tombol tambah) */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800">
-                  Tembusan Surat <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIncludeTembusan(!includeTembusan)}
-                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${
-                    includeTembusan ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-              </div>
+              <div className="flex items-center justify-start gap-2"><button type="button" onClick={() => setIncludeTembusan(!includeTembusan)} aria-label="Aktifkan tembusan" className={`w-3.5 h-3.5 shrink-0 rounded-full border border-[#c81e28] ${includeTembusan?'bg-[#c81e28] ring-2 ring-red-100':'bg-white'}`} /><label className="text-xs font-bold text-slate-800">Tembusan Surat <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label></div>
 
               {includeTembusan && (
                 <div className="space-y-2">
@@ -1176,6 +1158,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               />
             )}
           </div>
+          <button type="button" onClick={() => { setWizardStep(3); setViewMode('form'); }} className="w-full py-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold">Kembali</button>
         </div>
       )}
 

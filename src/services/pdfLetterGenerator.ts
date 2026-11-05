@@ -706,7 +706,7 @@ export async function createLetterPdf(
     onStage(stage);
     if (surat.includeKepadaYth) {
       await layout.paragraph('Kepada Yth.', { size: 12, lineHeight: 16, spacingAfter: 0 });
-      await layout.richParagraph(surat.penerimaNama.split('\\n').map((line) => `**${line}**`).join('\\n'), {
+      await layout.richParagraph(surat.penerimaNama.split('\n').map((line) => `**${line}**`).join('\n'), {
         size: 12, lineHeight: 16, spacingAfter: 0,
       });
       await layout.paragraph('di-', { size: 12, lineHeight: 16, spacingAfter: 0 });

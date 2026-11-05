@@ -470,7 +470,6 @@ async function drawSignatures(
         `${surat.approvalType || 'Mengetahui'},\n${surat.dewanJabatan}`, surat.dewanNama, surat.dewanNta,
         undefined, false,
       ));
-    }
   } else if (hasPembina) {
     const centerX = SIDE_MARGIN + columnWidth / 2;
     bottomYs.push(drawSignerBlock(

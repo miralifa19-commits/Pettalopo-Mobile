@@ -315,13 +315,13 @@ class LetterLayout {
       let lineWidth = 0;
       const drawLine = async (justify = false) => {
         await this.ensureSpace(lineHeight);
-        const spaces = line.filter((part) => /^\\s+$/.test(part.text));
+        const spaces = line.filter((part) => /^\s+$/.test(part.text));
         const extraSpace = justify && spaces.length > 0
           ? Math.max(0, (this.contentWidth - lineWidth) / spaces.length)
           : 0;
         let drawX = x;
         for (const part of line) {
-          if (/^\\s+$/.test(part.text)) {
+          if (/^\s+$/.test(part.text)) {
             drawX += part.font.widthOfTextAtSize(part.text, size) + extraSpace;
           } else {
             this.drawText(part.text, drawX, this.y, part.font, size);
@@ -694,7 +694,7 @@ export async function createLetterPdf(
       size: 12, font: italic, lineHeight: 16, spacingAfter: 2, align: 'center',
     });
     await layout.paragraph('Salam Pramuka,', {
-      size: 12, font: regular, lineHeight: 16, spacingAfter: 9, align: 'center',
+      size: 12, font: regular, lineHeight: 16, spacingAfter: 9, align: 'left',
     });
 
     stage = 'Menata paragraf isi dan rincian kegiatan';

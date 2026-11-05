@@ -84,10 +84,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   }, [roleDrafts]);
 
   const quarterRange = [
-    { start: 1, end: 3, year: 2026 },
-    { start: 4, end: 6, year: 2026 },
-    { start: 7, end: 9, year: 2027 },
-    { start: 10, end: 12, year: 2027 }
+    { start: 1, end: 3, year: 2026, startMonth: 7, endMonth: 9 },
+    { start: 4, end: 6, year: 2026, startMonth: 10, endMonth: 12 },
+    { start: 7, end: 9, year: 2027, startMonth: 1, endMonth: 3 },
+    { start: 10, end: 12, year: 2027, startMonth: 4, endMonth: 6 }
   ][selectedTriwulan - 1];
   const quarterProgramKerja = useMemo(
     () => programKerjaList.filter((item) => item.bulanUrutan >= quarterRange.start && item.bulanUrutan <= quarterRange.end),
@@ -102,11 +102,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         const date = new Date(letter.createdAt);
         return !Number.isNaN(date.getTime())
           && date.getFullYear() === quarterRange.year
-          && date.getMonth() + 1 >= quarterRange.start + 6
-          && date.getMonth() + 1 <= quarterRange.end + 6;
+          && date.getMonth() + 1 >= quarterRange.startMonth
+          && date.getMonth() + 1 <= quarterRange.endMonth;
       });
     } catch { return []; }
-  }, [selectedTriwulan, quarterRange.year, quarterRange.start, quarterRange.end]);
+  }, [selectedTriwulan, quarterRange.year, quarterRange.startMonth, quarterRange.endMonth]);
   const parseRupiahInput = (value: string) => Number(value.replace(/[^0-9]/g, '')) || 0;
   const formatRupiah = (value: number) => new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', maximumFractionDigits: 0

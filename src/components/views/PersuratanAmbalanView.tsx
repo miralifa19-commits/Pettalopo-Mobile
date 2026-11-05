@@ -78,6 +78,10 @@ export interface GeneratedSurat {
   includeTembusan: boolean;
   tembusanList: string[];
   approvalType?: 'Mengetahui' | 'Menyetujui';
+  dewanApprovalType?: 'Mengetahui' | 'Menyetujui';
+  pembinaApprovalType?: 'Mengetahui' | 'Menyetujui';
+  pembinaTambahanApprovalType?: 'Mengetahui' | 'Menyetujui';
+  ketuaGudepApprovalType?: 'Mengetahui' | 'Menyetujui';
   kotaPengesahan?: string;
   createdAt: string;
 }
@@ -169,6 +173,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Ketua Gugus Depan (BISA DIPILIH: default aktif)
   const [includeKetuaGudep, setIncludeKetuaGudep] = useState(true);
   const [approvalType, setApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [dewanApprovalType, setDewanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [pembinaApprovalType, setPembinaApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [pembinaTambahanApprovalType, setPembinaTambahanApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
+  const [ketuaGudepApprovalType, setKetuaGudepApprovalType] = useState<'Mengetahui' | 'Menyetujui'>('Mengetahui');
   const [kotaPengesahan, setKotaPengesahan] = useState('Maros');
 
   // Metode Pengesahan
@@ -322,7 +330,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       signerTitle = 'Pembina Putri Gugus Depan 10.036';
     }
 
-    if (!approvalType || !kotaPengesahan.trim()) { alert('Pilih Mengetahui/Menyetujui dan isi kota pengesahan terlebih dahulu.'); return; }
+    if (!kotaPengesahan.trim()) { alert('Isi kota pengesahan terlebih dahulu.'); return; }
     if (includeDewan && customSignerRoles[selectedDewanId] && !customSignerName.trim()) { alert('Nama penandatangan wajib diisi untuk jabatan yang dipilih.'); return; }
     const createdList: GeneratedSurat[] = [];
 
@@ -366,7 +374,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanJabatan: 'Pradana Putra',
         dewanNama: dewanList.find(d => d.id === 'pradana_pa')?.memberName || 'Amiruddin S.',
         dewanNta: 'NTA. 10.035.001',
-        approvalType, kotaPengesahan,
+        approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
         pembinaJabatan: 'Pembina Gugus Depan 10.035',
         pembinaNama: officials.pembinaPutra,
@@ -423,7 +431,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanJabatan: 'Pradana Putri',
         dewanNama: dewanList.find(d => d.id === 'pradana_pi')?.memberName || 'Nurhaliza Azzahra',
         dewanNta: 'NTA. 10.036.001',
-        approvalType, kotaPengesahan,
+        approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
         pembinaJabatan: 'Pembina Gugus Depan 10.036',
         pembinaNama: officials.pembinaPutri,
@@ -480,7 +488,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanJabatan,
         dewanNama,
         dewanNta,
-        approvalType, kotaPengesahan,
+        approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
         pembinaJabatan,
         pembinaNama,
@@ -515,7 +523,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
 
   const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, selectedPembinaRole, includeKetuaGudep, approvalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
     const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
     const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
@@ -532,7 +540,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? true); setSelectedPembinaRole(d.selectedPembinaRole ?? 'pembina_pa'); setIncludeKetuaGudep(d.includeKetuaGudep ?? true);
-    setApprovalType(d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
+    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
     setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setViewMode('form');
   };
@@ -620,56 +628,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 Bagian 1: Identitas Surat
               </span>
               <span className="text-[10px] text-slate-400 font-medium">Klik lingkaran untuk memilih</span>
-            </div>
-
-            {/* Pilihan Gugus Depan */}
-            <div className="space-y-2 pt-1">
-              <label className="text-xs font-bold text-slate-800 block">
-                Gugus Depan Pangkalan SMA Negeri 9 Maros
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  { id: '10.035-10.036', label: 'Gudep 10.035 - 10.036 (Gabungan)' },
-                  { id: '10.035', label: 'Gudep 10.035 (Putra)' },
-                  { id: '10.036', label: 'Gudep 10.036 (Putri)' }
-                ].map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => {
-                      setCeklisDuaDua(false);
-                      setGudepPilihan(g.id as any);
-                      if (g.id === '10.036') { setSelectedPembinaRole('pembina_pi'); setDigitalSigner('pembina_putri'); }
-                      else { setSelectedPembinaRole('pembina_pa'); setDigitalSigner('pembina_putra'); }
-                    }}
-                    className={`p-2.5 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer ${
-                      !ceklisDuaDua && gudepPilihan === g.id
-                        ? 'border-[#c81e28] bg-red-50 text-[#b71922]'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Opsi Generate 2 Surat Sekaligus */}
-              <div className="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Generate 2 Surat Sekaligus</p>
-                  <p className="text-[10px] text-slate-500">Terbitkan otomatis untuk Gudep 10.035 &amp; 10.036 secara terpisah</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCeklisDuaDua(!ceklisDuaDua)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
-                    ceklisDuaDua
-                      ? 'border-[#c81e28] bg-[#c81e28] text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-              </div>
             </div>
 
             {/* 1. Tanggal (Wajib) */}
@@ -1087,7 +1045,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div className="space-y-1"><label className="text-[11px] font-bold text-slate-700">Kota pengesahan <span className="text-[#c81e28]">*</span></label><input type="text" value={kotaPengesahan} onChange={(e) => setKotaPengesahan(e.target.value)} required placeholder="Maros" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white" /></div><div className="space-y-1"><label className="text-[11px] font-bold text-slate-700">Pengesahan <span className="text-[#c81e28]">*</span></label><select value={approvalType} onChange={(e) => setApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} required className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div className="space-y-1"><label className="text-[11px] font-bold text-slate-700">Kota pengesahan <span className="text-[#c81e28]">*</span></label><input type="text" value={kotaPengesahan} onChange={(e) => setKotaPengesahan(e.target.value)} required placeholder="Maros" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white" /></div></div>
 
             {/* 1. DEWAN AMBALAN (OPSIONAL: jika dipilih, nama wajib lengkap) */}
             <div className={`p-3.5 rounded-2xl border transition-all ${
@@ -1127,6 +1085,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                     <option value="ketua_sangga_kerja">Ketua Sangga Kerja</option><option value="sekretaris_sangga_kerja">Sekretaris Sangga Kerja</option><option value="ketua_panitia">Ketua Panitia</option><option value="sekretaris_panitia">Sekretaris Panitia</option>
                   </select>
                   {['ketua_sangga_kerja', 'sekretaris_sangga_kerja', 'ketua_panitia', 'sekretaris_panitia'].includes(selectedDewanId) && <input type="text" value={customSignerName} onChange={(e) => setCustomSignerName(e.target.value)} required placeholder="Nama penandatangan" className="w-full mt-2 text-xs p-2.5 rounded-xl border border-red-300 bg-white text-slate-900" />}
+                  <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={dewanApprovalType} onChange={(e) => setDewanApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
                 </div>
               )}
             </div>
@@ -1171,6 +1130,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                     <option value="pembantu_pa">Pembantu Pembina Putra: {officials.pembantuPembinaPutra}</option>
                     <option value="pembantu_pi">Pembantu Pembina Putri: {officials.pembantuPembinaPutri}</option>
                   </select>
+                  <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={pembinaApprovalType} onChange={(e) => setPembinaApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
                 </div>
               )}
             </div>
@@ -1200,6 +1160,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               </div>
             </div>
+
+            <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={ketuaGudepApprovalType} onChange={(e) => setKetuaGudepApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
+            <div className="mt-2 space-y-1"><label className="text-[10px] font-bold text-slate-700">Pilihan pengesahan</label><select value={pembinaTambahanApprovalType} onChange={(e) => setPembinaTambahanApprovalType(e.target.value as 'Mengetahui' | 'Menyetujui')} className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"><option value="Mengetahui">Mengetahui</option><option value="Menyetujui">Menyetujui</option></select></div>
 
             {/* Pilihan Metode Pengesahan: Ttd Biasa, Ttd Digital, Stempel Basah */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
@@ -1537,10 +1500,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <p>{activeSurat.penutupParagraf}</p>
             </div>
 
-            <div className="pt-3" style={{ fontSize: '12pt' }}><p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p></div>
-
-            {/* Tanggal Pengesahan */}
-            <div className="pt-4 text-left" style={{ fontSize: '12pt' }}><p>{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</p></div>
+            <div className="pt-3 text-center" style={{ fontSize: '12pt' }}><p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p></div>
 
             {/* TANDA TANGAN PENGESAHAN DENGAN ADAPTASI DINAMIS */}
             <div className="pt-4 text-left font-sans" style={{ fontSize: '11pt' }}>

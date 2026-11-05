@@ -425,7 +425,7 @@ function drawSignerBlock(
   if (includeStamp) {
     // Cap diletakkan di samping QR, tidak menimpa area QR maupun nama.
     const stampCenterX = qrImage
-      ? qrX + 34 + 20
+      ? qrX + 34 + 30
       : Math.min(x + columnWidth - 18, blockX + Math.min(columnWidth - 42, widest) + 22);
     drawStamp(layout.page, stampCenterX, qrY + 17, layout.fonts.bold);
   }

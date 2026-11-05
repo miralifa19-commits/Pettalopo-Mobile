@@ -75,7 +75,7 @@ const STANDARD_FONT_PROBE = {
     // WinAnsi-compatible code point check. PDFDocEncoding covers the
     // punctuation/Latin range accepted by the built-in standard fonts.
     const code = value.codePointAt(0) ?? 0;
-    if (code <= 0xFF && ![0x81,0x8D,0x8F,0x90,0x9D].includes(code)) return new Uint8Array([code]);
+    if (code <= 0x7F || (code >= 0xA0 && code <= 0xFF)) return new Uint8Array([code]);
     const winAnsiExtras = new Set([0x20AC,0x201A,0x0192,0x201E,0x2026,0x2020,0x2021,0x02C6,0x2030,0x0160,0x2039,0x0152,0x017D,0x2018,0x2019,0x201C,0x201D,0x2022,0x2013,0x2014,0x02DC,0x2122,0x0161,0x203A,0x0153,0x017E,0x0178]);
     if (winAnsiExtras.has(code)) return new Uint8Array([0]);
     throw new Error(`Karakter U+${code.toString(16).toUpperCase()} tidak didukung font PDF bawaan.`);
@@ -192,18 +192,21 @@ class LetterLayout {
     size: number,
     color = BLACK,
   ): void {
-    if (!text) return;
-    this.page.drawText(text, { x, y, size, font, color });
+    const safeText = cleanText(text);
+    if (!safeText) return;
+    this.page.drawText(safeText, { x, y, size, font, color });
   }
 
   drawRight(text: string, y: number, font: PDFFont, size: number): void {
-    const width = font.widthOfTextAtSize(text, size);
-    this.drawText(text, this.width - SIDE_MARGIN - width, y, font, size);
+    const safeText = cleanText(text);
+    const width = font.widthOfTextAtSize(safeText, size);
+    this.drawText(safeText, this.width - SIDE_MARGIN - width, y, font, size);
   }
 
   drawCentered(text: string, centerX: number, y: number, font: PDFFont, size: number): void {
-    const width = font.widthOfTextAtSize(text, size);
-    this.drawText(text, centerX - width / 2, y, font, size);
+    const safeText = cleanText(text);
+    const width = font.widthOfTextAtSize(safeText, size);
+    this.drawText(safeText, centerX - width / 2, y, font, size);
   }
 
   drawJustifiedLine(
@@ -214,7 +217,8 @@ class LetterLayout {
     font: PDFFont,
     size: number,
   ): void {
-    const words = text.split(' ').filter(Boolean);
+    const safeText = cleanText(text);
+    const words = safeText.split(' ').filter(Boolean);
     if (words.length < 2) {
       this.drawText(text, x, y, font, size);
       return;
@@ -409,9 +413,10 @@ function drawSignerBlock(
 
   y -= 49;
   const nameSize = 11;
-  const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(name, nameSize));
+  const safeName = cleanText(name);
+  const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
   const nameX = centerX - nameWidth / 2;
-  layout.drawText(name, nameX, y, layout.fonts.bold, nameSize);
+  layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
   layout.page.drawLine({
     start: { x: nameX, y: y - 1.5 },
     end: { x: nameX + nameWidth, y: y - 1.5 },
@@ -514,9 +519,10 @@ async function drawKetuaGudep(
 
   y -= 5;
   const nameSize = 11;
-  const nameWidth = Math.min(240, layout.fonts.bold.widthOfTextAtSize(surat.ketuaGudepNama, nameSize));
+  const safeName = cleanText(surat.ketuaGudepNama);
+  const nameWidth = Math.min(240, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
   const nameX = centerX - nameWidth / 2;
-  layout.drawText(surat.ketuaGudepNama, nameX, y, layout.fonts.bold, nameSize);
+  layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
   layout.page.drawLine({
     start: { x: nameX, y: y - 1.5 },
     end: { x: nameX + nameWidth, y: y - 1.5 },

@@ -425,6 +425,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         metodeTtd,
         includeTtdBiasa,
         includeQrCode,
+        includeTtdBiasa,
+        includeQrCode,
         digitalSigner: 'pembina_putra',
         digitalSignerName: officials.pembinaPutra,
         digitalSignerTitle: 'Pembina Putra Gugus Depan 10.035',
@@ -492,6 +494,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNama: officials.ketuaGudep,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
+        includeTtdBiasa,
+        includeQrCode,
         digitalSigner: 'pembina_putri',
         digitalSignerName: officials.pembinaPutri,
         digitalSignerTitle: 'Pembina Putri Gugus Depan 10.036',
@@ -562,6 +566,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         ketuaGudepNama: officials.ketuaGudep,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
+        includeTtdBiasa,
+        includeQrCode,
         digitalSigner,
         digitalSignerName: signerName,
         digitalSignerTitle: signerTitle,
@@ -704,6 +710,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           <div>
             <h2 className="text-sm font-extrabold text-slate-900">Pengaturan Surat</h2>
             <p className="text-xs text-slate-500 mt-1">Ubah kalimat jabatan yang akan tampil pada bagian pengesahan surat. Perubahan disimpan otomatis.</p>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+            <span className="text-xs font-bold text-slate-800 block">Kop Surat Resmi</span>
+            <span className="text-[10px] text-slate-500 block">Unduh PDF kop surat asli yang tersimpan di GitHub.</span>
+            <a href={`${import.meta.env.BASE_URL}${LETTERHEAD_ASSET}`} download="Kop_Surat_Pettalopo.pdf" className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-[#c81e28] px-4 py-3 text-xs font-bold text-white">Unduh Kop Surat</a>
           </div>
           {([
             ['pembinaPutra', 'Jabatan Pembina Putra'],

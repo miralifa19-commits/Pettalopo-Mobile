@@ -630,6 +630,14 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <span className="text-[10px] text-slate-400 font-medium">Klik lingkaran untuk memilih</span>
             </div>
 
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-800">Generate 2 Surat Sekaligus</p>
+                <p className="text-[10px] text-slate-500">Terbitkan otomatis untuk Gudep 10.035 &amp; 10.036 secara terpisah</p>
+              </div>
+              <button type="button" onClick={() => setCeklisDuaDua(!ceklisDuaDua)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${ceklisDuaDua ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
+            </div>
+
             {/* 1. Tanggal (Wajib) */}
             <div className="flex items-start gap-3 pt-2">
               <button
@@ -1454,7 +1462,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </p>
                 )}
               </div>
-
+              <div className="text-right whitespace-nowrap">{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</div>
             </div>
 
             {/* Kepada Yth. (Opsional) */}
@@ -1468,8 +1476,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             {/* Salam Pembuka */}
             <div className="pt-4 space-y-1" style={{ fontSize: '12pt' }}>
-              <p className="italic">Assalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
-              <p className="text-center">Salam Pramuka,</p>
+              <p className="italic text-center">Assalamu&apos;alaikum warahmatullahi wabarakatuh</p>
+              <p className="text-left">Salam Pramuka,</p>
             </div>
 
             {/* Isi Paragraf Surat */}
@@ -1511,7 +1519,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   <div>
                     <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                    <div className="h-16 flex items-center justify-center">
+                    <div className="h-16 flex items-center justify-start">
                       {/* Spasi TTD Dewan */}
                     </div>
                     <p className="font-bold underline">{activeSurat.dewanNama}</p>
@@ -1521,9 +1529,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   <div>
                     <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
-                    <div className="h-16 flex items-center justify-center relative">
+                    <div className="h-16 flex items-center justify-start relative">
                       {activeSurat.includeStempel && (
-                        <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
+                        <div className="absolute -top-1 right-4 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-start text-[7px] font-black uppercase text-left p-1 pointer-events-none rotate-[-8deg] opacity-80">
                           <span>GERAKAN PRAMUKA</span>
                           <span>GUDEP 10-035/10-036</span>
                           <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
@@ -1533,10 +1541,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
                         <div
                           onClick={() => setVerificationModalSurat(activeSurat)}
-                          className="cursor-pointer text-center group"
+                          className="cursor-pointer text-left group"
                           title="Klik untuk verifikasi keaslian dokumen"
                         >
-                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
+                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 " />
                           <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
                         </div>
                       ) : (
@@ -1554,10 +1562,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {/* Jika HANYA Dewan yang aktif (Pembina tidak aktif) */}
               {activeSurat.includeDewan && !activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
-                  <div className="min-w-[220px] text-center">
+                  <div className="min-w-[220px] text-left">
                     <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
-                    <div className="h-16 flex items-center justify-center">
+                    <div className="h-16 flex items-center justify-start">
                       {/* Spasi TTD Dewan */}
                     </div>
                     <p className="font-bold underline">{activeSurat.dewanNama}</p>
@@ -1569,12 +1577,12 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {/* Jika HANYA Pembina yang aktif (Dewan TIDAK diceklis - Opsional) */}
               {!activeSurat.includeDewan && activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
-                  <div className="min-w-[240px] text-center">
+                  <div className="min-w-[240px] text-left">
                     <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
-                    <div className="h-16 flex items-center justify-center relative">
+                    <div className="h-16 flex items-center justify-start relative">
                       {activeSurat.includeStempel && (
-                        <div className="absolute -top-1 right-2 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-center text-[7px] font-black uppercase text-center p-1 pointer-events-none rotate-[-8deg] opacity-80">
+                        <div className="absolute -top-1 right-2 w-20 h-20 rounded-full border-2 border-red-600/80 text-red-600 flex flex-col items-center justify-start text-[7px] font-black uppercase text-left p-1 pointer-events-none rotate-[-8deg] opacity-80">
                           <span>GERAKAN PRAMUKA</span>
                           <span>GUDEP 10-035/10-036</span>
                           <span className="text-[6px]">SMA NEGERI 9 MAROS</span>
@@ -1584,10 +1592,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                       {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
                         <div
                           onClick={() => setVerificationModalSurat(activeSurat)}
-                          className="cursor-pointer text-center group"
+                          className="cursor-pointer text-left group"
                           title="Klik untuk verifikasi keaslian dokumen"
                         >
-                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 mx-auto" />
+                          <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-16 h-16 " />
                           <span className="text-[8px] font-mono text-slate-500 block">QR Resmi Terverifikasi</span>
                         </div>
                       ) : (
@@ -1621,14 +1629,14 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
                   <p className="font-bold text-xs">Kepala SMA Negeri 9 Maros (Kamabigus)</p>
                   
-                  <div className="my-2 h-16 flex items-center justify-center">
+                  <div className="my-2 h-16 flex items-center justify-start">
                     {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl ? (
                       <div
                         onClick={() => setVerificationModalSurat(activeSurat)}
-                        className="cursor-pointer text-center group"
+                        className="cursor-pointer text-left group"
                         title="Klik untuk verifikasi keaslian dokumen"
                       >
-                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-14 h-14 mx-auto" />
+                        <img src={activeSurat.qrCodeDataUrl} alt="QR Code" className="w-14 h-14 " />
                         <span className="text-[7px] font-mono text-slate-400 block">Scan Dokumen Asli</span>
                       </div>
                     ) : (

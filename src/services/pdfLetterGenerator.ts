@@ -283,32 +283,58 @@ class LetterLayout {
     const x = options.x ?? SIDE_MARGIN;
     const lineHeight = options.lineHeight ?? 18;
     for (const rawLine of cleanText(value).split('\n')) {
-      const parts = rawLine.split(' ');
-      let cursorX = x;
-      let lineWords: Array<{ text: string; font: PDFFont }> = [];
+      const segments: Array<{ text: string; font: PDFFont }> = [];
+      let buffer = '';
+      let mode: 'regular' | 'bold' | 'italic' = 'regular';
+      const flush = () => {
+        if (!buffer) return;
+        const font = mode === 'bold' ? this.fonts.bold : mode === 'italic' ? this.fonts.italic : this.fonts.regular;
+        segments.push({ text: buffer, font });
+        buffer = '';
+      };
+      for (let index = 0; index < rawLine.length;) {
+        if (rawLine.slice(index, index + 2) === '**') {
+          flush();
+          mode = mode === 'bold' ? 'regular' : 'bold';
+          index += 2;
+        } else if (rawLine[index] === '*') {
+          flush();
+          mode = mode === 'italic' ? 'regular' : 'italic';
+          index += 1;
+        } else {
+          buffer += rawLine[index];
+          index += 1;
+        }
+      }
+      flush();
+      const words: Array<{ text: string; font: PDFFont }> = [];
+      for (const segment of segments) {
+        segment.text.split(/(\s+)/).filter(Boolean).forEach((part) => words.push({ text: part, font: segment.font }));
+      }
+      let line: Array<{ text: string; font: PDFFont }> = [];
       let lineWidth = 0;
-      const flush = async () => {
+      const drawLine = async () => {
         await this.ensureSpace(lineHeight);
         let drawX = x;
-        for (const part of lineWords) {
+        for (const part of line) {
           this.drawText(part.text, drawX, this.y, part.font, size);
           drawX += part.font.widthOfTextAtSize(part.text, size);
         }
         this.y -= lineHeight;
-        lineWords = [];
+        line = [];
         lineWidth = 0;
       };
-      for (const rawWord of parts) {
-        const bold = rawWord.startsWith('**') && rawWord.endsWith('**');
-        const italic = rawWord.startsWith('*') && rawWord.endsWith('*') && !bold;
-        const text = bold ? rawWord.slice(2, -2) : italic ? rawWord.slice(1, -1) : rawWord;
-        const font = bold ? this.fonts.bold : italic ? this.fonts.italic : this.fonts.regular;
-        const width = font.widthOfTextAtSize(text + ' ', size);
-        if (lineWords.length && lineWidth + width > this.contentWidth) await flush();
-        lineWords.push({ text: text + ' ', font });
+      for (const word of words) {
+        const width = word.font.widthOfTextAtSize(word.text, size);
+        if (line.length && lineWidth + width > this.contentWidth && !/^\s+$/.test(word.text)) {
+          while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+          lineWidth = line.reduce((sum, part) => sum + part.font.widthOfTextAtSize(part.text, size), 0);
+          await drawLine();
+        }
+        line.push(word);
         lineWidth += width;
       }
-      if (lineWords.length) await flush();
+      if (line.length) await drawLine();
       else await this.ensureSpace(lineHeight);
     }
     this.y -= options.spacingAfter ?? 0;

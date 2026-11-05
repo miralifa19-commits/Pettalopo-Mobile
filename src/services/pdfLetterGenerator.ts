@@ -411,7 +411,7 @@ function drawSignerBlock(
   return y - 6;
 }
 
-async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage): Promise<void> {
+async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage, rightBlockStartX?: number): Promise<void> {
   type Signer = {
     approval: string;
     title: string;
@@ -516,16 +516,23 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     members.forEach((signer, columnIndex) => {
       // Batas awal setiap kolom adalah koordinat tetap. Kolom kanan tidak
       // lagi menggeser teks ke kanan berdasarkan panjang masing-masing baris.
-      const x = members.length === 2
-        ? SIDE_MARGIN + columnIndex * (columnWidth + gap)
-        : (signers.length > 1
-          ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
-          : SIDE_MARGIN);
+      const isRightColumn = members.length === 2 && columnIndex === 1;
+      // The right signature block starts exactly below the W in Wabarakatuh.
+      const x = isRightColumn && rightBlockStartX !== undefined
+        ? rightBlockStartX
+        : members.length === 2
+          ? SIDE_MARGIN + columnIndex * (columnWidth + gap)
+          : (signers.length > 1
+            ? SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2
+            : SIDE_MARGIN);
+      const signerWidth = isRightColumn && rightBlockStartX !== undefined
+        ? Math.max(72, layout.width - SIDE_MARGIN - x)
+        : columnWidth;
 
       bottoms.push(drawSignerBlock(
         layout,
         x,
-        columnWidth,
+        signerWidth,
         y - (sharedApproval ? 13 : 0),
         sharedApproval ? undefined : signer.approval,
         signer.title,
@@ -689,13 +696,19 @@ export async function createLetterPdf(
 
     stage = 'Menata salam penutup dan tanggal pengesahan';
     onStage(stage);
-    await layout.paragraph('Wassalamu’alaikum Warahmatullahi Wabarakatuh', { size: 12, font: italic, lineHeight: 16, align: 'center' });
+    const salamPenutup = cleanText('Wassalamu’alaikum Warahmatullahi Wabarakatuh');
+    await layout.paragraph(salamPenutup, { size: 12, font: italic, lineHeight: 16, align: 'center' });
+    const kataWabarakatuh = 'Wabarakatuh';
+    const prefixSebelumW = salamPenutup.slice(0, salamPenutup.lastIndexOf(kataWabarakatuh));
+    const salamWidth = italic.widthOfTextAtSize(salamPenutup, 12);
+    const prefixWidth = italic.widthOfTextAtSize(prefixSebelumW, 12);
+    const wabarakatuhStartX = (layout.width - salamWidth) / 2 + prefixWidth;
     layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
     const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
-    await drawSignatures(layout, surat, qrImage);
+    await drawSignatures(layout, surat, qrImage, wabarakatuhStartX);
 
     stage = 'Menata tembusan surat';
     onStage(stage);

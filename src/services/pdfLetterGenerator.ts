@@ -2,7 +2,7 @@ import { PDFDocument, PDFPage, PDFFont, PDFImage, StandardFonts, rgb } from 'pdf
 import type { GeneratedSurat } from '../components/views/PersuratanAmbalanView';
 
 export const LETTERHEAD_ASSET =
-  'assets/aistudio/Gerakan_Pramuka_Gugus_Depan_10-035__10-036_Pangkalan_SMA_Negeri_9_Maros_20261104_213457_0000_6f4fe1a9.pdf';
+  'assets/aistudio/Gerakan Pramuka Gugus Depan 10-035  10-036 Pangkalan SMA Negeri 9 Maros_20261105_100015_0000.pdf';
 
 const PT_PER_CM = 72 / 2.54;
 const SIDE_MARGIN = 2.5 * PT_PER_CM;

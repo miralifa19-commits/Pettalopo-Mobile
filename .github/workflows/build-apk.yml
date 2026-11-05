@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - perbaikan-pdf
+      - feature/persuratan-ambalan-update
 
 permissions:
   contents: write

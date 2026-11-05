@@ -485,7 +485,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaJabatan,
         pembinaNama,
         pembinaNip,
-        includePembinaTambahan: gudepPilihan === '10.035-10.036',
+        includePembinaTambahan: includePembina && gudepPilihan === '10.035-10.036',
         pembinaTambahanJabatan: selectedPembinaRole === 'pembina_pi' ? 'Pembina Gugus Depan 10.035' : 'Pembina Gugus Depan 10.036',
         pembinaTambahanNama: selectedPembinaRole === 'pembina_pi' ? officials.pembinaPutra : officials.pembinaPutri,
         pembinaTambahanNip: selectedPembinaRole === 'pembina_pi' ? officials.nipPembinaPutra : officials.nipPembinaPutri,
@@ -639,6 +639,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                     onClick={() => {
                       setCeklisDuaDua(false);
                       setGudepPilihan(g.id as any);
+                      if (g.id === '10.036') { setSelectedPembinaRole('pembina_pi'); setDigitalSigner('pembina_putri'); }
+                      else { setSelectedPembinaRole('pembina_pa'); setDigitalSigner('pembina_putra'); }
                     }}
                     className={`p-2.5 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer ${
                       !ceklisDuaDua && gudepPilihan === g.id
@@ -1103,7 +1105,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </button>
                   <div>
                     <label className="text-xs font-bold text-slate-800 block">
-                      Tanda Tangan Dewan Ambalan <span className="text-[10px] text-slate-500 font-normal">(Opsional)</span>
+                      Penandatangan Ambalan / Sangga Kerja / Panitia <span className="text-[10px] text-slate-500 font-normal">(Opsional)</span>
                     </label>
                     <span className="text-[10px] text-slate-500">
                       {includeDewan ? 'Aktif — Wajib pilih nama pada dropdown di bawah' : 'Tidak disertakan dalam surat'}

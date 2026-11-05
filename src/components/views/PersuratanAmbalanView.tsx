@@ -117,6 +117,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   onBack
 }) => {
   const [viewMode, setViewMode] = useState<'dashboard' | 'form' | 'preview' | 'list' | 'drafts' | 'settings'>('dashboard');
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
   const [suratSettings, setSuratSettings] = useState<SuratSettings>(() => {
     try { return { ...DEFAULT_SURAT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}') }; }
@@ -602,7 +603,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
     setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setSignatureGapCm(d.signatureGapCm ?? 0); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
     setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
-    setEditingDraftId(draft.id); setViewMode('form');
+    setEditingDraftId(draft.id); setWizardStep(1); setViewMode('form');
   };
   const handleDeleteDraft = (id: string) => {
     const updated = draftSurat.filter((draft) => draft.id !== id); setDraftSurat(updated);
@@ -692,7 +693,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       <div className="flex items-center gap-3 py-1"><button type="button" onClick={() => viewMode === 'dashboard' ? onBack?.() : setViewMode('dashboard')} className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold" aria-label="Kembali">←</button><h1 className="text-lg font-extrabold text-slate-900">Kelola Surat Ambalan</h1></div>
       {viewMode === 'dashboard' && (
         <div className="grid grid-cols-1 gap-3">
-          <button type="button" onClick={() => { setEditingDraftId(null); setViewMode('form'); }} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-red-50 text-[#b71922] flex items-center justify-center text-2xl">＋</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Buat Surat Baru</strong><span className="block text-xs text-slate-500 mt-1">Isi, generate, dan simpan surat ke bundel keluar</span></span><span className="ml-auto text-slate-400">›</span></button>
+          <button type="button" onClick={() => { setEditingDraftId(null); setWizardStep(1); setViewMode('form'); }} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-red-50 text-[#b71922] flex items-center justify-center text-2xl">＋</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Buat Surat Baru</strong><span className="block text-xs text-slate-500 mt-1">Isi, generate, dan simpan surat ke bundel keluar</span></span><span className="ml-auto text-slate-400">›</span></button>
           <button type="button" onClick={() => setViewMode('drafts')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">▤</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Draf Surat</strong><span className="block text-xs text-slate-500 mt-1">{draftSurat.length} draf tersimpan</span></span><span className="ml-auto text-slate-400">›</span></button>
           <button type="button" onClick={() => setViewMode('list')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">▣</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Bundel Surat Keluar</strong><span className="block text-xs text-slate-500 mt-1">{arsipSurat.length} surat tersimpan</span></span><span className="ml-auto text-slate-400">›</span></button>
           <button type="button" onClick={() => setViewMode('settings')} className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left flex items-center gap-4"><span className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl">⚙</span><span className="min-w-0"><strong className="block text-sm text-slate-900">Pengaturan Surat</strong><span className="block text-xs text-slate-500 mt-1">Atur kalimat jabatan pada pengesahan</span></span><span className="ml-auto text-slate-400">›</span></button>
@@ -734,14 +735,36 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         <form onSubmit={handleGenerateSurat} className="space-y-4">
           
           <h2 className="text-sm font-bold text-slate-700">Buat Surat Baru</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              {[
+                { step: 1, title: 'Identitas' },
+                { step: 2, title: 'Isi Surat' },
+                { step: 3, title: 'Pengesahan' },
+                { step: 4, title: 'Pratinjau' },
+              ].map((item) => (
+                <div key={item.step} className="flex-1 min-w-0 text-center">
+                  <div className={`mx-auto w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold ${wizardStep === item.step ? 'bg-[#c81e28] text-white' : wizardStep > item.step ? 'bg-red-100 text-[#b71922]' : 'bg-slate-100 text-slate-400'}`}>
+                    {item.step}
+                  </div>
+                  <p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep === item.step ? 'text-[#b71922]' : 'text-slate-500'}`}>{item.title}</p>
+                </div>
+              ))}
+            </div>
+            <div className="h-1.5 rounded-md bg-slate-100 overflow-hidden">
+              <div className="h-full rounded-md bg-[#c81e28] transition-all" style={{ width: `${(wizardStep / 4) * 100}%` }} />
+            </div>
+            <p className="text-[11px] text-slate-500">Langkah {wizardStep} dari 4 · {wizardStep === 1 ? 'Identitas Surat' : wizardStep === 2 ? 'Isi Surat' : 'Pengesahan dan penandatangan'}</p>
+          </div>
 
           {/* ==================== BAGIAN 1: IDENTITAS ==================== */}
+          {wizardStep === 1 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
                 Bagian 1: Identitas Surat
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Klik lingkaran untuk memilih</span>
+              <span className="text-[10px] text-slate-400 font-medium">Kolom opsional dapat dikosongkan</span>
             </div>
 
             <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
@@ -749,7 +772,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <p className="text-xs font-bold text-slate-800">Generate 2 Surat Sekaligus</p>
                 <p className="text-[10px] text-slate-500">Terbitkan otomatis untuk Gudep 10.035 &amp; 10.036 secara terpisah</p>
               </div>
-              <button type="button" onClick={() => setCeklisDuaDua(!ceklisDuaDua)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${ceklisDuaDua ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
+              <button type="button" onClick={() => setCeklisDuaDua(!ceklisDuaDua)} className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${ceklisDuaDua ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
             </div>
 
             {/* 1. Tanggal (Wajib) */}
@@ -758,7 +781,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludeTanggal(!includeTanggal)}
                 title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includeTanggal
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -789,7 +812,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludeNomor(!includeNomor)}
                 title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includeNomor
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -827,7 +850,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludePerihal(!includePerihal)}
                 title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includePerihal
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -855,7 +878,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludeLampiran(!includeLampiran)}
                 title="Pilih untuk memasukkan lampiran ke surat"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includeLampiran
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -890,7 +913,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludeKeteranganIdentitas(!includeKeteranganIdentitas)}
                 title="Pilih untuk memasukkan keterangan identitas"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includeKeteranganIdentitas
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -925,7 +948,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 type="button"
                 onClick={() => setIncludeKepadaYth(!includeKepadaYth)}
                 title="Pilih untuk memasukkan Kepada Yth"
-                className={`mt-6 w-6 h-6 rounded-full shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
+                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
                   includeKepadaYth
                     ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
                     : 'border-slate-300 bg-white'
@@ -963,8 +986,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
           </div>
+          )}
 
           {/* ==================== BAGIAN 2: ISI SURAT ==================== */}
+          {wizardStep === 2 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
@@ -1058,7 +1083,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIncludeTempat(!includeTempat)}
-                  className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
+                  className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
                     includeTempat ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -1090,7 +1115,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIncludeKeteranganAcara(!includeKeteranganAcara)}
-                  className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
+                  className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
                     includeKeteranganAcara ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -1117,7 +1142,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               </div>
               <div className="flex items-start gap-2">
-                <button type="button" onClick={() => setIncludeKeteranganDetail(!includeKeteranganDetail)} className={`w-6 h-6 rounded-full shrink-0 border-2 mt-6 flex items-center justify-center ${includeKeteranganDetail ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
+                <button type="button" onClick={() => setIncludeKeteranganDetail(!includeKeteranganDetail)} className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center ${includeKeteranganDetail ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
                 <div className="flex-1">
                   <label className="text-[11px] font-bold text-slate-700 block mb-0.5">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label>
                   <input type="text" value={rincianKeteranganDetail} onChange={(e) => setRincianKeteranganDetail(e.target.value)} disabled={!includeKeteranganDetail} placeholder="Keterangan tambahan" className={`w-full text-xs p-2 rounded-xl border border-slate-200 ${includeKeteranganDetail ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'}`} />
@@ -1159,8 +1184,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
           </div>
+          )}
 
           {/* ==================== BAGIAN 3: PENGESAHAN (SEMUA HARUS DIPILIH) ==================== */}
+          {wizardStep === 3 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
@@ -1168,7 +1195,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   Bagian 3: Pengesahan &amp; Penandatangan
                 </span>
                 <span className="text-[10px] text-slate-500">
-                  Semua yang bertanda tangan harus dipilih secara spesifik
+                  Pilih penandatangan yang diperlukan; lainnya dapat dikosongkan
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
@@ -1282,7 +1309,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIncludeStempel(!includeStempel)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${
                     includeStempel ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -1299,7 +1326,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIncludeTembusan(!includeTembusan)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${
                     includeTembusan ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -1355,9 +1382,18 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
           </div>
+          )}
 
-          <button type="submit" className="w-full py-3.5 rounded-2xl bg-[#c81e28] hover:bg-[#a91b24] text-white font-extrabold text-sm transition-all cursor-pointer">Generate dan Simpan di Bundel Surat</button>
-          <button type="button" onClick={handleSaveDraft} className="w-full py-3 rounded-2xl border border-slate-300 bg-white text-slate-700 font-bold text-sm cursor-pointer">Simpan sebagai Draf</button>
+          <div className="flex gap-2 pt-1">
+            {wizardStep > 1 && (
+              <button type="button" onClick={() => setWizardStep((wizardStep - 1) as 1 | 2 | 3)} className="flex-1 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold">Kembali</button>
+            )}
+            {wizardStep < 3 ? (
+              <button type="button" onClick={() => setWizardStep((wizardStep + 1) as 2 | 3)} className="flex-1 py-3 rounded-xl bg-[#c81e28] text-white text-sm font-extrabold">Lanjutkan</button>
+            ) : (
+              <button type="submit" className="flex-1 py-3 rounded-xl bg-[#c81e28] hover:bg-[#a91b24] text-white text-sm font-extrabold">Lanjut ke Pratinjau</button>
+            )}
+          </div>
         </form>
       )}
 
@@ -1366,13 +1402,16 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {/* ======================================================== */}
       {viewMode === 'preview' && activeSurat && (
         <div className="space-y-4">
-          
+          <div className="space-y-1">
+            <h2 className="text-sm font-extrabold text-slate-900">Halaman 4 — Pratinjau Surat</h2>
+            <p className="text-xs text-slate-500">Periksa hasil dokumen sebelum dicetak atau disimpan.</p>
+          </div>
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setViewMode('form')}
+                onClick={() => { setWizardStep(3); setViewMode('form'); }}
                 className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
               >
                 ← Edit Form
@@ -1407,6 +1446,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </button>
               )}
 
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="py-2 px-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold"
+              >
+                Simpan sebagai Draf
+              </button>
               <button
                 type="button"
                 onClick={() => window.print()}

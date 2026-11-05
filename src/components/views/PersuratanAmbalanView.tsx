@@ -1488,7 +1488,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             {/* Pengesahan: kepala sekolah di atas; kelompok dewan dan pembina di bawah */}
             <div className="pt-4 space-y-7 text-left font-sans" style={{fontSize:'11pt'}}>
               {activeSurat.includeKetuaGudep && activeSurat.ketuaGudepNama && (
-                <div className="mx-auto w-1/2 text-center">
+                <div className="w-full text-left">
                   <p>{activeSurat.ketuaGudepApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                   <p className="font-bold">Kepala Mabigus UPT SMA Negeri 9 Maros,</p>
                   <div className="h-16 flex items-center justify-center">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
@@ -1497,7 +1497,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               )}
               {activeSurat.includeDewan && activeSurat.dewanNama && (
-                <div className="mx-auto w-1/2 text-center">
+                <div className="w-full text-left">
                   <p>Hormat Kami,</p>
                   <p className="font-bold">{activeSurat.dewanJabatan},</p>
                   <div className="h-16"></div>
@@ -1520,8 +1520,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   {signers.length > 1 && <p className="text-center mb-2">{sharedApproval || activeSurat.approvalType || 'Mengetahui'}</p>}
                   <div className="grid grid-cols-2 gap-x-5 gap-y-8">
                     {signers.map((signer, index) => (
-                      <div key={index} className={signers.length === 1 ? 'col-span-2 mx-auto w-1/2 text-center' : 'text-left'}>
-                        {signers.length === 1 && <p className="text-center">{signer.approval || activeSurat.approvalType || 'Mengetahui'}</p>}
+                      <div key={index} className={signers.length === 1 ? 'col-span-2 w-full text-left' : 'text-left'}>
+                        {signers.length === 1 && <p>{signer.approval || activeSurat.approvalType || 'Mengetahui'}</p>}
                         <p className="font-bold">{signer.title},</p>
                         <div className="h-16 flex items-center justify-start">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
                         <p className="font-bold underline">{signer.name}</p>

@@ -81,6 +81,30 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
 const shortBytes = await createLetterPdf(base, loadTestAsset);
 await inspectPdf(shortBytes, 1, 'Surat pendek');
 
+// Test unsupported characters in fields that are drawn directly (date,
+// recipient, signer names), not only in wrapped body paragraphs.
+const unicodeBytes = await createLetterPdf({
+  ...base,
+  tanggalSurat: '5 November 2026 📅',
+  penerimaNama: 'Kepala SMA Negeri 9 Maros 😀',
+  dewanNama: 'Amiruddin 🧭',
+  pembinaNama: 'Pembina Putra 🚀',
+  ketuaGudepNama: 'Kepala Sekolah 🎓',
+}, loadTestAsset);
+const unicodePdf = await pdfjsLib.getDocument({ data: unicodeBytes }).promise;
+const unicodeTextParts: string[] = [];
+for (let pageNumber = 1; pageNumber <= unicodePdf.numPages; pageNumber += 1) {
+  const page = await unicodePdf.getPage(pageNumber);
+  const content = await page.getTextContent();
+  unicodeTextParts.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
+}
+const unicodeText = unicodeTextParts.join(' ');
+assert.ok(unicodeText.includes('Kepala SMA Negeri 9 Maros ?'), 'Karakter tidak didukung pada penerima harus diganti ?');
+assert.ok(unicodeText.includes('Amiruddin ?'), 'Karakter tidak didukung pada nama dewan harus diganti ?');
+assert.ok(unicodeText.includes('Pembina Putra ?'), 'Karakter tidak didukung pada nama pembina harus diganti ?');
+assert.ok(unicodeText.includes('Kepala Sekolah ?'), 'Karakter tidak didukung pada nama ketua gudep harus diganti ?');
+console.log('PASS Uji karakter identitas dan tanda tangan: simbol non-WinAnsi diganti ? tanpa menggagalkan ekspor.');
+
 const longBody = Array.from({ length: 70 }, (_, index) =>
   'Paragraf uji nomor ' + (index + 1) + '. Pettalopo Mobile menyusun surat dengan teks asli, ukuran font terukur, dan pergantian halaman otomatis agar setiap baris tetap berada di dalam margin dokumen.'
 ).join('\n\n');

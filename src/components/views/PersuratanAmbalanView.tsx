@@ -928,8 +928,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800">
-                  Poin-Poin Rincian Kegiatan
+                  Rincian Kegiatan
                 </span>
+              </div>
               {/* Hari / Tanggal (Wajib) */}
               <div className="flex items-start gap-2">
                 <span className="w-6 text-center text-xs font-bold text-[#c81e28] pt-2.5">

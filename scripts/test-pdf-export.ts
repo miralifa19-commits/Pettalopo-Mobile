@@ -75,11 +75,16 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
     assert.ok(text.includes('GERAKAN PRAMUKA'), label + ': kop tidak ditemukan pada halaman ' + pageNumber);
   }
   assert.ok(pageTexts.join(' ').includes('Pengujian PDF Surat Resmi'), label + ': teks isi tidak bisa diekstrak');
-  console.log('PASS ' + label + ': ' + expectedPages + ' halaman, kop asli ada di setiap halaman, ukuran tetap, teks dapat diseleksi/diekstrak.');
+  return pageTexts;
+
 }
 
 const shortBytes = await createLetterPdf(base, loadTestAsset);
-await inspectPdf(shortBytes, 1, 'Surat pendek');
+const shortPages = await inspectPdf(shortBytes, 2, 'Surat pendek dengan tiga penandatangan');
+assert.ok(shortPages[0].includes('Amiruddin S.'), 'Dewan harus tetap berada di halaman pertama');
+assert.ok(shortPages[0].includes('Pembina Putra'), 'Pembina harus tetap berada di halaman pertama');
+assert.ok(shortPages[1].includes('Kepala Sekolah'), 'Kepala Sekolah harus dapat berpindah sendiri ke halaman berikutnya');
+console.log('PASS Uji alur tanda tangan: Dewan dan Pembina di halaman pertama, Kepala Sekolah di halaman berikutnya.');
 
 // Test unsupported characters in fields that are drawn directly (date,
 // recipient, signer names), not only in wrapped body paragraphs.

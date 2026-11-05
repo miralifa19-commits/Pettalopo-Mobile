@@ -1,5 +1,6 @@
 export interface MabigusOfficials {
   ketuaGudep: string;
+  ketuaGudepJabatan?: string;
   nipKetuaGudep?: string;
   pembinaPutra: string;
   nipPembinaPutra?: string;
@@ -11,6 +12,7 @@ export interface MabigusOfficials {
 
 export const DEFAULT_MABIGUS_OFFICIALS: MabigusOfficials = {
   ketuaGudep: 'Dr. H. Idrus, S. Pd., M. Pd',
+  ketuaGudepJabatan: 'Kepala Sekolah / Ketua Mabigus',
   nipKetuaGudep: 'NIP. 19680512 199403 1 004',
   pembinaPutra: 'Jumalang, S. Pd',
   nipPembinaPutra: 'NIP. 19750810 200502 1 002',

@@ -427,7 +427,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   // Urutan pengesahan dipertahankan: Kepala Sekolah, Dewan, lalu Pembina.
   if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
     signers.push({
-      approval: surat.ketuaGudepApprovalType || fallback,
+      approval: surat.ketuaGudepApprovalType ?? fallback,
       title: 'Kepala Sekolah / Ketua Mabigus',
       name: surat.ketuaGudepNama,
       id: surat.ketuaGudepNip,
@@ -447,21 +447,21 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
   if (surat.includePembantuPutra && surat.pembantuPutraNama) {
     signers.push({
-      approval: surat.pembantuPutraApprovalType || fallback,
+      approval: surat.pembantuPutraApprovalType ?? fallback,
       title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra',
       name: surat.pembantuPutraNama,
     });
   }
   if (surat.includePembantuPutri && surat.pembantuPutriNama) {
     signers.push({
-      approval: surat.pembantuPutriApprovalType || fallback,
+      approval: surat.pembantuPutriApprovalType ?? fallback,
       title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri',
       name: surat.pembantuPutriNama,
     });
   }
   if (surat.includePembina && surat.pembinaNama) {
     signers.push({
-      approval: surat.pembinaApprovalType || fallback,
+      approval: surat.pembinaApprovalType ?? fallback,
       title: surat.pembinaJabatan || 'Pembina Putra',
       name: surat.pembinaNama,
       id: surat.pembinaNip,
@@ -471,7 +471,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   }
   if (surat.includePembinaTambahan && surat.pembinaTambahanNama) {
     signers.push({
-      approval: surat.pembinaTambahanApprovalType || fallback,
+      approval: surat.pembinaTambahanApprovalType ?? fallback,
       title: surat.pembinaTambahanJabatan || 'Pembina Putri',
       name: surat.pembinaTambahanNama,
       id: surat.pembinaTambahanNip,

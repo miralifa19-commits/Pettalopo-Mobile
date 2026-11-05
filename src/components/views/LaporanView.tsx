@@ -102,8 +102,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         const date = new Date(letter.createdAt);
         return !Number.isNaN(date.getTime())
           && date.getFullYear() === quarterRange.year
-          && date.getMonth() + 1 >= quarterRange.start + 6 - 1
-          && date.getMonth() + 1 <= quarterRange.end + 6 - 1;
+          && date.getMonth() + 1 >= quarterRange.start + 6
+          && date.getMonth() + 1 <= quarterRange.end + 6;
       });
     } catch { return []; }
   }, [selectedTriwulan, quarterRange.year, quarterRange.start, quarterRange.end]);

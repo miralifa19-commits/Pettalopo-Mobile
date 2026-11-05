@@ -54,10 +54,14 @@ export interface GeneratedSurat {
   dewanNama: string;
   dewanNta: string;
   
-  includePembina: boolean; // Wajib/Pilihan
+  includePembina: boolean;
   pembinaJabatan: string;
   pembinaNama: string;
   pembinaNip?: string;
+  includePembinaTambahan?: boolean;
+  pembinaTambahanJabatan?: string;
+  pembinaTambahanNama?: string;
+  pembinaTambahanNip?: string;
 
   includeKetuaGudep: boolean; // Pilihan
   ketuaGudepNama: string;
@@ -481,6 +485,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaJabatan,
         pembinaNama,
         pembinaNip,
+        includePembinaTambahan: gudepPilihan === '10.035-10.036',
+        pembinaTambahanJabatan: selectedPembinaRole === 'pembina_pi' ? 'Pembina Gugus Depan 10.035' : 'Pembina Gugus Depan 10.036',
+        pembinaTambahanNama: selectedPembinaRole === 'pembina_pi' ? officials.pembinaPutra : officials.pembinaPutri,
+        pembinaTambahanNip: selectedPembinaRole === 'pembina_pi' ? officials.nipPembinaPutra : officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
         ketuaGudepNip: officials.nipKetuaGudep,
@@ -1481,7 +1489,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 )}
               </div>
 
-              {activeSurat.includeTanggal && <div className="text-left font-medium"><p>{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</p></div>}
             </div>
 
             {/* Kepada Yth. (Opsional) */}
@@ -1534,6 +1541,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             {/* TANDA TANGAN PENGESAHAN DENGAN ADAPTASI DINAMIS */}
             <div className="pt-4 text-left font-sans" style={{ fontSize: '11pt' }}>
+              <p className="font-bold mb-2">{activeSurat.approvalType || 'Mengetahui'},</p>
               
               {/* Jika Dewan DAN Pembina aktif: Render 2 kolom (Dewan Kiri, Pembina Kanan) */}
               {activeSurat.includeDewan && activeSurat.includePembina && (
@@ -1628,7 +1636,19 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               )}
 
-              {/* Ketua Gugus Depan Mengetahui (Tengah Bawah) */}
+
+              {activeSurat.includePembinaTambahan && (
+                <div className="pt-2 min-w-[240px]">
+                  <p className="font-bold">{activeSurat.pembinaTambahanJabatan}</p>
+                  <div className="my-2 h-16 flex items-center justify-start">
+                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR Code tanda tangan digital" className="w-14 h-14" />}
+                  </div>
+                  <p className="font-bold underline">{activeSurat.pembinaTambahanNama}</p>
+                  {activeSurat.pembinaTambahanNip && <p className="text-[10px] text-slate-500">{activeSurat.pembinaTambahanNip}</p>}
+                </div>
+              )}
+
+              {/* Ketua Gugus Depan */}
               {activeSurat.includeKetuaGudep && (
                 <div className="pt-2 inline-block min-w-[280px]">
                   <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>

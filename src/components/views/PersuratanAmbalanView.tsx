@@ -286,7 +286,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     const currentDewan = dewanList.find(d => d.id === selectedDewanId) || dewanList[0];
     const dewanNama = customSignerRoles[selectedDewanId] ? customSignerName.trim() : (currentDewan?.memberName || '');
     const dewanJabatan = customSignerRoles[selectedDewanId] || currentDewan?.jabatan || '';
-    const dewanNta = currentDewan?.satuan === 'Putra' ? 'NTA. 10.035.001' : 'NTA. 10.036.001';
+    const dewanNta = customSignerRoles[selectedDewanId] ? '' : (currentDewan?.satuan === 'Putra' ? 'NTA. 10.035.001' : 'NTA. 10.036.001');
 
     // Resolve Pembina
     let pembinaNama = officials.pembinaPutra;
@@ -1481,11 +1481,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 )}
               </div>
 
-              {activeSurat.includeTanggal && (
-                <div className="text-right font-medium">
-                  <p>Maros, {activeSurat.tanggalSurat}</p>
-                </div>
-              )}
+              {activeSurat.includeTanggal && <div className="text-left font-medium"><p>{activeSurat.kotaPengesahan || 'Maros'}, {activeSurat.tanggalSurat}</p></div>}
             </div>
 
             {/* Kepada Yth. (Opsional) */}
@@ -1522,7 +1518,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 )}
                 {activeSurat.includeKeteranganAcara && (
                   <p>
-                    <span className="inline-block w-36 font-bold">Keterangan</span> : {activeSurat.rincianKeteranganAcara}
+                    <span className="inline-block w-36 font-bold">Agenda</span> : {activeSurat.rincianKeteranganAcara}
                   </p>
                 )}
               </div>
@@ -1599,7 +1595,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
               {/* Jika HANYA Pembina yang aktif (Dewan TIDAK diceklis - Opsional) */}
               {!activeSurat.includeDewan && activeSurat.includePembina && (
-                <div className="flex justify-end pb-6">
+                <div className="flex justify-start pb-6">
                   <div className="min-w-[240px] text-center">
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
                     <div className="h-16 flex items-center justify-center relative">

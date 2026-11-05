@@ -147,7 +147,10 @@ interface FontSet {
   regular: PDFFont;
   bold: PDFFont;
   italic: PDFFont;
-  boldItalic: PDFFont;}class LetterLayout {
+  boldItalic: PDFFont;
+}
+
+class LetterLayout {
   readonly pages: PDFPage[] = [];
   readonly width: number;
   readonly height: number;
@@ -295,8 +298,11 @@ interface FontSet {
           mode = mode === 'bold' ? 'regular' : 'bold';
           index += 2;
         } else if (rawLine[index] === '*') {
-          flush();          mode = mode === 'italic' ? 'regular' : 'italic';          index += 1;
-        } else {          buffer += rawLine[index];
+          flush();
+          mode = mode === 'italic' ? 'regular' : 'italic';
+          index += 1;
+        } else {
+          buffer += rawLine[index];
           index += 1;
         }
       }
@@ -445,8 +451,8 @@ function drawSignerBlock(
   approval: string | undefined, title: string, name: string, identifier: string | undefined,
   qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
   textWidthLimit = columnWidth - 8,
-  reservedHeaderHeight = 0,
-): number {  const titleSize = 10.5;
+): number {
+  const titleSize = 10.5;
   let y = topY;
   const drawAligned = (text: string, font: PDFFont, size: number, baseline: number) => {
     const safe = cleanText(text);
@@ -457,20 +463,16 @@ function drawSignerBlock(
     drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
-  const titleLines = wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit);
-  for (const line of titleLines) {
+  for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit)) {
     drawAligned(line, layout.fonts.bold, titleSize, y);
     y -= 13;
   }
   y -= 3;
-  const usedHeaderHeight = (approval ? 13 : 0) + titleLines.length * 13 + 3;
-  y -= Math.max(0, reservedHeaderHeight - usedHeaderHeight);
   if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
   if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
-  // Samakan tinggi area tanda tangan digital dan basah agar nama,
-  // garis tanda tangan, serta NIP sejajar dalam satu baris.
-  // Pada tanda tangan basah, ruang ini dibiarkan kosong untuk tanda tangan manual.
-  y -= 42;
+  // QR membutuhkan ruang vertikal penuh; stempel berada di sisi kanan blok
+  // sehingga tidak perlu menghabiskan ruang tanda tangan sebesar QR.
+  y -= qrImage ? 42 : 15;
   const safeName = cleanText(name);
   const nameSize = 10.5;
   const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
@@ -539,14 +541,10 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   if (kepalaSekolah) rows.push([kepalaSekolah]);
 
   // Hitung kebutuhan ruang berdasarkan tinggi nyata tiap blok (termasuk QR/NIP).
-  const rowHeights = rows.map((members) => {
-    const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
-    const headerHeight = Math.max(...members.map((signer) => {
-      const titleLineCount = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8).length;
-      return (sharedApproval ? 0 : (signer.approval ? 13 : 0)) + titleLineCount * 13 + 3;
-    }));
-    return (sharedApproval ? 13 : 0) + headerHeight + 42 + 13 + (members.some((signer) => signer.id) ? 11 : 0) + 6;
-  });
+  const rowHeights = rows.map((members) => Math.max(...members.map((signer) => {
+    const titleLineCount = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8).length;
+    return 13 + titleLineCount * 13 + 3 + (signer.qr ? 42 : 30) + 13 + (signer.id ? 11 : 0) + 6;
+  })));
   await layout.ensureSpace(rowHeights.reduce((sum, height) => sum + height, 0) + Math.max(0, rows.length - 1) * 5 + 10);
   let rowY = layout.y;
   const bottoms: number[] = [];
@@ -555,10 +553,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const y = rowY;
     const rowBottoms: number[] = [];
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
-    const rowHeaderHeight = Math.max(...members.map((signer) => {
-      const titleLineCount = wrapPdfText(signer.title, layout.fonts.bold, 10.5, columnWidth - 8).length;
-      return (sharedApproval ? 0 : (signer.approval ? 13 : 0)) + titleLineCount * 13 + 3;
-    }));
     if (sharedApproval) layout.drawCentered(members[0].approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
 
     members.forEach((signer, columnIndex) => {
@@ -577,7 +571,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       const bottom = drawSignerBlock(
         layout, x, signerWidth, sharedApproval ? y - 13 : y,
         sharedApproval ? undefined : signer.approval + ',', signer.title, signer.name,
-        signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth, rowHeaderHeight,
+        signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth,
       );
       bottoms.push(bottom);
       rowBottoms.push(bottom);
@@ -593,13 +587,17 @@ async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promis
   const fontSize = 8.5;
   const lineHeight = 9;
   const entries = surat.tembusanList.map((item, index) => `${index + 1}. ${item}`);
-  const headingLines = wrapPdfText('Tembusan:', layout.fonts.regular, fontSize, layout.contentWidth);  const entryLineCount = entries.reduce(
-    (total, entry) => total + wrapPdfText(entry, layout.fonts.regular, fontSize, layout.contentWidth).length,    0,
-  );  const totalLines = headingLines.length + entryLineCount;
+  const headingLines = wrapPdfText('Tembusan:', layout.fonts.regular, fontSize, layout.contentWidth);
+  const entryLineCount = entries.reduce(
+    (total, entry) => total + wrapPdfText(entry, layout.fonts.regular, fontSize, layout.contentWidth).length,
+    0,
+  );
+  const totalLines = headingLines.length + entryLineCount;
   const blockHeight = totalLines * lineHeight;
   const bottomPosition = BOTTOM_SAFE_MARGIN + lineHeight;
   const blockTop = bottomPosition + (totalLines - 1) * lineHeight;
   const gapBeforeBlock = 10;
+
   // Tembusan ditempatkan di bagian bawah halaman. Jika ruang setelah isi dan
   // seluruh tanda tangan tidak cukup, pindahkan satu blok utuh ke halaman kop baru.
   if (layout.y - gapBeforeBlock < blockTop || blockHeight > layout.height - CONTENT_TOP_FROM_TOP - BOTTOM_SAFE_MARGIN) {
@@ -740,12 +738,16 @@ export async function createLetterPdf(
         label: row.label,
         value: row.value,
         x: SIDE_MARGIN,
-        labelWidth: 78,        maxWidth: layout.contentWidth,
+        labelWidth: 78,
+        maxWidth: layout.contentWidth,
         size: 12,
-        lineHeight: 17,        labelFont: regular,
+        lineHeight: 17,
+        labelFont: regular,
         valueFont: regular,
-        rowGap: 2,      });
+        rowGap: 2,
+      });
     }
+
     layout.y -= 7;
     await layout.richParagraph(surat.penutupParagraf, {
       size: 12, lineHeight: 18, spacingAfter: 8, align: 'justify',

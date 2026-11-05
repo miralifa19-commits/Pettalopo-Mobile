@@ -278,7 +278,7 @@ class LetterLayout {
     this.y -= options.spacingAfter ?? 0;
   }
 
-  async richParagraph(value: string, options: { x?: number; size?: number; lineHeight?: number; spacingAfter?: number } = {}): Promise<void> {
+  async richParagraph(value: string, options: { x?: number; size?: number; lineHeight?: number; spacingAfter?: number; align?: 'left' | 'justify' } = {}): Promise<void> {
     const size = options.size ?? 12;
     const x = options.x ?? SIDE_MARGIN;
     const lineHeight = options.lineHeight ?? 18;
@@ -313,12 +313,20 @@ class LetterLayout {
       }
       let line: Array<{ text: string; font: PDFFont }> = [];
       let lineWidth = 0;
-      const drawLine = async () => {
+      const drawLine = async (justify = false) => {
         await this.ensureSpace(lineHeight);
+        const spaces = line.filter((part) => /^\\s+$/.test(part.text));
+        const extraSpace = justify && spaces.length > 0
+          ? Math.max(0, (this.contentWidth - lineWidth) / spaces.length)
+          : 0;
         let drawX = x;
         for (const part of line) {
-          this.drawText(part.text, drawX, this.y, part.font, size);
-          drawX += part.font.widthOfTextAtSize(part.text, size);
+          if (/^\\s+$/.test(part.text)) {
+            drawX += part.font.widthOfTextAtSize(part.text, size) + extraSpace;
+          } else {
+            this.drawText(part.text, drawX, this.y, part.font, size);
+            drawX += part.font.widthOfTextAtSize(part.text, size);
+          }
         }
         this.y -= lineHeight;
         line = [];
@@ -329,7 +337,7 @@ class LetterLayout {
         if (line.length && lineWidth + width > this.contentWidth && !/^\s+$/.test(word.text)) {
           while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
           lineWidth = line.reduce((sum, part) => sum + part.font.widthOfTextAtSize(part.text, size), 0);
-          await drawLine();
+          await drawLine(options.align === 'justify');
         }
         line.push(word);
         lineWidth += width;
@@ -683,16 +691,16 @@ export async function createLetterPdf(
     }
 
     await layout.paragraph("Assalamu'alaikum warahmatullahi wabarakatuh", {
-      size: 12, font: italic, lineHeight: 16, spacingAfter: 2,
+      size: 12, font: italic, lineHeight: 16, spacingAfter: 2, align: 'center',
     });
     await layout.paragraph('Salam Pramuka,', {
-      size: 12, font: regular, lineHeight: 16, spacingAfter: 9,
+      size: 12, font: regular, lineHeight: 16, spacingAfter: 9, align: 'center',
     });
 
     stage = 'Menata paragraf isi dan rincian kegiatan';
     onStage(stage);
     await layout.richParagraph(surat.isiParagraf, {
-      size: 12, lineHeight: 18, spacingAfter: 9,
+      size: 12, lineHeight: 18, spacingAfter: 9, align: 'justify',
     });
 
     const bulletRows = [
@@ -726,10 +734,10 @@ export async function createLetterPdf(
 
     layout.y -= 7;
     await layout.richParagraph(surat.penutupParagraf, {
-      size: 12, lineHeight: 18, spacingAfter: 8,
+      size: 12, lineHeight: 18, spacingAfter: 8, align: 'justify',
     });
     await layout.paragraph("Wassalamu'alaikum warahmatullahi wabarakatuh", {
-      size: 12, font: italic, lineHeight: 16, spacingAfter: 8,
+      size: 12, font: italic, lineHeight: 16, spacingAfter: 8, align: 'center',
     });
 
     stage = 'Menata tanggal pengesahan';

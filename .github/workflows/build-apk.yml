@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - perbaikan-pdf
+      - update/surat-laporan-triwulan-2026-11-05
 
 permissions:
   contents: write

@@ -14,6 +14,25 @@ interface LaporanViewProps {
 
 type PeriodFilter = 'kegiatan' | 'triwulan' | 'masa_bakti';
 
+type TriwulanRole = 'pradana' | 'pemangku_adat' | 'sekretaris' | 'bendahara';
+interface TriwulanRoleDraft {
+  uraian: string;
+  kendala: string;
+  tindakLanjut: string;
+  saldoAwal: string;
+  pemasukan: string;
+  pengeluaran: string;
+}
+const EMPTY_TRIWULAN_DRAFT: TriwulanRoleDraft = {
+  uraian: '', kendala: '', tindakLanjut: '', saldoAwal: '', pemasukan: '', pengeluaran: ''
+};
+const TRIWULAN_ROLE_META: Record<TriwulanRole, { label: string; subtitle: string }> = {
+  pradana: { label: 'Pradana', subtitle: 'Koordinasi, pelaksanaan program kerja, dan evaluasi ambalan' },
+  pemangku_adat: { label: 'Pemangku Adat', subtitle: 'Adat ambalan, ketertiban, kedisiplinan, dan pembinaan anggota' },
+  sekretaris: { label: 'Sekretaris (Kerani)', subtitle: 'Administrasi, surat-menyurat, notulen, dan pengarsipan' },
+  bendahara: { label: 'Bendahara (Juru Uang)', subtitle: 'Kas, pemasukan, pengeluaran, dan pertanggungjawaban keuangan' }
+};
+
 export const LaporanView: React.FC<LaporanViewProps> = ({
   programKerjaList,
   currentUser,
@@ -45,6 +64,57 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
   // PDF Preview Modal
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+
+  // Laporan triwulan per jabatan. Catatan tersimpan lokal per jabatan dan periode.
+  const [selectedRole, setSelectedRole] = useState<TriwulanRole>('pradana');
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, TriwulanRoleDraft>>(() => {
+    try { return JSON.parse(localStorage.getItem('pettalopo_laporan_triwulan_jabatan_v1') || '{}'); }
+    catch { return {}; }
+  });
+  const roleDraftKey = `${selectedTriwulan}:${selectedRole}`;
+  const currentRoleDraft = { ...EMPTY_TRIWULAN_DRAFT, ...(roleDrafts[roleDraftKey] || {}) };
+  const updateRoleDraft = (field: keyof TriwulanRoleDraft, value: string) => {
+    setRoleDrafts((current) => ({
+      ...current,
+      [roleDraftKey]: { ...EMPTY_TRIWULAN_DRAFT, ...(current[roleDraftKey] || {}), [field]: value }
+    }));
+  };
+  useEffect(() => {
+    try { localStorage.setItem('pettalopo_laporan_triwulan_jabatan_v1', JSON.stringify(roleDrafts)); } catch {}
+  }, [roleDrafts]);
+
+  const quarterRange = [
+    { start: 1, end: 3, year: 2026 },
+    { start: 4, end: 6, year: 2026 },
+    { start: 7, end: 9, year: 2027 },
+    { start: 10, end: 12, year: 2027 }
+  ][selectedTriwulan - 1];
+  const quarterProgramKerja = useMemo(
+    () => programKerjaList.filter((item) => item.bulanUrutan >= quarterRange.start && item.bulanUrutan <= quarterRange.end),
+    [programKerjaList, quarterRange.start, quarterRange.end]
+  );
+  const quarterLetterArchive = useMemo(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('pettalopo_arsip_surat_resmi_v5') || '[]');
+      if (!Array.isArray(saved)) return [];
+      return saved.filter((letter: { createdAt?: string }) => {
+        if (!letter.createdAt) return false;
+        const date = new Date(letter.createdAt);
+        return !Number.isNaN(date.getTime())
+          && date.getFullYear() === quarterRange.year
+          && date.getMonth() + 1 >= quarterRange.start + 6
+          && date.getMonth() + 1 <= quarterRange.end + 6;
+      });
+    } catch { return []; }
+  }, [selectedTriwulan, quarterRange.year, quarterRange.start, quarterRange.end]);
+  const parseRupiahInput = (value: string) => Number(value.replace(/[^0-9]/g, '')) || 0;
+  const formatRupiah = (value: number) => new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', maximumFractionDigits: 0
+  }).format(value);
+  const financialClosingBalance = parseRupiahInput(currentRoleDraft.saldoAwal)
+    + parseRupiahInput(currentRoleDraft.pemasukan)
+    - parseRupiahInput(currentRoleDraft.pengeluaran);
+  const hasFinancialEntries = Boolean(currentRoleDraft.saldoAwal || currentRoleDraft.pemasukan || currentRoleDraft.pengeluaran);
 
   // Subscribe to evaluations
   useEffect(() => {
@@ -267,6 +337,140 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         </div>
       </div>
 
+      {periodFilter === 'triwulan' && (
+        <section className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-3">
+          <div>
+            <h3 className="text-sm font-black text-slate-900">Laporan Triwulan Per Jabatan</h3>
+            <p className="text-[11px] text-slate-500 mt-1">Pilih jabatan untuk menyusun laporan masing-masing. Data otomatis diambil dari aplikasi; catatan dan angka yang belum tersedia dapat diisi di sini.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(Object.keys(TRIWULAN_ROLE_META) as TriwulanRole[]).map((role) => (
+              <button
+                key={role}
+                onClick={() => setSelectedRole(role)}
+                className={`rounded-xl border p-3 text-left transition-colors ${selectedRole === role ? 'bg-red-50 border-red-300 text-[#b91c1c]' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+              >
+                <strong className="block text-xs font-extrabold">{TRIWULAN_ROLE_META[role].label}</strong>
+                <span className="block text-[10px] mt-1 opacity-80">{TRIWULAN_ROLE_META[role].subtitle}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-3 space-y-3">
+            <div className="border-b border-slate-100 pb-2">
+              <h4 className="text-xs font-black text-slate-900">{TRIWULAN_ROLE_META[selectedRole].label}</h4>
+              <p className="text-[10px] text-slate-500">{getPeriodLabel()}</p>
+            </div>
+
+            {selectedRole === 'pradana' && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { label: 'Agenda Triwulan', value: quarterProgramKerja.length },
+                    { label: 'Terlaksana', value: quarterProgramKerja.filter((item) => item.status === 'Terlaksana' || item.status === 'Selesai').length },
+                    { label: 'Berjalan', value: quarterProgramKerja.filter((item) => item.status === 'Berjalan').length },
+                    { label: 'Belum/Tidak', value: quarterProgramKerja.filter((item) => item.status === 'Direncanakan' || item.status === 'Tidak Terlaksana' || item.status === 'Belum Terlaksana').length }
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl bg-slate-50 border border-slate-200 p-2">
+                      <strong className="block text-lg font-black text-slate-900">{item.value}</strong>
+                      <span className="text-[10px] text-slate-500">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[11px] text-slate-600 space-y-1">
+                  <strong className="text-slate-800">Rekap program kerja:</strong>
+                  {quarterProgramKerja.length ? quarterProgramKerja.map((item) => (
+                    <p key={item.id}>• {item.nama} — {item.status}</p>
+                  )) : <p>Belum ada program kerja yang terdaftar pada triwulan ini.</p>}
+                </div>
+              </div>
+            )}
+
+            {selectedRole === 'pemangku_adat' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { label: 'Total anggota', value: allMembers.length },
+                  { label: 'Putra', value: allMembers.filter((member) => member.satuan === 'Putra').length },
+                  { label: 'Putri', value: allMembers.filter((member) => member.satuan === 'Putri').length },
+                  { label: 'Sangga terdata', value: new Set(allMembers.map((member) => member.sangga).filter(Boolean)).size }
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl bg-slate-50 border border-slate-200 p-2">
+                    <strong className="block text-lg font-black text-slate-900">{item.value}</strong>
+                    <span className="text-[10px] text-slate-500">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedRole === 'sekretaris' && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1">
+                <strong className="block text-lg font-black text-slate-900">{quarterLetterArchive.length} surat tersimpan</strong>
+                <span className="text-[10px] text-slate-500">Dihitung dari arsip surat pada perangkat ini untuk periode triwulan terpilih.</span>
+                {quarterLetterArchive.slice(0, 8).map((letter: { id?: string; nomorSurat?: string; perihal?: string }, index: number) => (
+                  <p key={letter.id || index} className="text-[11px] text-slate-700">{index + 1}. {letter.nomorSurat || 'Tanpa nomor'} — {letter.perihal || 'Tanpa perihal'}</p>
+                ))}
+                {quarterLetterArchive.length > 8 && <p className="text-[10px] text-slate-500">Dan {quarterLetterArchive.length - 8} surat lainnya.</p>}
+              </div>
+            )}
+
+            {selectedRole === 'bendahara' && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {([
+                    ['saldoAwal', 'Saldo awal kas'],
+                    ['pemasukan', 'Total pemasukan'],
+                    ['pengeluaran', 'Total pengeluaran']
+                  ] as Array<[keyof TriwulanRoleDraft, string]>).map(([field, label]) => (
+                    <label key={field} className="block text-[10px] font-bold text-slate-600">
+                      {label}
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={currentRoleDraft[field]}
+                        onChange={(event) => updateRoleDraft(field, event.target.value)}
+                        placeholder="0"
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-red-400"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+                  <span className="block text-[10px] text-emerald-800 font-bold">Saldo akhir (perhitungan otomatis)</span>
+                  <strong className="text-base font-black text-emerald-900">{hasFinancialEntries ? formatRupiah(financialClosingBalance) : 'Belum diisi'}</strong>
+                </div>
+                <p className="text-[10px] text-slate-500">Angka keuangan diisi oleh bendahara berdasarkan buku kas dan bukti transaksi. Aplikasi tidak membuat nominal perkiraan.</p>
+              </div>
+            )}
+
+            <label className="block text-[10px] font-bold text-slate-600">
+              {selectedRole === 'pradana' ? 'Uraian koordinasi dan pelaksanaan program kerja'
+                : selectedRole === 'pemangku_adat' ? 'Uraian adat, ketertiban, kedisiplinan, dan pembinaan anggota'
+                : selectedRole === 'sekretaris' ? 'Uraian administrasi, surat-menyurat, notulen, dan arsip'
+                : 'Rincian pemasukan, pengeluaran, sumber dana, dan bukti transaksi'}
+              <textarea
+                rows={3}
+                value={currentRoleDraft.uraian}
+                onChange={(event) => updateRoleDraft('uraian', event.target.value)}
+                placeholder="Tuliskan realisasi tugas selama triwulan ini..."
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-red-400"
+              />
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label className="block text-[10px] font-bold text-slate-600">
+                Kendala / hal yang perlu dievaluasi
+                <textarea rows={2} value={currentRoleDraft.kendala} onChange={(event) => updateRoleDraft('kendala', event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-red-400" placeholder="Tuliskan jika ada..." />
+              </label>
+              <label className="block text-[10px] font-bold text-slate-600">
+                Rencana tindak lanjut
+                <textarea rows={2} value={currentRoleDraft.tindakLanjut} onChange={(event) => updateRoleDraft('tindakLanjut', event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-red-400" placeholder="Rencana untuk triwulan berikutnya..." />
+              </label>
+            </div>
+            <p className="text-[10px] text-emerald-700 font-semibold">✓ Catatan tersimpan otomatis pada perangkat ini untuk jabatan dan triwulan yang dipilih.</p>
+          </div>
+        </section>
+      )}
+
       {/* 3. Action Buttons: Unduh PDF & Rekap AI */}
       <div className="flex items-center gap-2">
         <button
@@ -474,7 +678,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               {/* Judul Laporan */}
               <div className="text-center space-y-1">
                 <h3 className="text-sm font-black text-slate-950 uppercase underline tracking-wide">
-                  LAPORAN HASIL EVALUASI & PRESENSI KEGIATAN
+                  {periodFilter === 'triwulan' ? `LAPORAN TRIWULAN - ${TRIWULAN_ROLE_META[selectedRole].label}` : 'LAPORAN HASIL EVALUASI & PRESENSI KEGIATAN'}
                 </h3>
                 <p className="text-[11px] font-bold text-slate-700">
                   {getPeriodLabel()}
@@ -520,6 +724,42 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <p>{aiNarrative.paragrafKehadiran}</p>
                     <p>{aiNarrative.paragrafKepuasan}</p>
                     <p>{aiNarrative.paragrafEvaluasiKekurangan}</p>
+                  </div>
+                </div>
+              )}
+
+              {periodFilter === 'triwulan' && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase text-slate-900 border-b border-slate-200 pb-1">
+                    II. Pertanggungjawaban {TRIWULAN_ROLE_META[selectedRole].label}
+                  </h4>
+                  {selectedRole === 'pradana' && (
+                    <div className="text-[11px] space-y-1">
+                      <p>Jumlah agenda: {quarterProgramKerja.length}; terlaksana: {quarterProgramKerja.filter((item) => item.status === 'Terlaksana' || item.status === 'Selesai').length}; berjalan: {quarterProgramKerja.filter((item) => item.status === 'Berjalan').length}.</p>
+                      {quarterProgramKerja.map((item) => <p key={item.id}>• {item.nama} — {item.status}</p>)}
+                    </div>
+                  )}
+                  {selectedRole === 'pemangku_adat' && (
+                    <p className="text-[11px]">Anggota terdata: {allMembers.length}; Putra: {allMembers.filter((member) => member.satuan === 'Putra').length}; Putri: {allMembers.filter((member) => member.satuan === 'Putri').length}; sangga terdata: {new Set(allMembers.map((member) => member.sangga).filter(Boolean)).size}.</p>
+                  )}
+                  {selectedRole === 'sekretaris' && (
+                    <p className="text-[11px]">Surat pada arsip perangkat untuk periode ini: {quarterLetterArchive.length} dokumen.</p>
+                  )}
+                  {selectedRole === 'bendahara' && (
+                    <div className="text-[11px] space-y-1">
+                      <p>Saldo awal: {currentRoleDraft.saldoAwal ? formatRupiah(parseRupiahInput(currentRoleDraft.saldoAwal)) : 'Belum diisi'}</p>
+                      <p>Pemasukan: {currentRoleDraft.pemasukan ? formatRupiah(parseRupiahInput(currentRoleDraft.pemasukan)) : 'Belum diisi'}</p>
+                      <p>Pengeluaran: {currentRoleDraft.pengeluaran ? formatRupiah(parseRupiahInput(currentRoleDraft.pengeluaran)) : 'Belum diisi'}</p>
+                      <p>Saldo akhir: {hasFinancialEntries ? formatRupiah(financialClosingBalance) : 'Belum diisi'}</p>
+                    </div>
+                  )}
+                  <div className="space-y-1 text-[11px]">
+                    <strong>Uraian realisasi:</strong>
+                    <p className="whitespace-pre-wrap">{currentRoleDraft.uraian || 'Belum diisi.'}</p>
+                    <strong>Kendala / evaluasi:</strong>
+                    <p className="whitespace-pre-wrap">{currentRoleDraft.kendala || 'Belum diisi.'}</p>
+                    <strong>Rencana tindak lanjut:</strong>
+                    <p className="whitespace-pre-wrap">{currentRoleDraft.tindakLanjut || 'Belum diisi.'}</p>
                   </div>
                 </div>
               )}

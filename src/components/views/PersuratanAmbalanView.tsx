@@ -1517,7 +1517,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {activeSurat.includeDewan && activeSurat.includePembina && (
                 <div className="grid grid-cols-2 gap-4 pb-6">
                   <div>
-                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                    <p className="font-bold">{activeSurat.dewanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
                     <div className="h-16 flex items-center justify-start">
                       {/* Spasi TTD Dewan */}
@@ -1527,7 +1527,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </div>
 
                   <div>
-                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                    <p className="font-bold">{activeSurat.pembinaApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
                     <div className="h-16 flex items-center justify-start relative">
                       {activeSurat.includeStempel && (
@@ -1563,7 +1563,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {activeSurat.includeDewan && !activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
                   <div className="min-w-[220px] text-left">
-                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                    <p className="font-bold">{activeSurat.dewanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.dewanJabatan},</p>
                     <div className="h-16 flex items-center justify-start">
                       {/* Spasi TTD Dewan */}
@@ -1578,7 +1578,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {!activeSurat.includeDewan && activeSurat.includePembina && (
                 <div className="flex justify-start pb-6">
                   <div className="min-w-[240px] text-left">
-                    <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                    <p className="font-bold">{activeSurat.pembinaApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                     <p className="font-bold">{activeSurat.pembinaJabatan},</p>
                     <div className="h-16 flex items-center justify-start relative">
                       {activeSurat.includeStempel && (
@@ -1613,7 +1613,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
               {activeSurat.includePembinaTambahan && (
                 <div className="pt-2 min-w-[240px]">
-                  <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                  <p className="font-bold">{activeSurat.pembinaTambahanApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                   <p className="font-bold">{activeSurat.pembinaTambahanJabatan}</p>
                   <div className="my-2 h-16 flex items-center justify-start">
                     {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR Code tanda tangan digital" className="w-14 h-14" />}
@@ -1626,7 +1626,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               {/* Ketua Gugus Depan */}
               {activeSurat.includeKetuaGudep && (
                 <div className="pt-2 inline-block min-w-[280px]">
-                  <p className="font-bold">{activeSurat.approvalType || 'Mengetahui'},</p>
+                  <p className="font-bold">{activeSurat.ketuaGudepApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
                   <p className="font-bold text-xs">Kepala SMA Negeri 9 Maros (Kamabigus)</p>
                   
                   <div className="my-2 h-16 flex items-center justify-start">

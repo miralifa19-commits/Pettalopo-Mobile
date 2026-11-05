@@ -555,7 +555,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       );
       const nameWidth = layout.fonts.bold.widthOfTextAtSize(cleanText(signer.name), 10.5);
       const signerWidth = Math.min(columnWidth, Math.max(titleWidth, nameWidth, 72));
-      const textWidthLimit = signerWidth - 8;
+      const textWidthLimit = signerWidth;
       const titleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, textWidthLimit);
       const headerHeight = (sharedApproval ? 0 : (signer.approval ? 13 : 0)) + titleLines.length * 13 + 3;
       return { signer, signerWidth, textWidthLimit, headerHeight };

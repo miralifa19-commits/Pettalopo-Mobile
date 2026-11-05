@@ -590,7 +590,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
 
   const handleSaveDraft = () => {
-    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, digitalSigner, includeStempel, includeTembusan, tembusanList };
+    const data = { includeNomor, nomorUrut, gudepPilihan, ceklisDuaDua, includeTanggal, tanggalSurat, includePerihal, perihal, includeLampiran, lampiran, includeKeteranganIdentitas, keteranganIdentitas, includeKepadaYth, penerimaNama, penerimaTempat, isiParagraf, bulletStyle, rincianHariTanggal, rincianWaktu, includeTempat, rincianTempat, includeKeteranganAcara, rincianKeteranganAcara, includeKeteranganDetail, rincianKeteranganDetail, penutupParagraf, includeDewan, selectedDewanId, customSignerName, includePembina, includePembinaPutri, includePembantuPutra, includePembantuPutri, selectedPembinaRole, includeKetuaGudep, approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, pembantuPutraApprovalType, pembantuPutriApprovalType, ketuaGudepApprovalType, kotaPengesahan, metodeTtd, includeTtdBiasa, includeQrCode, digitalSigner, includeStempel, includeTembusan, tembusanList };
     const draft: FormDraft = { id: editingDraftId || `draft_${Date.now()}`, perihal: perihal.trim() || 'Draf tanpa judul', nomorUrut, savedAt: new Date().toISOString(), data };
     const updated = [draft, ...draftSurat.filter((item) => item.id !== draft.id)]; setDraftSurat(updated);
     try { localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(updated)); } catch {}
@@ -607,7 +607,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setIncludeKeteranganDetail(d.includeKeteranganDetail ?? false); setRincianKeteranganDetail(d.rincianKeteranganDetail ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
     setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
-    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
+    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setIncludeTtdBiasa(d.includeTtdBiasa ?? true); setIncludeQrCode(d.includeQrCode ?? (d.metodeTtd === 'digital')); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
     setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setViewMode('form');
   };
@@ -1348,7 +1348,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {activeSurat.metodeTtd === 'digital' && (
+              {(activeSurat.includeQrCode ?? activeSurat.metodeTtd === 'digital') && (
                 <button
                   type="button"
                   onClick={() => setVerificationModalSurat(activeSurat)}

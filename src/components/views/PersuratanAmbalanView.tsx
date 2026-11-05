@@ -305,7 +305,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     e.preventDefault();
 
     // Resolve Dewan (Hanya jika includeDewan aktif)
-    const customSignerRoles: Record<string, string> = { ketua_sangga_kerja_pa: 'Ketua Sangga Kerja Putra', sekretaris_sangga_kerja_pa: 'Sekretaris Sangga Kerja Putra', ketua_sangga_kerja_pi: 'Ketua Sangga Kerja Putri', sekretaris_sangga_kerja_pi: 'Sekretaris Sangga Kerja Putri', ketua_panitia: 'Ketua Panitia', sekretaris_panitia: 'Sekretaris Panitia' };
     const dewanOptions: Record<string, { title: string; member?: string; nta?: string }> = {
       pradana_pa: { title: 'Pradana', member: dewanList.find(d => d.id === 'pradana_pa')?.memberName, nta: 'NTA. 10.035.001' },
       pemangku_adat: { title: 'Pemangku Adat', member: dewanList.find(d => d.id === 'pemangku_adat_pa')?.memberName, nta: 'NTA. 10.035.001' },

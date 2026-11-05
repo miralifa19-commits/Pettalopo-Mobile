@@ -461,6 +461,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         rincianTempat,
         includeKeteranganAcara,
         rincianKeteranganAcara,
+        includeKeteranganDetail,
+        rincianKeteranganDetail,
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -472,11 +474,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         includePembantuPutra: false,
         includePembantuPutri,
         pembantuPutraNama: officials.pembantuPembinaPutra,
-        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutraJabatan: suratSettings.pembantuPutra,
         pembantuPutriNama: officials.pembantuPembinaPutri,
-        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutriJabatan: suratSettings.pembantuPutri,
         pembantuPutraApprovalType, pembantuPutriApprovalType,
-        pembinaJabatan: 'Pembina Gugus Depan 10.036',
+        pembinaJabatan: suratSettings.pembinaPutri,
         pembinaNama: officials.pembinaPutri,
         pembinaNip: officials.nipPembinaPutri,
         includeKetuaGudep,
@@ -526,6 +528,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         rincianTempat,
         includeKeteranganAcara,
         rincianKeteranganAcara,
+        includeKeteranganDetail,
+        rincianKeteranganDetail,
         penutupParagraf,
         includeDewan,
         dewanJabatan,
@@ -533,16 +537,16 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         dewanNta,
         approvalType, dewanApprovalType, pembinaApprovalType, pembinaTambahanApprovalType, ketuaGudepApprovalType, kotaPengesahan,
         includePembina,
-        pembinaJabatan: 'Pembina Gugus Depan 10.035',
+        pembinaJabatan: suratSettings.pembinaPutra,
         pembinaNama: officials.pembinaPutra,
         pembinaNip: officials.nipPembinaPutra,
         includePembinaTambahan: includePembinaPutri,
         includePembantuPutra,
         includePembantuPutri,
         pembantuPutraNama: officials.pembantuPembinaPutra,
-        pembantuPutraJabatan: 'Pembantu Pembina Gugus Depan 10.035',
+        pembantuPutraJabatan: suratSettings.pembantuPutra,
         pembantuPutriNama: officials.pembantuPembinaPutri,
-        pembantuPutriJabatan: 'Pembantu Pembina Gugus Depan 10.036',
+        pembantuPutriJabatan: suratSettings.pembantuPutri,
         pembantuPutraApprovalType, pembantuPutriApprovalType,
         pembinaTambahanJabatan: suratSettings.pembinaPutri,
         pembinaTambahanNama: officials.pembinaPutri,
@@ -1481,26 +1485,52 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
             <div className="pt-3 text-center" style={{ fontSize: '12pt' }}><p className="italic">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p></div>
 
-            {/* Pratinjau penandatangan: hanya yang dipilih yang ditampilkan */}
-            <div className="pt-4 grid grid-cols-2 gap-x-5 gap-y-8 text-left font-sans" style={{fontSize:'11pt'}}>
-              {[
-                {show:activeSurat.includeDewan, approval:activeSurat.dewanApprovalType || activeSurat.approvalType, title:activeSurat.dewanJabatan, name:activeSurat.dewanNama, id:activeSurat.dewanNta},
-                {show:activeSurat.includePembantuPutra, approval:activeSurat.pembantuPutraApprovalType, title:activeSurat.pembantuPutraJabatan || 'Pembantu Pembina Gugus Depan 10.035', name:activeSurat.pembantuPutraNama},
-                {show:activeSurat.includePembantuPutri, approval:activeSurat.pembantuPutriApprovalType, title:activeSurat.pembantuPutriJabatan || 'Pembantu Pembina Gugus Depan 10.036', name:activeSurat.pembantuPutriNama},
-                {show:activeSurat.includePembina, approval:activeSurat.pembinaApprovalType, title:activeSurat.pembinaJabatan || 'Pembina Gugus Depan 10.035', name:activeSurat.pembinaNama, id:activeSurat.pembinaNip},
-                {show:activeSurat.includePembinaTambahan, approval:activeSurat.pembinaTambahanApprovalType, title:activeSurat.pembinaTambahanJabatan || 'Pembina Gugus Depan 10.036', name:activeSurat.pembinaTambahanNama, id:activeSurat.pembinaTambahanNip},
-                {show:activeSurat.includeKetuaGudep, approval:activeSurat.ketuaGudepApprovalType, title:'Ketua Mabigus UPT SMA Negeri 9 Maros', name:activeSurat.ketuaGudepNama, id:activeSurat.ketuaGudepNip}
-              ].filter(signer => signer.show && signer.name).map((signer, index, list) => (
-                <div key={index} className={list.length % 2 === 1 && index === list.length - 1 ? 'col-span-2 mx-auto w-1/2' : ''}>
-                  <p className="font-bold">{signer.approval || activeSurat.approvalType || 'Mengetahui'},</p>
-                  <p className="font-bold">{signer.title},</p>
-                  <div className="h-16 flex items-center justify-start">
-                    {activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}
-                  </div>
-                  <p className="font-bold underline">{signer.name}</p>
-                  {signer.id && <p className="text-[10px] text-slate-500">{signer.id}</p>}
+            {/* Pengesahan: kepala sekolah di atas; kelompok dewan dan pembina di bawah */}
+            <div className="pt-4 space-y-7 text-left font-sans" style={{fontSize:'11pt'}}>
+              {activeSurat.includeKetuaGudep && activeSurat.ketuaGudepNama && (
+                <div className="mx-auto w-1/2 text-center">
+                  <p>{activeSurat.ketuaGudepApprovalType || activeSurat.approvalType || 'Mengetahui'},</p>
+                  <p className="font-bold">Kepala Mabigus UPT SMA Negeri 9 Maros,</p>
+                  <div className="h-16 flex items-center justify-center">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
+                  <p className="font-bold underline">{activeSurat.ketuaGudepNama}</p>
+                  {activeSurat.ketuaGudepNip && <p className="text-[10px] text-slate-500">{activeSurat.ketuaGudepNip}</p>}
                 </div>
-              ))}
+              )}
+              {activeSurat.includeDewan && activeSurat.dewanNama && (
+                <div className="mx-auto w-1/2 text-center">
+                  <p>Hormat Kami,</p>
+                  <p className="font-bold">{activeSurat.dewanJabatan},</p>
+                  <div className="h-16"></div>
+                  <p className="font-bold underline">{activeSurat.dewanNama}</p>
+                  {activeSurat.dewanNta && <p className="text-[10px] text-slate-500">{activeSurat.dewanNta}</p>}
+                </div>
+              )}
+              {(() => {
+                const signers = [
+                  {show:activeSurat.includePembantuPutra, approval:activeSurat.pembantuPutraApprovalType, title:activeSurat.pembantuPutraJabatan || 'Pembantu Pembina Putra', name:activeSurat.pembantuPutraNama},
+                  {show:activeSurat.includePembantuPutri, approval:activeSurat.pembantuPutriApprovalType, title:activeSurat.pembantuPutriJabatan || 'Pembantu Pembina Putri', name:activeSurat.pembantuPutriNama},
+                  {show:activeSurat.includePembina, approval:activeSurat.pembinaApprovalType, title:activeSurat.pembinaJabatan || 'Pembina Putra', name:activeSurat.pembinaNama, id:activeSurat.pembinaNip},
+                  {show:activeSurat.includePembinaTambahan, approval:activeSurat.pembinaTambahanApprovalType, title:activeSurat.pembinaTambahanJabatan || 'Pembina Putri', name:activeSurat.pembinaTambahanNama, id:activeSurat.pembinaTambahanNip},
+                ].filter(signer => signer.show && signer.name);
+                if (!signers.length) return null;
+                const sharedApproval = signers.length > 1
+                  ? (signers.every(signer => signer.approval === signers[0].approval) ? signers[0].approval : 'Mengetahui / Menyetujui')
+                  : '';
+                return <div>
+                  {signers.length > 1 && <p className="text-center mb-2">{sharedApproval || activeSurat.approvalType || 'Mengetahui'}</p>}
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-8">
+                    {signers.map((signer, index) => (
+                      <div key={index} className={signers.length === 1 ? 'col-span-2 mx-auto w-1/2 text-center' : 'text-left'}>
+                        {signers.length === 1 && <p className="text-center">{signer.approval || activeSurat.approvalType || 'Mengetahui'}</p>}
+                        <p className="font-bold">{signer.title},</p>
+                        <div className="h-16 flex items-center justify-start">{activeSurat.metodeTtd === 'digital' && activeSurat.qrCodeDataUrl && <img src={activeSurat.qrCodeDataUrl} alt="QR tanda tangan" className="w-14 h-14"/>}</div>
+                        <p className="font-bold underline">{signer.name}</p>
+                        {signer.id && <p className="text-[10px] text-slate-500">{signer.id}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>;
+              })()}
             </div>
 
             {/* Tembusan (Opsional) */}

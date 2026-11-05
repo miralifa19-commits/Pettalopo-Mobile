@@ -379,29 +379,35 @@ function drawStamp(
 function drawSignerBlock(
   layout: LetterLayout, x: number, columnWidth: number, topY: number,
   approval: string | undefined, title: string, name: string, identifier: string | undefined,
-  qrImage: PDFImage | undefined, includeStamp: boolean,
+  qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
 ): number {
   const titleSize = 10.5;
   let y = topY;
+  const drawAligned = (text: string, font: PDFFont, size: number, baseline: number) => {
+    const safe = cleanText(text);
+    const textWidth = font.widthOfTextAtSize(safe, size);
+    layout.drawText(safe, align === 'right' ? x + columnWidth - textWidth : x, baseline, font, size);
+  };
   if (approval) {
-    layout.drawText(approval, x, y, layout.fonts.regular, 10.5);
+    drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
   for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth - 8)) {
-    layout.drawText(line, x, y, layout.fonts.bold, titleSize);
+    drawAligned(line, layout.fonts.bold, titleSize, y);
     y -= 13;
   }
   y -= 3;
-  if (qrImage) layout.page.drawImage(qrImage, { x, y: y - 34, width: 34, height: 34 });
+  if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
   if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
   y -= 42;
   const safeName = cleanText(name);
   const nameSize = 10.5;
   const nameWidth = Math.min(columnWidth - 8, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
-  layout.drawText(safeName, x, y, layout.fonts.bold, nameSize);
-  layout.page.drawLine({ start: { x, y: y - 1.5 }, end: { x: x + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
+  const nameX = align === 'right' ? x + columnWidth - nameWidth : x;
+  layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
+  layout.page.drawLine({ start: { x: nameX, y: y - 1.5 }, end: { x: nameX + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
   y -= 13;
-  if (identifier) { layout.drawText(identifier, x, y, layout.fonts.regular, 8.5); y -= 11; }
+  if (identifier) { drawAligned(identifier, layout.fonts.regular, 8.5, y); y -= 11; }
   return y - 6;
 }
 
@@ -472,7 +478,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const xs = [SIDE_MARGIN, SIDE_MARGIN + columnWidth + gap];
     const bottoms = [
       drawSignerBlock(layout, xs[0], columnWidth, layout.y, 'Hormat Kami', dewan[0].title, dewan[0].name, dewan[0].id, dewan[0].qr, Boolean(dewan[0].stamp)),
-      drawSignerBlock(layout, xs[1], columnWidth, layout.y, pembinaApproval, pembina[0].title, pembina[0].name, pembina[0].id, pembina[0].qr, Boolean(pembina[0].stamp)),
+      drawSignerBlock(layout, xs[1], columnWidth, layout.y, pembinaApproval, pembina[0].title, pembina[0].name, pembina[0].id, pembina[0].qr, Boolean(pembina[0].stamp), 'right'),
     ];
     layout.y = Math.min(...bottoms) - 5;
   } else {
@@ -488,8 +494,8 @@ async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promis
   await layout.paragraph('Tembusan:', {
     size: 8.5,
     font: layout.fonts.regular,
-    lineHeight: 11,
-    spacingAfter: 2,
+    lineHeight: 9,
+    spacingAfter: 0,
   });
 
   for (let index = 0; index < surat.tembusanList.length; index += 1) {
@@ -497,8 +503,8 @@ async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promis
       x: SIDE_MARGIN,
       maxWidth: layout.contentWidth,
       size: 8.5,
-      lineHeight: 11,
-      spacingAfter: 1,
+      lineHeight: 9,
+      spacingAfter: 0,
     });
   }
 }

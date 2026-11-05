@@ -390,7 +390,7 @@ function drawSignerBlock(
     layout.drawText(safe, align === 'right' ? x + columnWidth - textWidth : x, baseline, font, size);
   };
   if (approval) {
-    drawAligned(approval, layout.fonts.regular, 10.5, y);
+    layout.drawCentered(approval, x + columnWidth / 2, y, layout.fonts.regular, 10.5);
     y -= 13;
   }
   for (const line of wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit)) {
@@ -497,10 +497,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
     const rowStart = row * 2;
     const members = signers.slice(rowStart, rowStart + 2);
     const y = startY - row * rowHeight;
-    const sharedApproval = members.length === 2
-      && members[0].approval.trim().toLocaleLowerCase('id')
-        === members[1].approval.trim().toLocaleLowerCase('id');
-
     // Ujung kanan blok TTD mengikuti teks terpanjang antara jabatan
     // dan nama. Isi blok tetap rata kiri, sementara ujung teks terpanjang
     // tepat menyentuh batas kanan area isi surat.
@@ -518,18 +514,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       : 0;
     const rightBlockWidth = Math.min(layout.contentWidth, Math.max(rightTitleWidth, rightNameWidth));
     const rightX = rightEdge - rightBlockWidth;
-
-    if (sharedApproval) {
-      const leftCenterX = SIDE_MARGIN + columnWidth / 2;
-      const rightCenterX = rightX + columnWidth / 2;
-      layout.drawCentered(
-        members[0].approval,
-        (leftCenterX + rightCenterX) / 2,
-        y,
-        layout.fonts.regular,
-        10.5,
-      );
-    }
 
     members.forEach((signer, columnIndex) => {
       // Batas awal setiap kolom adalah koordinat tetap. Kolom kanan tidak
@@ -551,8 +535,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         layout,
         x,
         signerWidth,
-        y - (sharedApproval ? 13 : 0),
-        sharedApproval ? undefined : signer.approval,
+        y,
+        signer.approval,
         signer.title,
         signer.name,
         signer.id,

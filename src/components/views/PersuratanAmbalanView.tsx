@@ -749,17 +749,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           ] as const).map(([key, label]) => (
             <label key={key} className="block space-y-1">
               <span className="text-xs font-bold text-slate-700">{label}</span>
-              {key === 'pembinaPutra' ? (
-                <textarea
-                  rows={3}
-                  value={suratSettings[key]}
-                  onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))}
-                  placeholder="Masukkan jabatan Pembina Putra. Tekan Enter untuk baris baru."
-                  className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white resize-y"
-                />
-              ) : (
-                <input value={suratSettings[key]} onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))} className="w-full text-sm p-3 rounded-xl border border-slate-200 bg-white" />
-              )}
+              <textarea
+                rows={2}
+                value={suratSettings[key]}
+                onChange={(e) => setSuratSettings((current) => ({ ...current, [key]: e.target.value }))}
+                placeholder={`Masukkan ${label.toLowerCase()}`}
+                className="w-full h-[4.5rem] min-h-[4.5rem] max-h-[4.5rem] text-sm p-3 rounded-xl border border-slate-200 bg-white resize-none overflow-y-auto leading-6"
+              />
             </label>
           ))}
           <button type="button" onClick={() => setViewMode('dashboard')} className="w-full py-3 rounded-xl bg-[#c81e28] text-white text-sm font-bold">Selesai</button>
@@ -780,8 +776,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {viewMode === 'form' && (
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           
-          <h2 className="text-sm font-bold text-slate-700">Buat Surat Baru</h2>
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               {[
                 { step: 1, title: 'Identitas' },
@@ -797,20 +792,20 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </button>
               ))}
             </div>
-            <div className="h-1.5 rounded-md bg-slate-100 overflow-hidden">
-              <div className="h-full rounded-md bg-[#c81e28] transition-all" style={{ width: `${(wizardStep / 4) * 100}%` }} />
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] font-semibold text-slate-500">LANGKAH {wizardStep}/4</span>
+              <span className="text-[10px] font-bold text-[#b71922]">{['Identitas','Isi Surat','Pengesahan','Pratinjau'][wizardStep - 1]}</span>
             </div>
-            <p className="text-[11px] text-slate-500">Langkah {wizardStep} dari 4 · {wizardStep === 1 ? 'Identitas Surat' : wizardStep === 2 ? 'Isi Surat' : 'Pengesahan dan penandatangan'}</p>
+            <div className="h-1 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-full rounded-full bg-[#c81e28] transition-all" style={{ width: `${(wizardStep / 4) * 100}%` }} />
+            </div>
           </div>
 
           {/* ==================== BAGIAN 1: IDENTITAS ==================== */}
           {wizardStep === 1 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
-                Bagian 1: Identitas Surat
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Kolom opsional dapat dikosongkan</span>
+              <span className="text-xs font-black text-[#c81e28]">Identitas Surat</span>
             </div>
 
             <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
@@ -1038,10 +1033,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           {wizardStep === 2 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider">
-                Bagian 2: Isi Surat
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Times New Roman 12pt</span>
+              <span className="text-xs font-black text-[#c81e28]">Isi Surat</span>
             </div>
 
             {/* Salam Pembuka (Otomatis) */}
@@ -1236,17 +1228,13 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           {wizardStep === 3 && (
           <div className="space-y-3">
             <div className="rounded-2xl bg-[#fff5f5] border border-red-100 px-4 py-3">
-              <h3 className="text-sm font-extrabold text-[#b71922]">Halaman 3 — Pengesahan Surat</h3>
-              <p className="text-[11px] text-slate-600 mt-1">Atur penandatangan dan pengesahan. Bagian yang tidak diperlukan boleh dikosongkan.</p>
+              <h3 className="text-sm font-extrabold text-[#b71922]">Pengesahan</h3>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
                 <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider block">
-                  Bagian 3: Pengesahan &amp; Penandatangan
-                </span>
-                <span className="text-[10px] text-slate-500">
-                  Pilih penandatangan yang diperlukan; lainnya dapat dikosongkan
+                  Penandatangan
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
@@ -1455,8 +1443,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {viewMode === 'preview' && activeSurat && (
         <div className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-sm font-extrabold text-slate-900">Halaman 4 — Pratinjau Surat</h2>
-            <p className="text-xs text-slate-500">Periksa hasil dokumen sebelum dicetak atau disimpan.</p>
+            <h2 className="text-sm font-extrabold text-slate-900">Pratinjau Surat</h2>
           </div>
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">

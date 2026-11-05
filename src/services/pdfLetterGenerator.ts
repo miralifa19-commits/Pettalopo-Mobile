@@ -517,22 +517,27 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
   if (!signers.length) return;
 
-  // Jika kedua pembina dipilih, pasangkan keduanya pada satu baris:
-  // Pembina Putra selalu kiri dan Pembina Putri selalu kanan.
-  const putra = signers.find((signer) => signer.role === 'pembina_putra');
-  const putri = signers.find((signer) => signer.role === 'pembina_putri');
-  let ordered = signers.filter((signer) => signer.role !== 'pembina_putra' && signer.role !== 'pembina_putri');
-  if (putra && putri) ordered = [...ordered, putra, putri];
-  else if (putra) ordered.push(putra);
-  else if (putri) ordered.push(putri);
+  // Susun tanda tangan berdasarkan hierarki: pelaksana/anggota,
+  // Pembantu Pembina, Pembina, lalu Kepala Sekolah.
+  // Penandatangan pada tingkat yang sama boleh sejajar dalam satu baris.
+  const dewan = signers.find((signer) => signer.role === 'dewan');
+  const pembantuPutra = signers.find((signer) => signer.role === 'pembantu_putra');
+  const pembantuPutri = signers.find((signer) => signer.role === 'pembantu_putri');
+  const pembinaPutra = signers.find((signer) => signer.role === 'pembina_putra');
+  const pembinaPutri = signers.find((signer) => signer.role === 'pembina_putri');
+  const kepalaSekolah = signers.find((signer) => signer.role === 'kepala_sekolah');
 
   const columnWidth = (layout.contentWidth - 18) / 2;
   const rows: Signer[][] = [];
-  const otherSigners = ordered.filter((signer) => signer.role !== 'pembina_putra' && signer.role !== 'pembina_putri');
-  for (let index = 0; index < otherSigners.length; index += 2) rows.push(otherSigners.slice(index, index + 2));
-  if (putra && putri) rows.push([putra, putri]);
-  else if (putra) rows.push([putra]);
-  else if (putri) rows.push([putri]);
+  if (dewan) rows.push([dewan]);
+  if (pembantuPutra && pembantuPutri) rows.push([pembantuPutra, pembantuPutri]);
+  else if (pembantuPutra) rows.push([pembantuPutra]);
+  else if (pembantuPutri) rows.push([pembantuPutri]);
+  if (pembinaPutra && pembinaPutri) rows.push([pembinaPutra, pembinaPutri]);
+  else if (pembinaPutra) rows.push([pembinaPutra]);
+  else if (pembinaPutri) rows.push([pembinaPutri]);
+  if (kepalaSekolah) rows.push([kepalaSekolah]);
+
   const rowHeight = 105;
   await layout.ensureSpace(rows.length * rowHeight + 24);
   const startY = layout.y;
@@ -551,8 +556,8 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
 
       let side: 'left' | 'right' = 'left';
       if (members.length === 2) {
-        if (signer.role === 'pembina_putra') side = 'left';
-        else if (signer.role === 'pembina_putri') side = 'right';
+        if (signer.role === 'pembina_putra' || signer.role === 'pembantu_putra') side = 'left';
+        else if (signer.role === 'pembina_putri' || signer.role === 'pembantu_putri') side = 'right';
         else side = columnIndex === 0 ? 'right' : 'left';
       }
       const x = side === 'right' ? layout.width - SIDE_MARGIN - signerWidth : SIDE_MARGIN;

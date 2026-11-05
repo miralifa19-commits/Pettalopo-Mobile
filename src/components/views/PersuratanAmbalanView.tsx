@@ -625,6 +625,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaTambahanNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
+        ketuaGudepJabatan: suratSettings.ketuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,

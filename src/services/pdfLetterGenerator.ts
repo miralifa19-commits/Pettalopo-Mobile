@@ -412,79 +412,118 @@ function drawSignerBlock(
 }
 
 async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage): Promise<void> {
-  type Signer = { approval: string; title: string; name: string; id?: string; qr?: PDFImage; stamp?: boolean };
+  type Signer = {
+    approval: string;
+    title: string;
+    name: string;
+    id?: string;
+    qr?: PDFImage;
+    stamp?: boolean;
+  };
+
   const fallback = surat.approvalType || 'Mengetahui';
-  const dewan: Signer[] = [];
-  const pembina: Signer[] = [];
-  const kepala: Signer[] = [];
+  const signers: Signer[] = [];
+
+  // Urutan pengesahan dipertahankan: Kepala Sekolah, Dewan, lalu Pembina.
+  if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
+    signers.push({
+      approval: surat.ketuaGudepApprovalType || fallback,
+      title: 'Kepala Sekolah / Ketua Mabigus',
+      name: surat.ketuaGudepNama,
+      id: surat.ketuaGudepNip,
+      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      stamp: surat.includeStempel,
+    });
+  }
 
   if (surat.includeDewan && surat.dewanNama) {
-    dewan.push({ approval: 'Hormat Kami', title: surat.dewanJabatan, name: surat.dewanNama, id: surat.dewanNta });
+    signers.push({
+      approval: 'Hormat Kami',
+      title: surat.dewanJabatan,
+      name: surat.dewanNama,
+      id: surat.dewanNta,
+    });
   }
+
   if (surat.includePembantuPutra && surat.pembantuPutraNama) {
-    pembina.push({ approval: surat.pembantuPutraApprovalType || fallback, title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra', name: surat.pembantuPutraNama });
+    signers.push({
+      approval: surat.pembantuPutraApprovalType || fallback,
+      title: surat.pembantuPutraJabatan || 'Pembantu Pembina Putra',
+      name: surat.pembantuPutraNama,
+    });
   }
   if (surat.includePembantuPutri && surat.pembantuPutriNama) {
-    pembina.push({ approval: surat.pembantuPutriApprovalType || fallback, title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri', name: surat.pembantuPutriNama });
+    signers.push({
+      approval: surat.pembantuPutriApprovalType || fallback,
+      title: surat.pembantuPutriJabatan || 'Pembantu Pembina Putri',
+      name: surat.pembantuPutriNama,
+    });
   }
   if (surat.includePembina && surat.pembinaNama) {
-    pembina.push({ approval: surat.pembinaApprovalType || fallback, title: surat.pembinaJabatan || 'Pembina Putra', name: surat.pembinaNama, id: surat.pembinaNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+    signers.push({
+      approval: surat.pembinaApprovalType || fallback,
+      title: surat.pembinaJabatan || 'Pembina Putra',
+      name: surat.pembinaNama,
+      id: surat.pembinaNip,
+      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      stamp: surat.includeStempel,
+    });
   }
   if (surat.includePembinaTambahan && surat.pembinaTambahanNama) {
-    pembina.push({ approval: surat.pembinaTambahanApprovalType || fallback, title: surat.pembinaTambahanJabatan || 'Pembina Putri', name: surat.pembinaTambahanNama, id: surat.pembinaTambahanNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
+    signers.push({
+      approval: surat.pembinaTambahanApprovalType || fallback,
+      title: surat.pembinaTambahanJabatan || 'Pembina Putri',
+      name: surat.pembinaTambahanNama,
+      id: surat.pembinaTambahanNip,
+      qr: surat.metodeTtd === 'digital' ? qrImage : undefined,
+      stamp: surat.includeStempel,
+    });
   }
-  if (surat.includeKetuaGudep && surat.ketuaGudepNama) {
-    kepala.push({ approval: surat.ketuaGudepApprovalType || fallback, title: 'Kepala Sekolah / Ketua Mabigus', name: surat.ketuaGudepNama, id: surat.ketuaGudepNip, qr: surat.metodeTtd === 'digital' ? qrImage : undefined, stamp: surat.includeStempel });
-  }
+
+  if (!signers.length) return;
 
   const gap = 18;
   const columnWidth = (layout.contentWidth - gap) / 2;
-  const drawGroup = async (group: Signer[], groupLabel?: string) => {
-    if (!group.length) return;
-    const rows = Math.ceil(group.length / 2);
-    const rowHeight = 105;
-    await layout.ensureSpace(rows * rowHeight + 24);
-    if (group.length > 1 && groupLabel) {
-      const labelWidth = layout.fonts.regular.widthOfTextAtSize(cleanText(groupLabel), 10.5);
-      layout.drawText(groupLabel, SIDE_MARGIN + (layout.contentWidth - labelWidth) / 2, layout.y, layout.fonts.regular, 10.5);
-      layout.y -= 16;
-    }
-    const startY = layout.y;
-    const bottoms: number[] = [];
-    for (let row = 0; row < rows; row += 1) {
-      const members = group.slice(row * 2, row * 2 + 2);
-      const y = startY - row * rowHeight;
-      const xs = members.length === 1
-        ? [SIDE_MARGIN]
-        : members.map((_, index) => SIDE_MARGIN + index * (columnWidth + gap));
-      members.forEach((signer, index) => {
-        const approval = group.length === 1 ? groupLabel || signer.approval : undefined;
-        bottoms.push(drawSignerBlock(layout, xs[index], columnWidth, y, approval, signer.title, signer.name, signer.id, signer.qr, Boolean(signer.stamp)));
-      });
-    }
-    layout.y = Math.min(...bottoms) - 5;
-  };
+  const rows = Math.ceil(signers.length / 2);
+  const rowHeight = 105;
 
-  // Kepala sekolah ditempatkan di bagian paling atas kelompok pengesahan.
-  await drawGroup(kepala, kepala[0]?.approval);
-  const pembinaApproval = pembina.length > 1
-    ? (pembina.every((signer) => signer.approval === pembina[0].approval) ? pembina[0].approval : 'Mengetahui / Menyetujui')
-    : pembina[0]?.approval;
+  // Sisakan ruang untuk SELURUH kelompok tanda tangan. Jika tidak cukup,
+  // pindahkan semuanya ke halaman kop berikutnya, bukan memecah kelompok.
+  await layout.ensureSpace(rows * rowHeight + 24);
+  const startY = layout.y;
+  const bottoms: number[] = [];
 
-  // Jika dewan dan satu pembina sama-sama menandatangani, letakkan sejajar
-  // agar surat pendek tetap satu halaman dan kedua kalimat pengesahan jelas.
-  if (dewan.length === 1 && pembina.length === 1) {
-    await layout.ensureSpace(130);
-    const xs = [SIDE_MARGIN, SIDE_MARGIN + columnWidth + gap];
-    const bottoms = [
-      drawSignerBlock(layout, xs[0], columnWidth, layout.y, 'Hormat Kami', dewan[0].title, dewan[0].name, dewan[0].id, dewan[0].qr, Boolean(dewan[0].stamp)),
-      drawSignerBlock(layout, xs[1], columnWidth, layout.y, pembinaApproval, pembina[0].title, pembina[0].name, pembina[0].id, pembina[0].qr, Boolean(pembina[0].stamp), 'right'),
-    ];
-    layout.y = Math.min(...bottoms) - 5;
-  } else {
-    await drawGroup(dewan, 'Hormat Kami');
-    await drawGroup(pembina, pembinaApproval);
-  }
+  signers.forEach((signer, index) => {
+    const row = Math.floor(index / 2);
+    const rowMembers = Math.min(2, signers.length - row * 2);
+    const isLastSingle = rowMembers === 1;
+    const align: 'left' | 'right' = rowMembers === 2 && index % 2 === 1 ? 'right' : 'left';
+    let x = SIDE_MARGIN;
+
+    if (rowMembers === 2) {
+      x = SIDE_MARGIN + (index % 2) * (columnWidth + gap);
+    } else if (signers.length > 1 && isLastSingle) {
+      // Penandatangan ketiga/kelima dan seterusnya berada di tengah baris.
+      x = SIDE_MARGIN + (layout.contentWidth - columnWidth) / 2;
+    }
+
+    const y = startY - row * rowHeight;
+    bottoms.push(drawSignerBlock(
+      layout,
+      x,
+      columnWidth,
+      y,
+      signer.approval,
+      signer.title,
+      signer.name,
+      signer.id,
+      signer.qr,
+      Boolean(signer.stamp),
+      align,
+    ));
+  });
+
+  layout.y = Math.min(...bottoms) - 5;
 }
 
 async function drawTembusan(layout: LetterLayout, surat: GeneratedSurat): Promise<void> {
@@ -567,7 +606,7 @@ export async function createLetterPdf(
         label: row.label,
         value: row.value,
         labelWidth: 72,
-        maxWidth: layout.contentWidth * 0.62,
+        maxWidth: layout.contentWidth * 0.58,
         size: 12,
         lineHeight: 16,
         labelFont: regular,
@@ -618,7 +657,7 @@ export async function createLetterPdf(
         label: row.label,
         value: row.value,
         x: SIDE_MARGIN,
-        labelWidth: 108,
+        labelWidth: 78,
         maxWidth: layout.contentWidth,
         size: 12,
         lineHeight: 17,

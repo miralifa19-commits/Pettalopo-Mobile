@@ -320,23 +320,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     const dewanNta = currentDewan?.nta || '';
 
     // Resolve Pembina
-    let pembinaNama = officials.pembinaPutra;
-    let pembinaJabatan = 'Pembina Gugus Depan 10.035';
-    let pembinaNip = officials.nipPembinaPutra;
-
-    if (selectedPembinaRole === 'pembina_pi') {
-      pembinaNama = officials.pembinaPutri;
-      pembinaJabatan = 'Pembina Gugus Depan 10.036';
-      pembinaNip = officials.nipPembinaPutri;
-    } else if (selectedPembinaRole === 'pembantu_pa') {
-      pembinaNama = officials.pembantuPembinaPutra;
-      pembinaJabatan = 'Pembantu Pembina Putra 10.035';
-      pembinaNip = undefined;
-    } else if (selectedPembinaRole === 'pembantu_pi') {
-      pembinaNama = officials.pembantuPembinaPutri;
-      pembinaJabatan = 'Pembantu Pembina Putri 10.036';
-      pembinaNip = undefined;
-    }
+    const pembinaNama = officials.pembinaPutra;
+    const pembinaJabatan = 'Pembina Gugus Depan 10.035';
+    const pembinaNip = officials.nipPembinaPutra;
 
     // Resolve Digital Signer
     let signerName = officials.pembinaPutra;
@@ -577,8 +563,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     setRincianHariTanggal(d.rincianHariTanggal ?? ''); setRincianWaktu(d.rincianWaktu ?? ''); setIncludeTempat(d.includeTempat ?? true); setRincianTempat(d.rincianTempat ?? '');
     setIncludeKeteranganAcara(d.includeKeteranganAcara ?? true); setRincianKeteranganAcara(d.rincianKeteranganAcara ?? ''); setPenutupParagraf(d.penutupParagraf ?? '');
     setIncludeDewan(d.includeDewan ?? false); setSelectedDewanId(d.selectedDewanId ?? 'pradana_pa'); setCustomSignerName(d.customSignerName ?? '');
-    setIncludePembina(d.includePembina ?? true); setSelectedPembinaRole(d.selectedPembinaRole ?? 'pembina_pa'); setIncludeKetuaGudep(d.includeKetuaGudep ?? true);
-    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
+    setIncludePembina(d.includePembina ?? false); setIncludePembinaPutri(d.includePembinaPutri ?? false); setIncludePembantuPutra(d.includePembantuPutra ?? false); setIncludePembantuPutri(d.includePembantuPutri ?? false); setIncludeKetuaGudep(d.includeKetuaGudep ?? false);
+    setApprovalType(d.approvalType ?? 'Mengetahui'); setDewanApprovalType(d.dewanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaApprovalType(d.pembinaApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembinaTambahanApprovalType(d.pembinaTambahanApprovalType ?? d.approvalType ?? 'Mengetahui'); setPembantuPutraApprovalType(d.pembantuPutraApprovalType ?? 'Mengetahui'); setPembantuPutriApprovalType(d.pembantuPutriApprovalType ?? 'Mengetahui'); setKetuaGudepApprovalType(d.ketuaGudepApprovalType ?? d.approvalType ?? 'Mengetahui'); setKotaPengesahan(d.kotaPengesahan ?? 'Maros'); setMetodeTtd(d.metodeTtd ?? 'digital'); setDigitalSigner(d.digitalSigner ?? 'pembina_putra');
     setIncludeStempel(d.includeStempel ?? true); setIncludeTembusan(d.includeTembusan ?? true); setTembusanList(d.tembusanList ?? []);
     setEditingDraftId(draft.id); setViewMode('form');
   };

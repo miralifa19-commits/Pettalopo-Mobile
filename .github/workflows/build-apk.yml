@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - perbaikan-pdf
 
 permissions:
   contents: write
@@ -48,14 +48,27 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps --no-package-lock
+      - name: Install Dependencies and refresh bun.lock
+        run: bun install --save-text-lockfile
 
-      - name: Test PDF export with original letterhead and multi-page text
-        run: npm run test:pdf
+      - name: Commit resolved bun.lock on feature branch
+        run: |
+          if ! git diff --quiet -- bun.lock; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add bun.lock
+            git commit -m "Update bun lockfile for PDF export"
+            git push
+          fi
+
+      - name: TypeScript check
+        run: bun run lint
+
+      - name: Test PDF export with short and multi-page letters
+        run: bun run test:pdf
 
       - name: Build Web Application
-        run: npm run build
+        run: bun run build
 
       - name: Create Android Project
         run: npx cap add android

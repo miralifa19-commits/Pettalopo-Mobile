@@ -470,7 +470,9 @@ function drawSignerBlock(
   y -= 3;
   if (qrImage) layout.page.drawImage(qrImage, { x: align === 'right' ? x + columnWidth - 34 : x, y: y - 34, width: 34, height: 34 });
   if (includeStamp) drawStamp(layout.page, x + columnWidth - 22, y - 16, layout.fonts.bold);
-  y -= 42;
+  // QR membutuhkan ruang vertikal penuh; stempel berada di sisi kanan blok
+  // sehingga tidak perlu menghabiskan ruang tanda tangan sebesar QR.
+  y -= qrImage ? 42 : 30;
   const safeName = cleanText(name);
   const nameSize = 10.5;
   const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
@@ -538,13 +540,15 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
   else if (pembinaPutri) rows.push([pembinaPutri]);
   if (kepalaSekolah) rows.push([kepalaSekolah]);
 
-  const rowHeight = 105;
+  // Jarak antarbaris disesuaikan dengan tinggi blok tanda tangan yang dipadatkan.
+  // Ini menjaga hierarki vertikal tanpa memaksa surat pendek pindah halaman.
+  const rowHeight = 92;
   await layout.ensureSpace(rows.length * rowHeight + 24);
-  const startY = layout.y;
+  let rowY = layout.y;
   const bottoms: number[] = [];
 
-  rows.forEach((members, rowIndex) => {
-    const y = startY - rowIndex * rowHeight;
+  rows.forEach((members) => {
+    const y = rowY;
     const sharedApproval = members.length === 2 && Boolean(members[0].approval) && members[0].approval === members[1].approval;
     if (sharedApproval) layout.drawCentered(members[0].approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
 
@@ -567,6 +571,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         signer.id, signer.qr, Boolean(signer.stamp), 'left', signerWidth,
       ));
     });
+    rowY = Math.min(...bottoms) - (rowHeight - 5);
   });
   layout.y = Math.min(...bottoms) - 5;
 }

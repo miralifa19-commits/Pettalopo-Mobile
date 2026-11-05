@@ -242,6 +242,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const toggleDigitalSigner = (id: string, checked: boolean) => setDigitalSignerIds((current) => checked ? [...new Set([...current, id])] : current.filter((item) => item !== id));
   const selectedDigitalSignerIds = digitalSignerIds.filter((id) => ({ dewan: includeDewan, pembantu_putra: includePembantuPutra, pembantu_putri: includePembantuPutri, pembina_putra: includePembina, pembina_putri: includePembinaPutri, kepala_sekolah: includeKetuaGudep } as Record<string, boolean>)[id]);
   const isiTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const penutupTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const applyPenutupFormat = (marker: '**' | '*') => { const el = penutupTextareaRef.current; if (!el) return; const start = el.selectionStart, end = el.selectionEnd; const selected = penutupParagraf.slice(start, end); if (!selected) return; setPenutupParagraf(`${penutupParagraf.slice(0,start)}${marker}${selected}${marker}${penutupParagraf.slice(end)}`); requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start+marker.length,end+marker.length); }); };
+  const insertPenutupBullet = () => { const el = penutupTextareaRef.current; if (!el) return; const start = el.selectionStart; const lineStart = penutupParagraf.lastIndexOf('\\n',start-1)+1; setPenutupParagraf(`${penutupParagraf.slice(0,lineStart)}• ${penutupParagraf.slice(lineStart)}`); requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start+2,start+2); }); };
   const applyIsiFormat = (marker: '**' | '*') => {
     const el = isiTextareaRef.current;
     if (!el) return;
@@ -804,32 +807,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {/* ======================================================== */}
       {viewMode === 'form' && (
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-          
-          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              {[
-                { step: 1, title: 'Identitas' },
-                { step: 2, title: 'Isi Surat' },
-                { step: 3, title: 'Pengesahan' },
-                { step: 4, title: 'Pratinjau' },
-              ].map((item) => (
-                <button type="button" key={item.step} onClick={() => { if (item.step <= 3) setWizardStep(item.step as 1 | 2 | 3); }} disabled={item.step === 4} className="flex-1 min-w-0 text-center disabled:cursor-default">
-                  <div className={`mx-auto w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold ${wizardStep === item.step ? 'bg-[#c81e28] text-white' : wizardStep > item.step ? 'bg-red-100 text-[#b71922]' : 'bg-slate-100 text-slate-400'}`}>
-                    {item.step}
-                  </div>
-                  <p className={`mt-1 text-[9px] font-semibold truncate ${wizardStep === item.step ? 'text-[#b71922]' : 'text-slate-500'}`}>{item.title}</p>
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-[10px] font-semibold text-slate-500">LANGKAH {wizardStep}/4</span>
-              <span className="text-[10px] font-bold text-[#b71922]">{['Identitas','Isi Surat','Pengesahan','Pratinjau'][wizardStep - 1]}</span>
-            </div>
-            <div className="h-1 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full rounded-full bg-[#c81e28] transition-all" style={{ width: `${(wizardStep / 4) * 100}%` }} />
-            </div>
-          </div>
-
           {/* ==================== BAGIAN 1: IDENTITAS ==================== */}
           {wizardStep === 1 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
@@ -837,180 +814,14 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               <span className="text-xs font-black text-[#c81e28]">Identitas Surat</span>
             </div>
 
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-800">Generate 2 Surat Sekaligus</p>
-                <p className="text-[10px] text-slate-500">Terbitkan otomatis untuk Gudep 10.035 &amp; 10.036 secara terpisah</p>
-              </div>
-              <button type="button" onClick={() => setCeklisDuaDua(!ceklisDuaDua)} className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${ceklisDuaDua ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
-            </div>
+            
 
-            {/* 1. Tanggal (Wajib) */}
-            <div className="flex items-start gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIncludeTanggal(!includeTanggal)}
-                title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeTanggal
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
-                    Tanggal Surat <span className="text-[#c81e28]">*</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">Sejajar nomor surat di kanan</span>
-                </div>
-                <input
-                  type="text"
-                  value={tanggalSurat}
-                  onChange={(e) => setTanggalSurat(e.target.value)}
-                  placeholder="Contoh: 10 November 2026"
-                  required
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-[#c81e28]"
-                />
-              </div>
-            </div>
+            <div className="space-y-1 pt-2"><label className="text-xs font-bold text-slate-800">Tanggal Surat <span className="text-[#c81e28]">*</span></label><input type="text" value={tanggalSurat} onChange={(e) => setTanggalSurat(e.target.value)} placeholder="Contoh: 10 November 2026" required className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]" /></div>
+            <div className="space-y-1"><label className="text-xs font-bold text-slate-800">Nomor Surat <span className="text-[#c81e28]">*</span></label><div className="flex items-center gap-2"><input type="text" value={nomorUrut} onChange={(e) => setNomorUrut(e.target.value)} placeholder="Contoh: 015" required className="w-24 text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-mono focus:border-[#c81e28]" /><span className="text-xs font-mono text-slate-500">/{gudepPilihan}/C/2026</span></div></div>
+            <div className="space-y-1"><label className="text-xs font-bold text-slate-800">Lampiran <span className="text-[#c81e28]">*</span></label><input type="text" value={lampiran} onChange={(e) => setLampiran(e.target.value)} placeholder="Isi jumlah lampiran atau tanda -" required className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]" /></div>
+            <div className="space-y-1"><label className="text-xs font-bold text-slate-800">Perihal <span className="text-[#c81e28]">*</span></label><input type="text" value={perihal} onChange={(e) => setPerihal(e.target.value)} placeholder="Contoh: Undangan Kegiatan Latihan Gabungan" required className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]" /></div>
 
-            {/* 2. Nomor Surat (Wajib) */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => setIncludeNomor(!includeNomor)}
-                title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeNomor
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
-                    Nomor Surat <span className="text-[#c81e28]">*</span>
-                  </label>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Hasil: {nomorUrut}/{ceklisDuaDua ? '10.035 & 10.036' : gudepPilihan}/C/2026
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={nomorUrut}
-                    onChange={(e) => setNomorUrut(e.target.value)}
-                    placeholder="Contoh: 015"
-                    required
-                    className="w-24 text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 font-mono focus:outline-none focus:border-[#c81e28]"
-                  />
-                  <span className="text-xs font-mono text-slate-500">
-                    /{ceklisDuaDua ? '10.035 / 10.036' : gudepPilihan}/C/2026
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Perihal (Wajib) */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => setIncludePerihal(!includePerihal)}
-                title="Pilih untuk menampilkan di surat"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includePerihal
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-1">
-                <label className="text-xs font-bold text-slate-800">
-                  Perihal <span className="text-[#c81e28]">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={perihal}
-                  onChange={(e) => setPerihal(e.target.value)}
-                  placeholder="Contoh: Undangan Kegiatan Latihan Gabungan"
-                  required
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-[#c81e28]"
-                />
-              </div>
-            </div>
-
-            {/* 4. Lampiran (Opsional, dengan lingkaran opsi) */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => setIncludeLampiran(!includeLampiran)}
-                title="Pilih untuk memasukkan lampiran ke surat"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeLampiran
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
-                    Lampiran <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-500">
-                    {includeLampiran ? 'Dimasukkan ke surat' : 'Dilewati'}
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={lampiran}
-                  onChange={(e) => setLampiran(e.target.value)}
-                  placeholder="Contoh: 1 (Satu) Lembar Jadwal Kegiatan"
-                  disabled={!includeLampiran}
-                  className={`w-full text-xs p-2.5 rounded-xl border border-slate-200 transition-all ${
-                    includeLampiran ? 'bg-white text-slate-900 focus:border-[#c81e28]' : 'bg-slate-100 text-slate-400'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* 5. Keterangan Identitas (Opsional, dengan lingkaran opsi) */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => setIncludeKeteranganIdentitas(!includeKeteranganIdentitas)}
-                title="Pilih untuk memasukkan keterangan identitas"
-                className={`mt-6 w-6 h-6 rounded-md shrink-0 border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  includeKeteranganIdentitas
-                    ? 'border-[#c81e28] bg-[#c81e28] text-white shadow-xs'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-              </button>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
-                    Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-500">
-                    {includeKeteranganIdentitas ? 'Dimasukkan ke surat' : 'Dilewati'}
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={keteranganIdentitas}
-                  onChange={(e) => setKeteranganIdentitas(e.target.value)}
-                  placeholder="Contoh: Sangat Segera / Penting"
-                  disabled={!includeKeteranganIdentitas}
-                  className={`w-full text-xs p-2.5 rounded-xl border border-slate-200 transition-all ${
-                    includeKeteranganIdentitas ? 'bg-white text-slate-900 focus:border-[#c81e28]' : 'bg-slate-100 text-slate-400'
-                  }`}
-                />
-              </div>
-            </div>
+            <div className="space-y-1"><label className="text-xs font-bold text-slate-800">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label><input type="text" value={keteranganIdentitas} onChange={(e) => setKeteranganIdentitas(e.target.value)} placeholder="Contoh: Penting / Segera" className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]" /></div>
 
             {/* 6. Kepada Yth. (Opsional, dengan lingkaran opsi) */}
             <div className="flex items-start gap-3 pt-1 border-t border-slate-100">
@@ -1035,22 +846,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   </span>
                 </div>
                 {includeKepadaYth && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={penerimaNama}
-                      onChange={(e) => setPenerimaNama(e.target.value)}
-                      placeholder="Nama / Instansi Penerima"
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
-                    />
-                    <input
-                      type="text"
-                      value={penerimaTempat}
-                      onChange={(e) => setPenerimaTempat(e.target.value)}
-                      placeholder="Tempat,"
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28]"
-                    />
-                  </div>
+                  <textarea rows={3} value={penerimaNama} onChange={(e) => setPenerimaNama(e.target.value)} placeholder="Nama / Instansi Penerima (bisa beberapa baris)" className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#c81e28] resize-y" />
                 )}
               </div>
             </div>
@@ -1063,15 +859,6 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="text-xs font-black text-[#c81e28]">Isi Surat</span>
-            </div>
-
-            {/* Salam Pembuka (Otomatis) */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Salam Pembuka &amp; Salam Pramuka (Otomatis)
-              </span>
-              <p className="text-xs font-serif italic text-slate-800">Assalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
-              <p className="text-xs font-serif text-slate-800 text-center">Salam Pramuka,</p>
             </div>
 
             {/* Isi Surat Paragraf */}
@@ -1152,76 +939,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 </div>
               </div>
 
-              {/* Tempat (Opsional dengan lingkaran toggle) */}
-              <div className="flex items-start gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIncludeTempat(!includeTempat)}
-                  className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
-                    includeTempat ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[11px] font-bold text-slate-700">
-                      Tempat <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                    </label>
-                    <span className="text-[10px] text-slate-500">
-                      {includeTempat ? 'Dimasukkan' : 'Dilewati'}
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={rincianTempat}
-                    onChange={(e) => setRincianTempat(e.target.value)}
-                    disabled={!includeTempat}
-                    placeholder="Contoh: Sanggar Bakti SMA Negeri 9 Maros"
-                    className={`w-full text-xs p-2 rounded-xl border border-slate-200 transition-all ${
-                      includeTempat ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Keterangan Acara (Opsional dengan lingkaran toggle) */}
-              <div className="flex items-start gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIncludeKeteranganAcara(!includeKeteranganAcara)}
-                  className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center transition-all cursor-pointer ${
-                    includeKeteranganAcara ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'
-                  }`}
-                >
-                </button>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[11px] font-bold text-slate-700">
-                      Keterangan / Agenda Kegiatan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span>
-                    </label>
-                    <span className="text-[10px] text-slate-500">
-                      {includeKeteranganAcara ? 'Dimasukkan' : 'Dilewati'}
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={rincianKeteranganAcara}
-                    onChange={(e) => setRincianKeteranganAcara(e.target.value)}
-                    disabled={!includeKeteranganAcara}
-                    placeholder="Contoh: Menggunakan Seragam Pramuka Lengkap"
-                    className={`w-full text-xs p-2 rounded-xl border border-slate-200 transition-all ${
-                      includeKeteranganAcara ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'
-                    }`}
-                  />
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <button type="button" onClick={() => setIncludeKeteranganDetail(!includeKeteranganDetail)} className={`w-6 h-6 rounded-md shrink-0 border-2 mt-6 flex items-center justify-center ${includeKeteranganDetail ? 'border-[#c81e28] bg-[#c81e28] text-white' : 'border-slate-300 bg-white'}`}></button>
-                <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-700 block mb-0.5">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label>
-                  <input type="text" value={rincianKeteranganDetail} onChange={(e) => setRincianKeteranganDetail(e.target.value)} disabled={!includeKeteranganDetail} placeholder="Keterangan tambahan" className={`w-full text-xs p-2 rounded-xl border border-slate-200 ${includeKeteranganDetail ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'}`} />
-                </div>
-              </div>
+              <div className="space-y-2"><label className="text-[11px] font-bold text-slate-700 block">Tempat <span className="text-[#c81e28]">*</span></label><input type="text" value={rincianTempat} onChange={(e) => setRincianTempat(e.target.value)} required placeholder="Tempat kegiatan" className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white text-slate-900" /><label className="text-[11px] font-bold text-slate-700 block">Keterangan <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span></label><input type="text" value={rincianKeteranganDetail} onChange={(e) => setRincianKeteranganDetail(e.target.value)} placeholder="Keterangan tambahan" className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white text-slate-900" /></div>
 
             </div>
 
@@ -1240,7 +958,9 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                   ✨ Bantu Penutup
                 </button>
               </div>
+              <div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => applyPenutupFormat('**')} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-black">B</button><button type="button" onClick={() => applyPenutupFormat('*')} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs italic">I</button><button type="button" onClick={insertPenutupBullet} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs">• Poin</button></div>
               <textarea
+                ref={penutupTextareaRef}
                 rows={2}
                 value={penutupParagraf}
                 onChange={(e) => setPenutupParagraf(e.target.value)}
@@ -1249,28 +969,17 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
               />
             </div>
 
-            {/* Salam Penutup (Otomatis) */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Salam Penutup (Otomatis)
-              </span>
-              <p className="text-xs font-serif italic text-slate-800">Wassalamu&apos;alaikum Warahmatullahi Wabarakatuh</p>
-            </div>
-
           </div>
           )}
 
           {/* ==================== BAGIAN 3: PENGESAHAN (SEMUA HARUS DIPILIH) ==================== */}
           {wizardStep === 3 && (
           <div className="space-y-3">
-            <div className="rounded-2xl bg-[#fff5f5] border border-red-100 px-4 py-3">
-              <h3 className="text-sm font-extrabold text-[#b71922]">Pengesahan</h3>
-            </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
                 <span className="text-xs font-black text-[#c81e28] uppercase tracking-wider block">
-                  Penandatangan
+                  Penandatanganan
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Tanggal ikut surat</span>
@@ -1405,19 +1114,11 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
       {viewMode === 'preview' && activeSurat && (
         <div className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-sm font-extrabold text-slate-900">Pratinjau Surat</h2>
+            <h2 className="text-sm font-extrabold text-slate-900 text-center">Pratinjau Surat</h2>
           </div>
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => { setWizardStep(3); setViewMode('form'); }}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
-              >
-                ← Edit Form
-              </button>
-
               {previewSuratList.length > 1 && (
                 <div className="flex items-center gap-1">
                   {previewSuratList.map((s, idx) => (

@@ -411,7 +411,7 @@ function drawSignerBlock(
   return y - 6;
 }
 
-async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage, rightBlockStartX?: number): Promise<void> {
+async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrImage?: PDFImage): Promise<void> {
   type Signer = {
     approval: string;
     title: string;
@@ -735,17 +735,12 @@ export async function createLetterPdf(
     onStage(stage);
     const salamPenutup = cleanText('Wassalamu’alaikum Warahmatullahi Wabarakatuh');
     await layout.paragraph(salamPenutup, { size: 12, font: italic, lineHeight: 16, align: 'center' });
-    const kataWabarakatuh = 'Wabarakatuh';
-    const prefixSebelumW = salamPenutup.slice(0, salamPenutup.lastIndexOf(kataWabarakatuh));
-    const salamWidth = italic.widthOfTextAtSize(salamPenutup, 12);
-    const prefixWidth = italic.widthOfTextAtSize(prefixSebelumW, 12);
-    const hurufWStartX = SIDE_MARGIN + (layout.contentWidth - salamWidth) / 2 + prefixWidth;
     layout.y -= 8;
 
     stage = 'Menyematkan QR dan menata tanda tangan';
     onStage(stage);
     const qrImage = surat.metodeTtd === 'digital' ? await embedQrCode(outputPdf, surat.qrCodeDataUrl) : undefined;
-    await drawSignatures(layout, surat, qrImage, hurufWStartX);
+    await drawSignatures(layout, surat, qrImage);
 
     stage = 'Menata tembusan surat';
     onStage(stage);

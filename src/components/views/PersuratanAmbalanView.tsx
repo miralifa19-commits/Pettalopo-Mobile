@@ -118,6 +118,24 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'dashboard' | 'form' | 'preview' | 'list' | 'drafts' | 'settings'>('dashboard');
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Setiap berpindah langkah, tampilkan bagian paling atas pada layar HP.
+  useEffect(() => {
+    if (viewMode !== 'form') return;
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      let element: HTMLElement | null = document.querySelector('form');
+      while (element) {
+        if (element.scrollHeight > element.clientHeight + 2) {
+          element.scrollTop = 0;
+        }
+        element = element.parentElement;
+      }
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [wizardStep, viewMode]);
   const [officials, setOfficials] = useState<MabigusOfficials>(getMabigusOfficials());
   const [suratSettings, setSuratSettings] = useState<SuratSettings>(() => {
     try { return { ...DEFAULT_SURAT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}') }; }

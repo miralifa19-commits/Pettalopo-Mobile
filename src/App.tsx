@@ -364,7 +364,7 @@ export default function App() {
             <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
             <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
             <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
-              <img src="/assets/dewan-gear-logo.png" alt="Dewan" className="dewan-nav-gear" />
+              <img src="/assets/aistudio/lingkaran-dewan-8_ebfa4b45.png" alt="Dewan" className="dewan-nav-gear" />
               <span>Dewan</span>
             </button>
             <button type="button" onClick={() => setActiveMenu('chat')}><MessageCircle size={19}/><span>Ruang Ambalan</span></button>

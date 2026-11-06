@@ -714,7 +714,10 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         .trim()
         .replace(/\s+/g, '_')
         .slice(0, 90) || 'Surat_Ambalan';
-      const fileName = `${safePerihal}.pdf`;
+      const now = new Date();
+      const pad = (value: number) => String(value).padStart(2, '0');
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const fileName = `${safePerihal}_${timestamp}.pdf`;
 
       const delivery = await deliverPdfFile(pdfBytes, fileName, (stage) => {
         currentStage = stage;

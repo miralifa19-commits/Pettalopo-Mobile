@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { FileOpener } from '@capawesome-team/capacitor-file-opener';
+import { Share } from '@capacitor/share';
 import { PdfExportStageError, type PdfStageCallback } from './pdfLetterGenerator';
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -28,40 +28,42 @@ export async function deliverPdfFile(
     let savedUri = '';
 
     try {
-      onStage('Menyimpan PDF ke penyimpanan dokumen Android');
+      onStage('Menyimpan PDF sementara di penyimpanan aplikasi');
       const saved = await Filesystem.writeFile({
         path: relativePath,
         data: bytesToBase64(pdfBytes),
-        directory: Directory.Documents,
+        directory: Directory.Cache,
         recursive: true,
       });
       savedUri = saved.uri || (await Filesystem.getUri({
         path: relativePath,
-        directory: Directory.Documents,
+        directory: Directory.Cache,
       })).uri;
 
-      onStage('Membuka PDF dengan aplikasi pembaca dokumen Android');
+      onStage('Membuka menu Bagikan untuk menyimpan PDF');
       try {
-        await FileOpener.openFile({
-          path: savedUri,
-          mimeType: 'application/pdf',
+        await Share.share({
+          title: fileName,
+          text: 'Pilih Simpan ke File atau aplikasi tujuan untuk menyimpan surat.',
+          files: [savedUri],
+          dialogTitle: 'Bagikan atau simpan PDF',
         });
       } catch (error) {
         throw new PdfExportStageError(
-          'Membuka PDF yang sudah tersimpan',
+          'Membuka menu Bagikan PDF',
           error,
           savedUri,
         );
       }
 
       return {
-        message: 'PDF tersimpan di Dokumen/Pettalopo dan dibuka di aplikasi pembaca PDF.',
+        message: 'Menu Bagikan terbuka. Pilih Simpan ke File untuk menyimpan PDF.',
         savedPath: savedUri,
       };
     } catch (error) {
       if (error instanceof PdfExportStageError) throw error;
       throw new PdfExportStageError(
-        'Menyimpan PDF ke penyimpanan dokumen Android',
+        'Menyimpan PDF sementara di penyimpanan aplikasi',
         error,
         savedUri || undefined,
       );

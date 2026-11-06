@@ -89,6 +89,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     }
   };
 
+  useEffect(() => {
+    if (open && auth.currentUser) void finishLogin(auth.currentUser);
+  }, [open]);
+
   const handleGoogle = async () => {
     setLoading(true);
     setError('');
@@ -97,7 +101,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         const result = await FirebaseAuthentication.signInWithGoogle();
         const user = result.user;
         if (!user?.uid) throw new Error('Google tidak mengembalikan identitas akun.');
-        await finishLogin(user);
+        await finishLogin({ ...user, photoURL: user.photoUrl || user.photoURL });
       } else {
         const result = await signInWithPopup(auth, googleProvider);
         await finishLogin(result.user);

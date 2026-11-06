@@ -42,6 +42,8 @@ export default function App() {
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
   const pullStartY = useRef<number | null>(null);
+  const pullHoldTimer = useRef<number | null>(null);
+  const [pullHoldReady, setPullHoldReady] = useState(false);
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
@@ -220,15 +222,29 @@ export default function App() {
             pullStartY.current = event.currentTarget.scrollTop <= 0
               ? (event.touches[0]?.clientY ?? null)
               : null;
+            setPullHoldReady(false);
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            if (pullStartY.current !== null) {
+              pullHoldTimer.current = window.setTimeout(() => setPullHoldReady(true), 3000);
+            }
           }}
           onTouchEnd={(event) => {
             const startY = pullStartY.current;
             pullStartY.current = null;
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            pullHoldTimer.current = null;
             const endY = event.changedTouches[0]?.clientY;
-            if (startY !== null && endY !== undefined &&
-                endY - startY > 100 && event.currentTarget.scrollTop <= 0) {
+            if (pullHoldReady && startY !== null && endY !== undefined &&
+                endY - startY > 55 && event.currentTarget.scrollTop <= 0) {
               window.location.reload();
             }
+            setPullHoldReady(false);
+          }}
+          onTouchCancel={() => {
+            pullStartY.current = null;
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            pullHoldTimer.current = null;
+            setPullHoldReady(false);
           }}
         >
           {activeMenu === 'home' && (
@@ -386,7 +402,7 @@ export default function App() {
         )}
 
         <GoogleAuthPortal
-          open={isGooglePortalOpen}
+          open={isGooglePortalOpen && !showPettalopoSplash}
           onComplete={(googleUser) => {
             setUser(googleUser);
             setIsGooglePortalOpen(false);

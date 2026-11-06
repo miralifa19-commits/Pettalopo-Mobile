@@ -77,6 +77,11 @@ jobs:
           data = json.loads(p.read_text())
           if not data.get("project_info") or not data.get("client"):
               raise SystemExit("google-services.json tidak valid.")
+          if data["project_info"].get("project_id") != "optimum-habitat-fbvhw":
+              raise SystemExit("google-services.json bukan untuk Firebase project Pettalopo.")
+          package_names = [item.get("client_info", {}).get("android_client_info", {}).get("package_name") for item in data["client"]]
+          if "id.sch.smpialwasi_maros.ambalan" not in package_names:
+              raise SystemExit("google-services.json tidak memuat package id Pettalopo Mobile.")
           p = Path("android/variables.gradle")
           lines = p.read_text().splitlines()
           for key, value in {

@@ -28,7 +28,7 @@ import { PengaturanView } from './components/views/PengaturanView';
 import { LaporanView } from './components/views/LaporanView';
 import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
-import { UpdateChecker } from './components/UpdateChecker';
+import { ApkUpdater } from './components/ApkUpdater';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
 import { 
@@ -185,7 +185,7 @@ export default function App() {
       {/* Main Native App Container */}
       <div className="w-full max-w-lg mx-auto min-h-screen bg-white flex flex-col relative">
         
-        <UpdateChecker />
+        <ApkUpdater />
 
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (

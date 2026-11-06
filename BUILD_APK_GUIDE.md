@@ -172,3 +172,35 @@ Jika di masa mendatang Anda ingin merilis aplikasi ke **Google Play Store** atau
           name: ambalan-la-surullah-signed-release-apk
           path: android/app/build/outputs/apk/release/*-signed.apk
    ```
+
+
+---
+
+## 6. Rilis Auto Update Pettalopo Mobile
+
+Pettalopo Mobile memeriksa `version.json` dari GitHub Release terbaru. Ketika `versionCode` rilis lebih tinggi daripada versi terpasang, aplikasi menampilkan dialog **Pembaruan Tersedia**. Tombol **Update** mengunduh APK ke `Directory.Cache` dengan progres, membersihkan APK lama dari cache, lalu langsung membuka pemasang Android tanpa membuka Manajer File.
+
+### Langkah rilis
+
+1. Naikkan `version` dan `androidVersionCode` di `package.json`. Contoh: `version: 1.0.9` dan `androidVersionCode: 9`. Workflow menyalin nilai tersebut ke `versionName` dan `versionCode` pada `android/app/build.gradle` saat proyek Android dibuat.
+2. Pastikan GitHub Actions memiliki empat secrets berikut dan nilainya memakai keystore yang SAMA dengan APK yang sudah terpasang:
+   - `PETTALOPO_KEYSTORE_BASE64`
+   - `PETTALOPO_KEYSTORE_PASSWORD`
+   - `PETTALOPO_KEY_ALIAS`
+   - `PETTALOPO_KEY_PASSWORD`
+3. Push perubahan ke branch `main` atau jalankan workflow **Build Android APK - Ambalan La Surullah**.
+4. Jika signing berhasil, workflow membangun Release APK, menyiapkan nama aset `pettalopo.apk`, membuat `version.json`, lalu menerbitkan GitHub Release bertag `v<version>` dengan kedua aset tersebut.
+5. Pastikan Release terbaru memiliki dua aset: `pettalopo.apk` dan `version.json`.
+
+Format manifest:
+
+```json
+{
+  "versionCode": 9,
+  "versionName": "1.0.9",
+  "apkUrl": "https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v1.0.9/pettalopo.apk",
+  "catatan": "Pembaruan Pettalopo Mobile versi 1.0.9."
+}
+```
+
+**Penting:** `versionCode` harus selalu naik. Jangan mengganti `applicationId` atau keystore setelah APK pertama dipasang. Build Debug dari GitHub Actions tidak cocok untuk jalur Auto Update Release karena tanda tangan Debug CI dapat berbeda dengan tanda tangan Release. APK yang menerima pembaruan harus dipasang dari Release yang ditandatangani dengan keystore permanen yang sama. Android tetap dapat meminta izin awal "izinkan pemasangan aplikasi dari sumber ini" dan konfirmasi **Pasang**.

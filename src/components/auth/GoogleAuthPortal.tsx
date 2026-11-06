@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
@@ -33,11 +33,16 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isThanking, setIsThanking] = useState(false);
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (user) setNama((current) => current || user.displayName || '');
+      if (user) {
+        setNama((current) => current || user.displayName || '');
+        if (openRef.current) void finishLogin(user);
+      }
     });
     return unsubscribe;
   }, []);
@@ -89,10 +94,6 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     }
   };
 
-  useEffect(() => {
-    if (open && auth.currentUser) void finishLogin(auth.currentUser);
-  }, [open]);
-
   const handleGoogle = async () => {
     setLoading(true);
     setError('');
@@ -102,10 +103,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         if (!result.user?.uid || !result.credential?.idToken) throw new Error('Google tidak mengembalikan token identitas.');
         const webCredential = GoogleAuthProvider.credential(result.credential.idToken);
         const webResult = await signInWithCredential(auth, webCredential);
-        await finishLogin(webResult.user);
+        // onAuthStateChanged handles profile loading after the JS session is established.
       } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        await finishLogin(result.user);
+        await signInWithPopup(auth, googleProvider);
+        // onAuthStateChanged handles profile loading after the popup completes.
       }
     } catch (e: any) {
       setError(e?.message || 'Login Google gagal. Pastikan penyedia Google sudah aktif di Firebase.');

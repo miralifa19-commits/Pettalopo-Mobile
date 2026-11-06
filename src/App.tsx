@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -21,6 +21,7 @@ import { PengaturanView } from './components/views/PengaturanView';
 import { LaporanView } from './components/views/LaporanView';
 import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
+import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
 import { ApkUpdater } from './components/ApkUpdater';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
@@ -38,8 +39,11 @@ export default function App() {
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
   const pullStartY = useRef<number | null>(null);
+  const pullHoldTimer = useRef<number | null>(null);
+  const [pullHoldReady, setPullHoldReady] = useState(false);
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
@@ -186,8 +190,8 @@ export default function App() {
         <header className="pettalopo-topbar pettalopo-topbar-home">
           <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
             <span className="pettalopo-member-avatar">
-              {(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
-                ? <img src={(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
+              {(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
+                ? <img src={(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
                 : <span>{(user.nama || 'A').trim().charAt(0).toUpperCase()}</span>}
             </span>
             <span className="pettalopo-member-meta">
@@ -218,17 +222,36 @@ export default function App() {
             pullStartY.current = event.currentTarget.scrollTop <= 0
               ? (event.touches[0]?.clientY ?? null)
               : null;
+            setPullHoldReady(false);
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            if (pullStartY.current !== null) {
+              pullHoldTimer.current = window.setTimeout(() => setPullHoldReady(true), 3000);
+            }
           }}
           onTouchEnd={(event) => {
             const startY = pullStartY.current;
             pullStartY.current = null;
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            pullHoldTimer.current = null;
             const endY = event.changedTouches[0]?.clientY;
-            if (startY !== null && endY !== undefined &&
-                endY - startY > 100 && event.currentTarget.scrollTop <= 0) {
+            if (pullHoldReady && startY !== null && endY !== undefined &&
+                endY - startY > 55 && event.currentTarget.scrollTop <= 0) {
               window.location.reload();
             }
+            setPullHoldReady(false);
+          }}
+          onTouchCancel={() => {
+            pullStartY.current = null;
+            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+            pullHoldTimer.current = null;
+            setPullHoldReady(false);
           }}
         >
+          {pullHoldReady && (
+            <div className="sticky top-1 z-40 mx-auto mb-2 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#e51c24] shadow-lg border border-red-200">
+              <RefreshCw size={16} className="animate-spin" /> Lepaskan untuk memuat ulang
+            </div>
+          )}
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -337,6 +360,7 @@ export default function App() {
               onUpdateUser={setUser}
               onNavigateToDatabase={() => setActiveMenu('database')}
               onOpenAuthModal={() => setIsAuthModalOpen(true)}
+              onLogout={() => setIsGooglePortalOpen(true)}
             />
           )}
 
@@ -381,6 +405,19 @@ export default function App() {
             <button type="button" onClick={() => setActiveMenu('pengumuman')} aria-current={activeMenu === 'pengumuman' ? 'page' : undefined}><Megaphone size={19}/><span>Pengumuman</span></button>
           </nav>
         )}
+
+        <GoogleAuthPortal
+          open={isGooglePortalOpen && !showPettalopoSplash}
+          onComplete={(googleUser) => {
+            setUser(googleUser);
+            setIsGooglePortalOpen(false);
+          }}
+          onSkip={() => setIsGooglePortalOpen(false)}
+          onLogout={() => {
+            setIsGooglePortalOpen(true);
+            setShowPettalopoSplash(true);
+          }}
+        />
 
         <NotificationsModal
           isOpen={isNotificationsOpen}

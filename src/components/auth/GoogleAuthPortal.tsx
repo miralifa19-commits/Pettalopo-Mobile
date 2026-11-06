@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { onAuthStateChanged, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
+import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../firebase/config';
 import { UserAccount } from '../../types';
@@ -99,9 +99,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     try {
       if (Capacitor.isNativePlatform()) {
         const result = await FirebaseAuthentication.signInWithGoogle();
-        const user = result.user;
-        if (!user?.uid) throw new Error('Google tidak mengembalikan identitas akun.');
-        await finishLogin({ ...user, photoURL: user.photoUrl || user.photoURL });
+        if (!result.user?.uid || !result.credential?.idToken) throw new Error('Google tidak mengembalikan token identitas.');
+        const webCredential = GoogleAuthProvider.credential(result.credential.idToken);
+        const webResult = await signInWithCredential(auth, webCredential);
+        await finishLogin(webResult.user);
       } else {
         const result = await signInWithPopup(auth, googleProvider);
         await finishLogin(result.user);
@@ -169,7 +170,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const logout = async () => {
     try {
       if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
-      else await webSignOut(auth);
+      await webSignOut(auth);
       setFirebaseUser(null);
       setNeedsProfile(false);
       setIsThanking(true);

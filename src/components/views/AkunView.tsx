@@ -125,7 +125,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-[11px] font-bold border border-blue-200">
               <User className="w-3.5 h-3.5 text-blue-600" />
-              <span>AKUN ANGGOTA PENEGAK</span>
+              <span>{(user as any).statusKeanggotaan === 'purna_ambalan' ? 'AKUN PURNA AMBALAN' : 'AKUN ANGGOTA PENEGAK'}</span>
             </span>
           )}
         </div>

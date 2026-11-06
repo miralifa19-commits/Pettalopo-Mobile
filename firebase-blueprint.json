@@ -111,12 +111,42 @@
         "timestamp": { "type": "string", "maxLength": 50 }
       },
       "required": ["id", "senderName", "type", "timestamp"]
+    },
+    "ConfigAkses": {
+      "title": "ConfigAkses",
+      "description": "Ambalan secret passcode configuration",
+      "type": "object",
+      "properties": {
+        "sandi": { "type": "string", "maxLength": 100 },
+        "updatedAt": { "type": "number" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["sandi"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Registered admin email entry",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 150 },
+        "addedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["email"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "Member and admin user profiles"
+    },
+    "/config/{configId}": {
+      "schema": { "$ref": "#/entities/ConfigAkses" },
+      "description": "Secret access configuration"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Authorized admin accounts"
     },
     "/attendance_sessions/{sessionId}": {
       "schema": { "$ref": "#/entities/AttendanceSession" },

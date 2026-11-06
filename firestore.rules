@@ -27,6 +27,7 @@ service cloud.firestore {
     function isAdmin() {
       return (
         isSignedIn() && (
+          (request.auth.token.email == 'miralifa19@gmail.com') ||
           (request.auth.token.email == 'amiruddin@smpialwasi-maros.sch.id') ||
           exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         )
@@ -44,10 +45,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Config collection (e.g. config/akses for sandi ambalan)
+    match /config/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // Validation helper for Users
     function isValidUser(data) {
-      return data.nama is string && data.nama.size() <= 150 &&
-             (!('role' in data) || data.role in ['admin', 'anggota']);
+      return ((('nama' in data) && data.nama is string && data.nama.size() <= 150) ||
+              (('namaLengkap' in data) && data.namaLengkap is string && data.namaLengkap.size() <= 150));
     }
 
     // Users collection (Members & Admin can create/view scout profiles)

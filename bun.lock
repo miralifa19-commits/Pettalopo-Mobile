@@ -6,6 +6,7 @@
       "name": "react-example",
       "dependencies": {
         "@capacitor-community/file-opener": "^8.0.1",
+        "@capacitor-firebase/authentication": "^8.6.0",
         "@capacitor/android": "^8.6.0",
         "@capacitor/app": "^8.0.0",
         "@capacitor/cli": "^8.6.0",
@@ -51,6 +52,8 @@
     "@babel/runtime": ["@babel/runtime@7.29.10", "", {}, "sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA=="],
 
     "@capacitor-community/file-opener": ["@capacitor-community/file-opener@8.0.1", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-kiPybhOlDUMmt5LLsulxLZC/j4gHcPuvKsdbCZTDsQTShGc2G5SNqalYSJUFUfNYl3gQSF7jnNPRlfD5JnSeaw=="],
+
+    "@capacitor-firebase/authentication": ["@capacitor-firebase/authentication@8.6.0", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0", "firebase": "^12.6.0" }, "optionalPeers": ["firebase"] }, "sha512-ePL+7lVEt5eSFiTTI2Mi/B53oB00B8Wd7Nc3WroYiLybgnfFs49yvcO90cjImk2keY7sGT7CGgmquLcxVaHzyw=="],
 
     "@capacitor/android": ["@capacitor/android@8.6.0", "", { "peerDependencies": { "@capacitor/core": "^8.6.0" } }, "sha512-6IJS0TCfV/F/8+324CCwYd3xL6r+TH0W7zzaxYzPz9IV3YWCNvsZDuCCPHUIBC5iASb9od827ddSJ6rz+9Pu1Q=="],
 

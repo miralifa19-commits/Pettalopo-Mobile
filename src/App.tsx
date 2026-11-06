@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -247,6 +247,11 @@ export default function App() {
             setPullHoldReady(false);
           }}
         >
+          {pullHoldReady && (
+            <div className="sticky top-1 z-40 mx-auto mb-2 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#e51c24] shadow-lg border border-red-200">
+              <RefreshCw size={16} className="animate-spin" /> Lepaskan untuk memuat ulang
+            </div>
+          )}
           {activeMenu === 'home' && (
             <HomeView
               user={user}

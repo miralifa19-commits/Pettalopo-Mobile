@@ -14,12 +14,15 @@
     "test:pdf": "tsx scripts/test-pdf-export.ts"
   },
   "dependencies": {
+    "@capacitor-community/file-opener": "^8.0.1",
+    "@capacitor-firebase/authentication": "8.6.0",
     "@capacitor/android": "^8.6.0",
     "@capacitor/app": "^8.0.0",
     "@capacitor/cli": "^8.6.0",
     "@capacitor/core": "^8.6.0",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/canvas-confetti": "^1.9.0",
@@ -33,14 +36,12 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",
     "qrcode": "^1.5.4",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "vite": "^8.3.0",
-    "pdf-lib": "^1.17.1",
-    "@capacitor/share": "^8.0.0",
-    "@capacitor-community/file-opener": "^8.0.1"
+    "vite": "^8.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

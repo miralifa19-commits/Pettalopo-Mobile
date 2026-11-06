@@ -30,6 +30,7 @@ interface AkunViewProps {
   onUpdateUser: (updated: UserAccount) => void;
   onNavigateToDatabase?: () => void;
   onOpenAuthModal?: () => void;
+  onLogout?: () => void;
   onBack?: () => void;
 }
 
@@ -38,6 +39,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
   onUpdateUser,
   onNavigateToDatabase,
   onOpenAuthModal,
+  onLogout,
   onBack
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -128,9 +130,11 @@ export const AkunView: React.FC<AkunViewProps> = ({
           )}
         </div>
 
-        {/* Logo without frame box with 15s shine */}
-        <div className="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
-          <ShiningAmbalanLogo className="w-16 h-16" alt="Logo Ambalan" />
+        {/* Foto profil Google atau foto unggahan anggota */}
+        <div className="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-amber-400 bg-slate-100 flex items-center justify-center">
+          {user.foto || (user as any).fotoUrl || (user as any).photoURL
+            ? <img src={user.foto || (user as any).fotoUrl || (user as any).photoURL} alt="Foto profil" className="w-full h-full object-cover" />
+            : <ShiningAmbalanLogo className="w-16 h-16" alt="Logo Ambalan" />}
         </div>
 
         <h1 className="text-base sm:text-lg font-black text-slate-900 mt-1">
@@ -206,6 +210,12 @@ export const AkunView: React.FC<AkunViewProps> = ({
             <span>Edit Profil</span>
           </button>
 
+          {onLogout && (
+            <button onClick={onLogout} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 text-red-700 text-xs font-bold border border-red-200">
+              <LogOut className="w-3.5 h-3.5" /><span>Keluar Akun Google</span>
+            </button>
+          )}
+
           {onOpenAuthModal && (
             <button
               onClick={onOpenAuthModal}
@@ -242,6 +252,18 @@ export const AkunView: React.FC<AkunViewProps> = ({
           >
             Buka Database →
           </button>
+        </div>
+      )}
+
+      {/* Biodata dari proses login Google */}
+      {((user as any).alamat || (user as any).angkatan || (user as any).nomorWhatsApp || user.ttl) && (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2 text-xs">
+          <h2 className="font-extrabold text-slate-800 uppercase tracking-wider">Biodata</h2>
+          {user.ttl && <p><span className="text-slate-500">Tempat/Tanggal Lahir: </span><strong>{user.ttl}</strong></p>}
+          {(user as any).alamat && <p><span className="text-slate-500">Alamat: </span><strong>{(user as any).alamat}</strong></p>}
+          {(user as any).angkatan && <p><span className="text-slate-500">Angkatan: </span><strong>{(user as any).angkatan}</strong></p>}
+          {(user as any).nomorWhatsApp && <a className="inline-flex text-green-700 font-bold underline" href={"https://wa.me/" + String((user as any).nomorWhatsApp).replace(/[^0-9]/g, '')} target="_blank" rel="noreferrer">WhatsApp: {(user as any).nomorWhatsApp}</a>}
+          {user.motto && <p><span className="text-slate-500">Motto: </span><strong>{user.motto}</strong></p>}
         </div>
       )}
 

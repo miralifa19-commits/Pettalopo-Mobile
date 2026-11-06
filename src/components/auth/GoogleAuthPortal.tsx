@@ -94,6 +94,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     }
   };
 
+  useEffect(() => {
+    if (open && auth.currentUser) void finishLogin(auth.currentUser);
+  }, [open]);
+
   const handleGoogle = async () => {
     setLoading(true);
     setError('');

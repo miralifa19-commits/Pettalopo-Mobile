@@ -12,6 +12,7 @@ export type ActiveMenu =
   | 'organisasi'
   | 'program_kerja'
   | 'presensi'
+  | 'pengumuman'
   | 'misi_pramuka'
   | 'games'
   | 'sku_skk'

@@ -542,3 +542,11 @@ main button,main a{overflow-wrap:anywhere}
 .pettalopo-topbar.pettalopo-topbar-home .pettalopo-menu-button{color:#fff!important;background:rgba(255,255,255,.15)!important;border-radius:50%!important}
 .pettalopo-topbar.pettalopo-topbar-home .pettalopo-menu-button:active{background:rgba(255,255,255,.3)!important}
 
+
+
+/* Banner seragam Ruang Kerja Dewan Ambalan. */
+.dewan-menu-banner{display:grid!important;grid-template-columns:28px minmax(0,1fr)!important;grid-template-rows:auto auto!important;align-items:start!important;column-gap:12px!important;row-gap:5px!important;width:100%;height:100px;min-height:100px;padding:15px!important;border-radius:16px!important;box-sizing:border-box;overflow:hidden}
+.dewan-menu-banner>span:first-child{grid-column:1;grid-row:1 / span 2;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#fff0f1}
+.dewan-menu-banner>span:nth-child(2){grid-column:2;grid-row:1;min-width:0;white-space:normal!important;font-size:16px!important;line-height:1.2!important;font-weight:850!important;color:#202124!important}
+.dewan-menu-banner>span:nth-child(3){grid-column:2;grid-row:2;min-width:0;white-space:normal!important;overflow:hidden;text-overflow:clip!important;font-size:11px!important;line-height:1.35!important;color:#737b84!important;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.pettalopo-nav-dewan>span{font-size:7px!important;line-height:1.05!important;white-space:normal!important;text-align:center}

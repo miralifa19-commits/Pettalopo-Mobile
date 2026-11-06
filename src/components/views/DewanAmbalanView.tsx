@@ -10,6 +10,7 @@ import {
   Dewan8Position 
 } from '../../data/dewanStructure';
 import { PersuratanAmbalanView } from './PersuratanAmbalanView';
+import { ComingSoonView } from './ComingSoonView';
 
 interface DewanAmbalanViewProps {
   currentUser?: UserAccount;
@@ -304,7 +305,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
       {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
       {activeMenu !== 'proker' && activeMenu !== 'persuratan' && (
         <MenuHeaderCard
-          title="Dewan Ambalan"
+          title="Ruang Kerja Dewan Ambalan"
           subtitle={
             activeMenu === 'menu'
               ? 'Pengelolaan & administrasi masa bakti'
@@ -337,7 +338,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
             <button
               type="button"
               onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs dewan-menu-banner"
             >
               <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">1.</span>
               <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Program Kerja</span>
@@ -384,168 +385,6 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
               <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rekap kegiatan dan laporan masa bakti</span>
             </button>
           </div>
-
-          {/* ========================================================
-              8 RODA KEPENGURUSAN DEWAN AMBALAN (ROTASI DEWAN)
-              ======================================================== */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="grid h-7 w-7 place-items-center rounded-lg bg-red-50 text-[#e51c24]">
-                  <Crown size={16} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase">
-                    8 Roda Kepengurusan Dewan Ambalan
-                  </h3>
-                  <p className="text-[10px] text-slate-500">
-                    Otomatis masuk &amp; memiliki akses di Grup Dewan Ambalan
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowManageDewanModal(true)}
-                className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-[#e51c24] border border-red-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all"
-              >
-                <Settings size={12} />
-                <span>Pilih / Rotasi Dewan</span>
-              </button>
-            </div>
-
-            {/* Grid 8 Posisi: 4 Putra & 4 Putri */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              {/* Kolom Satuan Putra */}
-              <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-black uppercase text-blue-800 tracking-wider block">
-                  ⚜️ Fungsionaris Putra (Gudep 10.035)
-                </span>
-                {dewan8List.filter(p => p.satuan === 'Putra').map((pos) => (
-                  <div key={pos.id} className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-1 shadow-2xs">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-500 block truncate">{pos.jabatan}</span>
-                      <strong className="text-xs text-slate-900 block truncate">{pos.memberName}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingPosition(pos);
-                        setShowManageDewanModal(true);
-                      }}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold shrink-0 cursor-pointer"
-                    >
-                      Ganti
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Kolom Satuan Putri */}
-              <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-black uppercase text-rose-800 tracking-wider block">
-                  🌸 Fungsionaris Putri (Gudep 10.036)
-                </span>
-                {dewan8List.filter(p => p.satuan === 'Putri').map((pos) => (
-                  <div key={pos.id} className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-1 shadow-2xs">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-500 block truncate">{pos.jabatan}</span>
-                      <strong className="text-xs text-slate-900 block truncate">{pos.memberName}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingPosition(pos);
-                        setShowManageDewanModal(true);
-                      }}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold shrink-0 cursor-pointer"
-                    >
-                      Ganti
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ========================================================
-              MODAL ROTASI / PEMILIHAN 8 DEWAN AMBALAN (ADMIN)
-              ======================================================== */}
-          {showManageDewanModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs font-sans">
-              <div className="bg-white w-full max-w-lg rounded-3xl p-5 border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <Crown size={18} className="text-[#e51c24]" />
-                    <h3 className="text-sm font-extrabold text-slate-900">
-                      {editingPosition ? `Tetapkan ${editingPosition.jabatan}` : 'Kelola 8 Roda Dewan Ambalan'}
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowManageDewanModal(false);
-                      setEditingPosition(null);
-                    }}
-                    className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-200 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Pilih anggota untuk memegang 8 roda kepengurusan. Akun yang dipilih akan secara otomatis masuk dan memiliki akses fungsionaris pada <strong>Grup Dewan Ambalan</strong> di Ruang Ambalan.
-                </p>
-
-                {/* Form assign per posisi */}
-                <div className="space-y-3">
-                  {(editingPosition ? [editingPosition] : dewan8List).map((pos) => {
-                    const candidateMembers = allMembers.filter(m => pos.satuan ? m.satuan === pos.satuan : true);
-                    return (
-                      <div key={pos.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                            <span className={pos.satuan === 'Putra' ? 'text-blue-600' : 'text-rose-600'}>
-                              {pos.satuan === 'Putra' ? '⚜️' : '🌸'}
-                            </span>
-                            {pos.jabatan}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
-                            {pos.satuan}
-                          </span>
-                        </div>
-
-                        <select
-                          value={pos.memberUid || pos.memberName}
-                          onChange={(e) => handleUpdateDewanMember(pos.id, e.target.value)}
-                          className="w-full text-xs font-semibold px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[#e51c24]"
-                        >
-                          <option value={pos.memberName}>-- {pos.memberName} (Petahana) --</option>
-                          {candidateMembers.map((m) => (
-                            <option key={m.uid || m.nama} value={m.uid || m.nama}>
-                              {m.nama} (Sangga {m.sangga} - {m.tingkat})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowManageDewanModal(false);
-                      setEditingPosition(null);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-[#e51c24] hover:bg-[#c81e28] text-white text-xs font-bold transition-all shadow-xs cursor-pointer text-center"
-                  >
-                    Simpan &amp; Terapkan ke Sistem
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
         </div>
       )}
@@ -867,6 +706,9 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
           4. HALAMAN KELOLA KEUANGAN
           ======================================================== */}
       {activeMenu === 'keuangan' && (
+        <ComingSoonView title="Kelola Keuangan" subtitle="Pengelolaan kas dan iuran anggota sedang disiapkan." icon="💰" onBackToDashboard={() => setActiveMenu('menu')} />
+      )}
+      {activeMenu === 'keuangan' && false && (
         <div className="space-y-3">
           
           {/* Ringkasan Kas Keuangan */}
@@ -936,6 +778,9 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
           5. HALAMAN KELOLA LAPORAN (REKAP 4 MENU)
           ======================================================== */}
       {activeMenu === 'laporan' && (
+        <ComingSoonView title="Kelola Laporan" subtitle="Rekap kegiatan dan laporan masa bakti sedang disiapkan." icon="📊" onBackToDashboard={() => setActiveMenu('menu')} />
+      )}
+      {activeMenu === 'laporan' && false && (
         <div className="space-y-3">
           
           {/* Pilihan Periode Laporan */}

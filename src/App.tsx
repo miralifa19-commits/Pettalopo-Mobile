@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -8,17 +8,10 @@ import { NotificationsModal } from './components/NotificationsModal';
 import { HomeView } from './components/views/HomeView';
 import { DashboardView } from './components/views/DashboardView';
 import { ProgramKerjaView } from './components/views/ProgramKerjaView';
-import { PresensiView } from './components/views/PresensiView';
-import { MisiPramukaView } from './components/views/MisiPramukaView';
-import { GamesView } from './components/views/GamesView';
 import { DewanAmbalanView } from './components/views/DewanAmbalanView';
-import { SkuSkkView } from './components/views/SkuSkkView';
-import { RuangBelajarView } from './components/views/RuangBelajarView';
 import { LatihanRutinView } from './components/views/LatihanRutinView';
 import { AkunView } from './components/views/AkunView';
 import { DatabaseAnggotaView } from './components/views/DatabaseAnggotaView';
-import { ProfilAmbalanView } from './components/views/ProfilAmbalanView';
-import { MabigusView } from './components/views/MabigusView';
 import { AnggotaAmbalanView } from './components/views/AnggotaAmbalanView';
 import { DewanAmbalanRosterView } from './components/views/DewanAmbalanRosterView';
 import { SanggaView } from './components/views/SanggaView';
@@ -46,6 +39,7 @@ export default function App() {
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
+  const pullStartY = useRef<number | null>(null);
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
@@ -218,7 +212,23 @@ export default function App() {
           </div>
         </header>
         )}
-        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+        <main
+          className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28"
+          onTouchStart={(event) => {
+            pullStartY.current = event.currentTarget.scrollTop <= 0
+              ? (event.touches[0]?.clientY ?? null)
+              : null;
+          }}
+          onTouchEnd={(event) => {
+            const startY = pullStartY.current;
+            pullStartY.current = null;
+            const endY = event.changedTouches[0]?.clientY;
+            if (startY !== null && endY !== undefined &&
+                endY - startY > 100 && event.currentTarget.scrollTop <= 0) {
+              window.location.reload();
+            }
+          }}
+        >
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -241,11 +251,11 @@ export default function App() {
           )}
 
           {activeMenu === 'profil_ambalan' && (
-            <ProfilAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />
+            <ComingSoonView title="Profil Ambalan" subtitle="Profil dan identitas Ambalan La Surullah Petta Lopo sedang disiapkan." icon="🏕️" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
-          {activeMenu === 'mabigus' && <MabigusView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
+          {activeMenu === 'mabigus' && <ComingSoonView title="Mabigus" subtitle="Informasi Majelis Pembimbing Gugus Depan sedang disiapkan." icon="🛡️" onBackToDashboard={() => setActiveMenu('home')} />}
           {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
           {activeMenu === 'ruang_kerja_dewan' && (
             <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
@@ -259,11 +269,11 @@ export default function App() {
           )}
 
           {activeMenu === 'sku_skk' && (
-            <SkuSkkView />
+            <ComingSoonView title="Jelajahi SKU" subtitle="Fitur penjelajahan Syarat Kecakapan Umum sedang disiapkan." icon="🎖️" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'ruang_belajar' && (
-            <RuangBelajarView isAdmin={isAdmin} onOpenQuiz={() => setActiveMenu('quiz')} />
+            <ComingSoonView title="Ruang Belajar" subtitle="Materi, panduan, dan pengetahuan kepramukaan sedang disiapkan." icon="📚" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'quiz' && (
@@ -282,19 +292,19 @@ export default function App() {
           )}
 
           {activeMenu === 'presensi' && (
-            <PresensiView
-              currentUser={user}
-              programKerjaList={programKerjaList}
-              onBack={() => setActiveMenu('home')}
-            />
+            <ComingSoonView title="Presensi" subtitle="Fitur presensi Ambalan sedang disiapkan." icon="📋" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'misi_pramuka' && (
-            <MisiPramukaView onBack={() => setActiveMenu('home')} />
+            <ComingSoonView title="Misi Pramuka" subtitle="Tantangan bakti dan misi kepramukaan sedang disiapkan." icon="🎯" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'games' && (
-            <GamesView onBack={() => setActiveMenu('home')} />
+            <ComingSoonView title="Games" subtitle="Kuis dan permainan kepramukaan sedang disiapkan." icon="🎮" onBackToDashboard={() => setActiveMenu('home')} />
+          )}
+
+          {activeMenu === 'pengumuman' && (
+            <ComingSoonView title="Pengumuman" subtitle="Pusat informasi dan pengumuman Ambalan sedang disiapkan." icon="📢" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'pengaturan' && (
@@ -364,11 +374,11 @@ export default function App() {
             <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
             <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
             <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
-              <img src="/assets/aistudio/lingkaran-dewan-8_ebfa4b45.png" alt="Dewan" className="dewan-nav-gear" />
-              <span>Dewan</span>
+              <Users size={19} />
+              <span>Ruang Kerja<br />Dewan Ambalan</span>
             </button>
             <button type="button" onClick={() => setActiveMenu('chat')}><MessageCircle size={19}/><span>Ruang Ambalan</span></button>
-            <button type="button" onClick={() => setIsNotificationsOpen(true)}><Megaphone size={19}/><span>Pengumuman</span></button>
+            <button type="button" onClick={() => setActiveMenu('pengumuman')} aria-current={activeMenu === 'pengumuman' ? 'page' : undefined}><Megaphone size={19}/><span>Pengumuman</span></button>
           </nav>
         )}
 

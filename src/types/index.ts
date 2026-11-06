@@ -22,7 +22,8 @@ export type ActiveMenu =
   | 'pengaturan'
   | 'latihan_rutin'
   | 'akun'
-  | 'database';
+  | 'database'
+  | 'admin_menu';
 
 export interface KegiatanEvaluation {
   id: string;

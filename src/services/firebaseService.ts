@@ -162,6 +162,10 @@ export function subscribeToProgramKerja(
   callback: (list: ProgramKerjaItem[]) => void,
   onError?: (err: unknown) => void
 ) {
+  if (!auth.currentUser) {
+    callback(DEFAULT_PROGRAM_KERJA_ITEMS);
+    return () => {};
+  }
   try {
     const q = query(collection(db, PROKER_PATH));
     return onSnapshot(
@@ -171,23 +175,20 @@ export function subscribeToProgramKerja(
         snapshot.forEach((docSnap) => {
           items.push({ ...docSnap.data(), id: docSnap.id } as ProgramKerjaItem);
         });
-        if (items.length < 24 && DEFAULT_PROGRAM_KERJA_ITEMS.length > 0) {
-          seedDefaultProgramKerja(DEFAULT_PROGRAM_KERJA_ITEMS).catch(() => {});
-          // Combine existing with missing defaults
-          const existingIds = new Set(items.map(i => i.id));
-          const combined = [...items, ...DEFAULT_PROGRAM_KERJA_ITEMS.filter(d => !existingIds.has(d.id))];
-          callback(combined);
-        } else {
+        if (items.length > 0) {
           callback(items);
+        } else {
+          callback(DEFAULT_PROGRAM_KERJA_ITEMS);
         }
       },
       (error) => {
         if (onError) onError(error);
-        handleFirestoreError(error, OperationType.GET, PROKER_PATH);
+        console.warn('Program kerja sync notice:', error);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, PROKER_PATH);
+    if (onError) onError(error);
+    console.warn('Program kerja query notice:', error);
   }
 }
 
@@ -246,14 +247,15 @@ export async function seedDefaultMembers(): Promise<void> {
 }
 
 export async function syncUserProfile(user: UserAccount): Promise<void> {
-  if (!user.uid && !user.username) return;
-  const uid = user.uid || `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+  if (!auth.currentUser || !user.uid || user.uid === 'admin_pembina_01') return;
+  if (user.uid !== auth.currentUser.uid) return;
+  const uid = user.uid;
   const path = `${USERS_PATH}/${uid}`;
   try {
     const docRef = doc(db, USERS_PATH, uid);
     await setDoc(docRef, { ...user, uid }, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Sync profile notice:', error);
   }
 }
 
@@ -306,6 +308,9 @@ export function subscribeToAllMembers(
   callback: (members: UserAccount[]) => void,
   onError?: (err: unknown) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   try {
     const q = query(collection(db, USERS_PATH));
     return onSnapshot(
@@ -313,29 +318,18 @@ export function subscribeToAllMembers(
       (snapshot) => {
         const members: UserAccount[] = [];
         snapshot.forEach((docSnap) => {
-          // Bersihkan data dummy lama jika masih tersisa di Firestore
-          if (docSnap.id.startsWith('member_putra_') || docSnap.id.startsWith('member_putri_')) {
-            deleteDoc(doc(db, USERS_PATH, docSnap.id)).catch(() => {});
-          } else {
-            members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
-          }
+          members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
         });
-
-        // Jika database belum memiliki data sama sekali, pastikan akun Admin Utama tersinkron
-        if (members.length === 0) {
-          syncUserProfile(DEFAULT_ADMIN_ACCOUNT).catch(() => {});
-          callback([DEFAULT_ADMIN_ACCOUNT]);
-        } else {
-          callback(members);
-        }
+        callback(members);
       },
       (error) => {
         if (onError) onError(error);
-        handleFirestoreError(error, OperationType.GET, USERS_PATH);
+        console.warn('Members subscribe notice:', error);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, USERS_PATH);
+    if (onError) onError(error);
+    console.warn('Members query notice:', error);
   }
 }
 

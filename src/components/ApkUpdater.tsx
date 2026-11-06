@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
@@ -31,23 +31,32 @@ export function ApkUpdater() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [installerOpened, setInstallerOpened] = useState(false);
+  const [dismissedVersionCode, setDismissedVersionCode] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
+    let checking = false;
 
     const checkForUpdate = async () => {
-      if (Capacitor.getPlatform() !== 'android') return;
+      if (Capacitor.getPlatform() !== 'android' || checking) return;
+      checking = true;
 
       try {
-        const response = await fetch(VERSION_URL, {
-          cache: 'no-store',
+        // Use Capacitor's native HTTP bridge. A WebView fetch to GitHub Release
+        // assets can fail CORS after GitHub redirects the "latest" download URL.
+        const response = await CapacitorHttp.get({
+          url: VERSION_URL,
           headers: { Accept: 'application/json' },
+          connectTimeout: 15000,
+          readTimeout: 15000,
         });
-        if (!response.ok) {
+        if (response.status < 200 || response.status >= 300) {
           throw new Error(`Manifest pembaruan tidak dapat dibaca (HTTP ${response.status}).`);
         }
 
-        const latest = await response.json() as UpdateManifest;
+        const latest = (
+          typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        ) as UpdateManifest;
         if (
           !Number.isFinite(Number(latest.versionCode)) ||
           !latest.versionName ||
@@ -79,17 +88,27 @@ export function ApkUpdater() {
             }),
         );
 
-        if (active && Number(latest.versionCode) > installedVersionCode) {
+        if (active && Number(latest.versionCode) > installedVersionCode && Number(latest.versionCode) !== dismissedVersionCode) {
           setManifest(latest);
         }
       } catch (checkError) {
         console.warn('Pemeriksaan Auto Update Pettalopo gagal:', checkError);
+      } finally {
+        checking = false;
       }
     };
 
     void checkForUpdate();
-    return () => { active = false; };
-  }, []);
+    // Re-check whenever the user returns to Pettalopo, e.g. after network
+    // becomes available or the app has been left in the background.
+    const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) void checkForUpdate();
+    });
+    return () => {
+      active = false;
+      void appStateListener.then((listener) => listener.remove());
+    };
+  }, [dismissedVersionCode]);
 
   // Setelah pengguna kembali dari layar pemasang Android, periksa apakah APK
   // baru benar-benar sudah terpasang. Hanya hapus file cache jika versionCode
@@ -322,7 +341,7 @@ export function ApkUpdater() {
           <button
             type="button"
             disabled={downloading || installerOpened}
-            onClick={() => setManifest(null)}
+            onClick={() => { setDismissedVersionCode(manifest.versionCode); setManifest(null); }}
             className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
           >
             <RefreshCw size={15} />

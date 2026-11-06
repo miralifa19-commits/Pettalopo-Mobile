@@ -30,7 +30,6 @@ interface AkunViewProps {
   onUpdateUser: (updated: UserAccount) => void;
   onNavigateToDatabase?: () => void;
   onOpenAuthModal?: () => void;
-  onLogout?: () => void;
   onBack?: () => void;
 }
 
@@ -39,7 +38,6 @@ export const AkunView: React.FC<AkunViewProps> = ({
   onUpdateUser,
   onNavigateToDatabase,
   onOpenAuthModal,
-  onLogout,
   onBack
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -208,14 +206,13 @@ export const AkunView: React.FC<AkunViewProps> = ({
             <span>Edit Profil</span>
           </button>
 
-          {onLogout && (
+          {onOpenAuthModal && (
             <button
-              type="button"
-              onClick={onLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 border border-red-200 transition-colors cursor-pointer"
+              onClick={onOpenAuthModal}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e51c24] text-white text-xs font-bold hover:bg-[#c9141b] border border-amber-400 shadow-xs transition-colors"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Keluar Akun</span>
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Ganti / Masuk Akun</span>
             </button>
           )}
         </div>

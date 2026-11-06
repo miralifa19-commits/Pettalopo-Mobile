@@ -173,6 +173,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   };
 
   const logout = async () => {
+    if (!window.confirm('Yakin mau keluar kak?')) return;
     try {
       if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
       await webSignOut(auth);

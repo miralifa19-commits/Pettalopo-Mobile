@@ -45,6 +45,7 @@ const base: GeneratedSurat = {
   pembinaNip: 'NIP. 19800101 200501 1 001',
   includeKetuaGudep: true,
   ketuaGudepNama: 'Kepala Sekolah',
+  ketuaGudepJabatan: 'Kepala Sekolah / Ketua Mabigus (Mabigus Test)',
   ketuaGudepNip: 'NIP. 19700101 199501 1 001',
   metodeTtd: 'biasa',
   digitalSigner: 'pembina_putra',
@@ -75,6 +76,7 @@ async function inspectPdf(bytes: Uint8Array, expectedPages: number, label: strin
     assert.ok(text.includes('GERAKAN PRAMUKA'), label + ': kop tidak ditemukan pada halaman ' + pageNumber);
   }
   assert.ok(pageTexts.join(' ').includes('Pengujian PDF Surat Resmi'), label + ': teks isi tidak bisa diekstrak');
+  assert.ok(pageTexts.join(' ').includes('Kepala Sekolah / Ketua Mabigus (Mabigus Test)'), label + ': jabatan Kepala Sekolah harus mengikuti pengaturan Mabigus');
   return pageTexts;
 
 }

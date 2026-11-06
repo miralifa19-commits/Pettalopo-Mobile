@@ -450,7 +450,6 @@ function drawSignerBlock(
   layout: LetterLayout, x: number, columnWidth: number, topY: number,
   approval: string | undefined, title: string, name: string, identifier: string | undefined,
   qrImage: PDFImage | undefined, includeStamp: boolean, align: 'left' | 'right' = 'left',
-  textWidthLimit = columnWidth - 8,
   reservedHeaderHeight = 0,
   signatureAreaHeight = qrImage ? 42 : 15,
 ): number {
@@ -465,7 +464,7 @@ function drawSignerBlock(
     drawAligned(approval, layout.fonts.regular, 10.5, y);
     y -= 13;
   }
-  const titleLines = wrapPdfText(title, layout.fonts.bold, titleSize, textWidthLimit);
+  const titleLines = wrapPdfText(title, layout.fonts.bold, titleSize, columnWidth);
   for (const line of titleLines) {
     drawAligned(line, layout.fonts.bold, titleSize, y);
     y -= 13;
@@ -479,7 +478,7 @@ function drawSignerBlock(
   y -= signatureAreaHeight;
   const safeName = cleanText(name);
   const nameSize = 10.5;
-  const nameWidth = Math.min(textWidthLimit, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
+  const nameWidth = Math.min(columnWidth, layout.fonts.bold.widthOfTextAtSize(safeName, nameSize));
   const nameX = align === 'right' ? x + columnWidth - nameWidth : x;
   layout.drawText(safeName, nameX, y, layout.fonts.bold, nameSize);
   layout.page.drawLine({ start: { x: nameX, y: y - 1.5 }, end: { x: nameX + nameWidth, y: y - 1.5 }, thickness: 0.6, color: BLACK });
@@ -555,10 +554,9 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       );
       const nameWidth = layout.fonts.bold.widthOfTextAtSize(cleanText(signer.name), 10.5);
       const signerWidth = Math.min(columnWidth, Math.max(titleWidth, nameWidth, 72));
-      const textWidthLimit = signerWidth;
-      const titleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, textWidthLimit);
+      const titleLines = wrapPdfText(signer.title, layout.fonts.bold, 10.5, signerWidth);
       const headerHeight = (sharedApproval ? 0 : (signer.approval ? 13 : 0)) + titleLines.length * 13 + 3;
-      return { signer, signerWidth, textWidthLimit, headerHeight };
+      return { signer, signerWidth, headerHeight };
     });
     const headerHeight = Math.max(...entries.map((entry) => entry.headerHeight));
     // Area tanda tangan selalu sama untuk digital maupun basah agar jarak jabatan-nama konsisten.
@@ -580,7 +578,7 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
       layout.drawCentered(row.entries[0].signer.approval + ',', layout.width / 2, y, layout.fonts.regular, 10.5);
     }
 
-    row.entries.forEach(({ signer, signerWidth, textWidthLimit }) => {
+    row.entries.forEach(({ signer, signerWidth }) => {
       let side: 'left' | 'right' = 'left';
       if (row.entries.length === 2) {
         if (signer.role === 'pembina_putra' || signer.role === 'pembantu_putra') side = 'left';
@@ -599,7 +597,6 @@ async function drawSignatures(layout: LetterLayout, surat: GeneratedSurat, qrIma
         signer.qr,
         Boolean(signer.stamp),
         'left',
-        textWidthLimit,
         row.headerHeight,
         row.signatureAreaHeight,
       );

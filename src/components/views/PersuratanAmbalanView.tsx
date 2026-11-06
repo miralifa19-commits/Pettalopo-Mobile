@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { createLetterPdf, PdfExportStageError } from '../../services/pdfLetterGenerator';
 import { deliverPdfFile } from '../../services/pdfFileDelivery';
+import { PdfCanvasPreview } from '../PdfCanvasPreview';
 import { UserAccount, ProgramKerjaItem } from '../../types';
 import { askKakCikalAI } from '../../services/aiChatService';
 import { getMabigusOfficials, MabigusOfficials } from '../../data/mabigusData';
@@ -297,7 +298,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState('');
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
+  const [pdfPreviewBytes, setPdfPreviewBytes] = useState<Uint8Array | null>(null);
   const [isPreparingPreview, setIsPreparingPreview] = useState(false);
   const [previewPdfError, setPreviewPdfError] = useState('');
   
@@ -391,6 +392,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
   // Build Surat
   const handleGenerateSurat = async () => {
 
+    const jabatanKetuaMabigus = getMabigusOfficials().ketuaGudepJabatan?.trim() || 'Kepala Sekolah / Ketua Mabigus';
+
     // Resolve Dewan (Hanya jika includeDewan aktif)
     const dewanOptions: Record<string, { title: string; member?: string; nta?: string }> = {
       pradana_pa: { title: 'Pradana', member: dewanList.find(d => d.id === 'pradana_pa')?.memberName, nta: 'NTA. 10.035.001' },
@@ -416,7 +419,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
     let signerTitle = 'Pembina Putra Gugus Depan 10.035';
     if (digitalSigner === 'kepala_sekolah') {
       signerName = officials.ketuaGudep;
-      signerTitle = 'Kepala SMA Negeri 9 Maros (Mabigus)';
+      signerTitle = jabatanKetuaMabigus;
     } else if (digitalSigner === 'pembina_putri') {
       signerName = officials.pembinaPutri;
       signerTitle = 'Pembina Putri Gugus Depan 10.036';
@@ -482,7 +485,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutra,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: suratSettings.ketuaMabigus,
+        ketuaGudepJabatan: jabatanKetuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putra',
@@ -552,7 +555,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: suratSettings.ketuaMabigus,
+        ketuaGudepJabatan: jabatanKetuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner: 'pembina_putri',
@@ -625,7 +628,7 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
         pembinaTambahanNip: officials.nipPembinaPutri,
         includeKetuaGudep,
         ketuaGudepNama: officials.ketuaGudep,
-        ketuaGudepJabatan: suratSettings.ketuaMabigus,
+        ketuaGudepJabatan: jabatanKetuaMabigus,
         ketuaGudepNip: officials.nipKetuaGudep,
         metodeTtd,
         digitalSigner,
@@ -752,29 +755,31 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
 
   useEffect(() => {
     if (viewMode !== 'preview' || !activeSurat) {
-      setPdfPreviewUrl('');
+      setPdfPreviewBytes(null);
       setPreviewPdfError('');
       setIsPreparingPreview(false);
       return;
     }
+
     let cancelled = false;
-    let objectUrl = '';
     setIsPreparingPreview(true);
     setPreviewPdfError('');
-    setPdfPreviewUrl('');
-    createLetterPdf(activeSurat).then((bytes) => {
-      if (cancelled) return;
-      const blob = new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: 'application/pdf' });
-      objectUrl = URL.createObjectURL(blob);
-      setPdfPreviewUrl(objectUrl);
+    setPdfPreviewBytes(null);
+
+    createLetterPdf(activeSurat, undefined, (stage) => {
+      if (!cancelled) setPreviewPdfError('');
+    }).then((bytes) => {
+      if (!cancelled) setPdfPreviewBytes(new Uint8Array(bytes));
     }).catch((error) => {
-      if (!cancelled) setPreviewPdfError(error instanceof Error ? error.message : String(error));
+      if (!cancelled) {
+        setPreviewPdfError(error instanceof Error ? error.message : String(error));
+      }
     }).finally(() => {
       if (!cancelled) setIsPreparingPreview(false);
     });
+
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [viewMode, activeSurat?.id, activeSurat?.createdAt]);
 
@@ -1138,12 +1143,8 @@ export const PersuratanAmbalanView: React.FC<PersuratanAmbalanViewProps> = ({
                 Pratinjau PDF belum dapat ditampilkan: {previewPdfError}
               </div>
             )}
-            {pdfPreviewUrl && !isPreparingPreview && (
-              <iframe
-                title={`Pratinjau surat ${activeSurat.perihal}`}
-                src={pdfPreviewUrl}
-                className="w-full h-[78vh] min-h-[620px] bg-white border border-slate-300"
-              />
+            {pdfPreviewBytes && !isPreparingPreview && (
+              <PdfCanvasPreview data={pdfPreviewBytes} />
             )}
           </div>
           <button type="button" onClick={() => { setWizardStep(3); setViewMode('form'); }} className="w-full py-3 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold">Kembali</button>

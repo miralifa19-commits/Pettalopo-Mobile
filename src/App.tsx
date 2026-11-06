@@ -23,16 +23,6 @@ import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { ApkUpdater } from './components/ApkUpdater';
 
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './firebase/config';
-import { LoginScreen } from './components/auth/LoginScreen';
-import { RegisterScreen } from './components/auth/RegisterScreen';
-import { DisabledAccountScreen } from './components/auth/DisabledAccountScreen';
-import { OnboardingTour } from './components/auth/OnboardingTour';
-import { AdminMenuView } from './components/views/AdminMenuView';
-import { UserProfile } from './types/auth';
-import { fetchUserProfile, isPrimaryAdminEmail, signOutAmbalan } from './services/authService';
-
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
 import { 
   subscribeToProgramKerja, 
@@ -49,68 +39,7 @@ export default function App() {
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const pullStartY = useRef<number | null>(null);
-
-  // Pantau status login Firebase Auth secara realtime
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (authUser) => {
-      setFirebaseUser(authUser);
-      if (authUser) {
-        try {
-          const profile = await fetchUserProfile(authUser.uid);
-          if (profile) {
-            if (isPrimaryAdminEmail(authUser.email) && profile.peran !== 'admin') {
-              profile.peran = 'admin';
-            }
-            setUserProfile(profile);
-          } else {
-            setUserProfile(null);
-          }
-        } catch (err) {
-          console.warn('Gagal membaca profil pengguna:', err);
-          setUserProfile(null);
-        }
-      } else {
-        setUserProfile(null);
-      }
-      setAuthChecked(true);
-    });
-
-    return () => unsub();
-  }, []);
-
-  // Sinkronisasi profil ke objek user ambalan lokal
-  useEffect(() => {
-    if (userProfile) {
-      setUser((prev) => ({
-        ...prev,
-        uid: userProfile.uid,
-        nama: userProfile.namaLengkap,
-        role: userProfile.peran,
-        email: userProfile.email,
-        foto: userProfile.fotoUrl,
-        jabatan: userProfile.peran === 'admin'
-          ? 'Pembina / Admin'
-          : userProfile.peran === 'dewan'
-          ? 'Dewan Ambalan'
-          : userProfile.status === 'purna_ambalan'
-          ? 'Purna Ambalan'
-          : 'Anggota Ambalan',
-      }));
-    }
-  }, [userProfile]);
-
-  const handleLogout = async () => {
-    if (window.confirm('Apakah Kakak yakin ingin keluar dari akun?')) {
-      await signOutAmbalan();
-      setFirebaseUser(null);
-      setUserProfile(null);
-      setActiveMenu('home');
-    }
-  };
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
@@ -199,25 +128,19 @@ export default function App() {
 
 
 
-  // Persist and sync user lokal
+  // Persist and sync user
   useEffect(() => {
     localStorage.setItem('ambalan_user_account_v3', JSON.stringify(user));
-    if (firebaseUser && userProfile && user.uid === firebaseUser.uid && user.uid !== 'admin_pembina_01') {
-      syncUserProfile(user).catch(() => {});
-    }
-  }, [user, firebaseUser, userProfile]);
+    syncUserProfile(user).catch(() => {});
+  }, [user]);
 
   // Persist program kerja locally
   useEffect(() => {
     localStorage.setItem('ambalan_program_kerja', JSON.stringify(programKerjaList));
   }, [programKerjaList]);
 
-  // Real-time Firestore sync for Members (hanya untuk Admin terverifikasi)
+  // Real-time Firestore sync for Members
   useEffect(() => {
-    if (!firebaseUser || !userProfile || userProfile.peran !== 'admin') {
-      return;
-    }
-
     const unsubscribe = subscribeToAllMembers((members) => {
       if (members && members.length > 0) {
         setAllMembers(members);
@@ -227,14 +150,10 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [firebaseUser, userProfile]);
+  }, []);
 
-  // Real-time Firestore sync for Program Kerja (hanya setelah akun masuk & terdaftar)
+  // Real-time Firestore sync for Program Kerja
   useEffect(() => {
-    if (!firebaseUser || !userProfile || userProfile.nonaktif || !userProfile.onboardingSelesai) {
-      return;
-    }
-
     const unsubscribe = subscribeToProgramKerja(
       (items) => {
         if (items && items.length > 0) {
@@ -249,76 +168,14 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [firebaseUser, userProfile]);
-
-  if (showPettalopoSplash) {
-    return <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />;
-  }
-
-  // 1. Setelah flash screen selesai, periksa status login (jangan tampilkan beranda atau menu apa pun sebelum selesai)
-  if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center select-none font-sans">
-        <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 p-2 shadow-xs mb-3 flex items-center justify-center">
-          <img src="/assets/pettalopo-logo.png" alt="Logo" className="w-12 h-12 object-contain" />
-        </div>
-        <div className="w-6 h-6 border-2 border-[#e51c24] border-t-transparent rounded-full animate-spin my-2" />
-        <p className="text-xs font-bold text-slate-600 mt-1">Memeriksa status akun...</p>
-      </div>
-    );
-  }
-
-  // 2. Belum login: tampilkan HALAMAN LOGIN (hanya tombol Masuk dengan Google)
-  if (!firebaseUser) {
-    return (
-      <LoginScreen
-        onSuccess={() => {}}
-      />
-    );
-  }
-
-  // 3. Sudah login tapi profil belum ada: tampilkan LAYAR PENDAFTARAN
-  if (!userProfile) {
-    return (
-      <RegisterScreen
-        firebaseUser={firebaseUser}
-        onProfileCreated={(createdProfile) => {
-          setUserProfile(createdProfile);
-        }}
-        onSignOut={() => {
-          setFirebaseUser(null);
-          setUserProfile(null);
-        }}
-      />
-    );
-  }
-
-  // 4. Akun dinonaktifkan
-  if (userProfile.nonaktif) {
-    return (
-      <DisabledAccountScreen
-        onSignOut={() => {
-          setFirebaseUser(null);
-          setUserProfile(null);
-        }}
-      />
-    );
-  }
-
-  // 5. Onboarding belum selesai: tampilkan Tur Panduan SATU KALI
-  if (!userProfile.onboardingSelesai) {
-    return (
-      <OnboardingTour
-        userProfile={userProfile}
-        onFinish={() => {
-          setUserProfile((prev) => (prev ? { ...prev, onboardingSelesai: true } : null));
-        }}
-      />
-    );
-  }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
+      {showPettalopoSplash && (
+        <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
+      )}
+      
       {/* Main Native App Container */}
       <div className="w-full max-w-lg mx-auto min-h-screen bg-white flex flex-col relative">
         
@@ -329,60 +186,29 @@ export default function App() {
         <header className="pettalopo-topbar pettalopo-topbar-home">
           <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
             <span className="pettalopo-member-avatar">
-              {userProfile.fotoUrl || (user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
-                ? <img src={userProfile.fotoUrl || (user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
+              {(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
+                ? <img src={(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
                 : <span>{(user.nama || 'A').trim().charAt(0).toUpperCase()}</span>}
             </span>
             <span className="pettalopo-member-meta">
               <strong>{user.nama || 'Profil Anggota'}</strong>
-              <small>
-                {userProfile.peran === 'admin'
-                  ? 'Pembina / Admin'
-                  : userProfile.peran === 'dewan'
-                  ? 'Dewan Ambalan'
-                  : userProfile.status === 'purna_ambalan'
-                  ? 'Purna Ambalan'
-                  : 'Anggota Ambalan'}
-              </small>
+              <small>{user.role === 'admin' ? 'Pembina / Admin' : /laksana/i.test(user.tingkat || '') ? 'Penegak Laksana' : /bantara/i.test(user.tingkat || '') ? 'Penegak Bantara' : 'Calon Anggota'}</small>
             </span>
           </button>
-
-          <div className="flex items-center gap-2">
-            {userProfile.peran === 'admin' && (
-              <button
-                type="button"
-                onClick={() => setActiveMenu('admin_menu')}
-                className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-black border border-white/30 shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
-                title="Buka Menu Admin"
-              >
-                <span>🛡️</span>
-                <span>Admin</span>
-              </button>
+          <div className="pettalopo-overflow-wrap">
+            <button type="button" className="pettalopo-menu-button" onClick={() => setIsQuickMenuOpen((open) => !open)} aria-label="Buka menu lainnya" aria-expanded={isQuickMenuOpen}>
+              <MoreVertical size={21} />
+            </button>
+            {isQuickMenuOpen && (
+              <div className="pettalopo-overflow-menu">
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
+                  <Settings size={17} /><span>Pengaturan</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
+                  <UserRound size={17} /><span>Akun</span>
+                </button>
+              </div>
             )}
-
-            <div className="pettalopo-overflow-wrap">
-              <button type="button" className="pettalopo-menu-button" onClick={() => setIsQuickMenuOpen((open) => !open)} aria-label="Buka menu lainnya" aria-expanded={isQuickMenuOpen}>
-                <MoreVertical size={21} />
-              </button>
-              {isQuickMenuOpen && (
-                <div className="pettalopo-overflow-menu">
-                  {userProfile.peran === 'admin' && (
-                    <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('admin_menu'); }}>
-                      <span className="text-sm">🛡️</span><strong>Menu Admin</strong>
-                    </button>
-                  )}
-                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
-                    <Settings size={17} /><span>Pengaturan</span>
-                  </button>
-                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
-                    <UserRound size={17} /><span>Akun</span>
-                  </button>
-                  <button type="button" onClick={() => { setIsQuickMenuOpen(false); handleLogout(); }} className="text-red-600">
-                    <span className="text-sm">🚪</span><span>Keluar</span>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </header>
         )}
@@ -505,17 +331,12 @@ export default function App() {
             />
           )}
 
-          {activeMenu === 'admin_menu' && (
-            <AdminMenuView onBack={() => setActiveMenu('home')} />
-          )}
-
           {activeMenu === 'akun' && (
             <AkunView
               user={user}
               onUpdateUser={setUser}
               onNavigateToDatabase={() => setActiveMenu('database')}
-              onLogout={handleLogout}
-              onBack={() => setActiveMenu('home')}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
             />
           )}
 
@@ -551,28 +372,11 @@ export default function App() {
         {activeMenu !== 'chat' && (
           <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
             <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
-            {userProfile?.status === 'purna_ambalan' ? (
-              <button type="button" onClick={() => setActiveMenu('dashboard')} aria-current={activeMenu === 'dashboard' ? 'page' : undefined}><CalendarCheck size={19}/><span>Agenda</span></button>
-            ) : (
-              <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
-            )}
-            {userProfile?.status !== 'purna_ambalan' && (
-              <button
-                type="button"
-                className="pettalopo-nav-dewan"
-                onClick={() => {
-                  if (userProfile?.peran === 'dewan' || userProfile?.peran === 'admin') {
-                    setActiveMenu('ruang_kerja_dewan');
-                  } else {
-                    setActiveMenu('dewan_ambalan');
-                  }
-                }}
-                aria-current={(activeMenu === 'ruang_kerja_dewan' || activeMenu === 'dewan_ambalan') ? 'page' : undefined}
-              >
-                <Users size={19} />
-                <span>Ruang Kerja<br />Dewan Ambalan</span>
-              </button>
-            )}
+            <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
+            <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
+              <Users size={19} />
+              <span>Ruang Kerja<br />Dewan Ambalan</span>
+            </button>
             <button type="button" onClick={() => setActiveMenu('chat')}><MessageCircle size={19}/><span>Ruang Ambalan</span></button>
             <button type="button" onClick={() => setActiveMenu('pengumuman')} aria-current={activeMenu === 'pengumuman' ? 'page' : undefined}><Megaphone size={19}/><span>Pengumuman</span></button>
           </nav>

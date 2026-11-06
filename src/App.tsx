@@ -21,6 +21,7 @@ import { PengaturanView } from './components/views/PengaturanView';
 import { LaporanView } from './components/views/LaporanView';
 import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
+import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
 import { ApkUpdater } from './components/ApkUpdater';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
@@ -38,6 +39,7 @@ export default function App() {
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
   const pullStartY = useRef<number | null>(null);
 
@@ -186,8 +188,8 @@ export default function App() {
         <header className="pettalopo-topbar pettalopo-topbar-home">
           <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
             <span className="pettalopo-member-avatar">
-              {(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
-                ? <img src={(user as any).fotoProfil || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
+              {(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
+                ? <img src={(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
                 : <span>{(user.nama || 'A').trim().charAt(0).toUpperCase()}</span>}
             </span>
             <span className="pettalopo-member-meta">
@@ -337,6 +339,7 @@ export default function App() {
               onUpdateUser={setUser}
               onNavigateToDatabase={() => setActiveMenu('database')}
               onOpenAuthModal={() => setIsAuthModalOpen(true)}
+              onLogout={() => setIsGooglePortalOpen(true)}
             />
           )}
 
@@ -381,6 +384,19 @@ export default function App() {
             <button type="button" onClick={() => setActiveMenu('pengumuman')} aria-current={activeMenu === 'pengumuman' ? 'page' : undefined}><Megaphone size={19}/><span>Pengumuman</span></button>
           </nav>
         )}
+
+        <GoogleAuthPortal
+          open={isGooglePortalOpen}
+          onComplete={(googleUser) => {
+            setUser(googleUser);
+            setIsGooglePortalOpen(false);
+          }}
+          onSkip={() => setIsGooglePortalOpen(false)}
+          onLogout={() => {
+            setIsGooglePortalOpen(true);
+            setShowPettalopoSplash(true);
+          }}
+        />
 
         <NotificationsModal
           isOpen={isNotificationsOpen}

@@ -69,7 +69,7 @@ export function ApkUpdater() {
         await Promise.all(
           cachedFiles.files
             .map((file) => {
-              const match = file.name.match(/^pettalopo-mobile-v(\\d+)\\.apk$/i);
+              const match = file.name.match(/^pettalopo-mobile-v(\d+)\.apk$/i);
               return match && Number(match[1]) <= installedVersionCode
                 ? Filesystem.deleteFile({
                     path: `${UPDATE_FOLDER}/${file.name}`,

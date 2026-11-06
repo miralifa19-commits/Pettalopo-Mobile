@@ -259,6 +259,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
       {((user as any).alamat || (user as any).angkatan || (user as any).nomorWhatsApp || user.ttl) && (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2 text-xs">
           <h2 className="font-extrabold text-slate-800 uppercase tracking-wider">Biodata</h2>
+          {user.email && <p><span className="text-slate-500">Email Google: </span><strong>{user.email}</strong></p>}
           {user.ttl && <p><span className="text-slate-500">Tempat/Tanggal Lahir: </span><strong>{user.ttl}</strong></p>}
           {(user as any).alamat && <p><span className="text-slate-500">Alamat: </span><strong>{(user as any).alamat}</strong></p>}
           {(user as any).angkatan && <p><span className="text-slate-500">Angkatan: </span><strong>{(user as any).angkatan}</strong></p>}

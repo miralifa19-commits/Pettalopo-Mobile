@@ -2,6 +2,7 @@ name: Pasang Login Google - Pettalopo Mobile
 
 on:
   workflow_dispatch:
+  push:
     branches:
       - fix/member-google-auth
 

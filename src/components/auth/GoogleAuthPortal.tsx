@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { onAuthStateChanged, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
@@ -32,6 +32,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const [needsProfile, setNeedsProfile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isThanking, setIsThanking] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -167,13 +168,15 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       else await webSignOut(auth);
       setFirebaseUser(null);
       setNeedsProfile(false);
-      onLogout?.();
+      setIsThanking(true);
+      window.setTimeout(() => { setIsThanking(false); onLogout?.(); }, 1000);
     } catch (e: any) {
       setError(e?.message || 'Tidak dapat keluar dari akun Google.');
     }
   };
 
   if (!open) return null;
+  if (isThanking) return <div className="fixed inset-0 z-[130] bg-[#e51c24] text-white flex flex-col items-center justify-center text-center p-6"><img src={LOGO_IMAGE_PATH} alt="Logo Ambalan" className="w-24 h-24 object-contain mb-4" /><h2 className="text-xl font-black">Terima kasih, Kak!</h2><p className="text-sm mt-2">Sampai jumpa kembali di Pettalopo Mobile.</p></div>;
 
   return (
     <div className="fixed inset-0 z-[120] overflow-y-auto bg-white flex items-center justify-center p-4">

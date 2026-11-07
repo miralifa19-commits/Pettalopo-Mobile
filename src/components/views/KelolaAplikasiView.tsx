@@ -575,8 +575,8 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
             </div>
             <div className="py-2.5 flex justify-between">
               <span className="text-slate-500 font-medium">Status Pembaruan</span>
-              <span className="font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">
-                Terkini & Aktif
+              <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                Disiapkan untuk rilis v1.4
               </span>
             </div>
           </div>

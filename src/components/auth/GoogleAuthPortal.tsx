@@ -659,13 +659,6 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
                 Lanjutkan dengan mode pratinjau
               </button>
 
-              <button
-                type="button"
-                onClick={() => setShowFirestoreDiagnostics(true)}
-                className="w-full text-[11px] text-slate-500 underline cursor-pointer"
-              >
-                Diagnostik koneksi Firestore
-              </button>
             </div>
           )}
 
@@ -675,6 +668,13 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
               <span>{error}</span>
             </div>
           )}
+              <button
+                type="button"
+                onClick={() => setShowFirestoreDiagnostics(true)}
+                className="w-full text-[11px] text-slate-500 underline cursor-pointer"
+              >
+                Diagnostik koneksi Firestore
+              </button>
         </div>
       </div>
       <FirestoreDiagnostics open={showFirestoreDiagnostics} onClose={() => setShowFirestoreDiagnostics(false)} />

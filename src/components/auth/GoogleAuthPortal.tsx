@@ -134,7 +134,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         setNeedsProfile(true);
         return;
       }
-      const data = snap.data();
+      const data = snap.data() as Record<string, any>;
 
       // Akun Admin Utama
       if (user.email?.toLowerCase() === ADMIN_EMAIL) {

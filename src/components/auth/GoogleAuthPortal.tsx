@@ -14,6 +14,21 @@ type GooglePortalProps = {
   onLogout?: () => void;
 };
 
+function withFirestoreTimeout<T>(promise: Promise<T>, timeoutMs = 10_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`Firestore tidak merespons dalam ${timeoutMs / 1000} detik.`);
+      (error as Error & { code?: string }).code = 'timeout';
+      reject(error);
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 const ADMIN_EMAIL = 'miralifa19@gmail.com';
 
 // Perhitungan usia presisi sampai satuan hari berdasarkan kalender lahir
@@ -79,12 +94,19 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const [error, setError] = useState('');
   const [isThanking, setIsThanking] = useState(false);
   const openRef = useRef(open);
+  const processingUidRef = useRef<string | null>(null);
   useEffect(() => { openRef.current = open; }, [open]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (user) {
+        console.info('[GoogleAuth] Login Google berhasil (auth state)', {
+          email: user.email,
+          uid: user.uid,
+          projectId: auth.app.options.projectId,
+        });
+        console.info('[GoogleAuth] UID didapat', { uid: user.uid });
         setNamaAsli((current) => current || user.displayName || '');
         if (openRef.current) void finishLogin(user);
       }
@@ -99,14 +121,24 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const calculatedAge = computeScoutAge(tanggalLahir);
 
   const finishLogin = async (user: any) => {
+    if (processingUidRef.current === user.uid) {
+      console.info('[GoogleAuth] Proses login untuk UID ini masih berjalan; duplikasi diabaikan.', { uid: user.uid });
+      return;
+    }
+    processingUidRef.current = user.uid;
     setFirebaseUser(user);
     setError('');
     setLoading(true);
+    console.info('[GoogleAuth] Mulai menyelesaikan login', {
+      uid: user.uid,
+      projectId: auth.app.options.projectId,
+      databaseId: '(default)',
+    });
     try {
       const ref = doc(db, 'users', user.uid);
 
       // Refresh the Google credential before any Firestore operation.
-      await user.getIdToken(true);
+      await withFirestoreTimeout(user.getIdToken(true), 10_000);
 
       // The primary administrator is trusted by the verified Google email.
       // Provision the admin profile before attempting a read: first login must
@@ -127,34 +159,29 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           foto: user.photoURL || '',
           createdAt: new Date().toISOString().slice(0, 10)
         };
-        await setDoc(ref, {
+        await withFirestoreTimeout(setDoc(ref, {
           ...admin,
           googleAuth: true,
           onboardingSelesai: true,
           statusKeanggotaan: 'admin',
           updatedAt: Date.now()
-        }, { merge: true });
+        }, { merge: true }), 10_000);
         onComplete(admin);
         return;
       }
 
       // Members read only their own private profile document.
-      let snap: Awaited<ReturnType<typeof getDocFromServer>> | null = null;
-      let lastReadError: any;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          snap = await getDocFromServer(ref);
-          lastReadError = null;
-          break;
-        } catch (readError: any) {
-          lastReadError = readError;
-          const isTransient = readError?.code === 'unavailable'
-            || /client is offline|network|timeout/i.test(readError?.message || '');
-          if (!isTransient || attempt === 2) throw readError;
-          await new Promise((resolve) => window.setTimeout(resolve, 1000 * (attempt + 1)));
-        }
-      }
-      if (lastReadError || !snap) throw lastReadError || new Error('Firestore tidak mengembalikan hasil pembacaan.');
+      console.info('[GoogleAuth] Mulai baca profil', {
+        uid: user.uid,
+        path: `users/${user.uid}`,
+        databaseId: '(default)',
+      });
+      const snap = await withFirestoreTimeout(getDocFromServer(ref), 10_000);
+      console.info('[GoogleAuth] Hasil baca profil', {
+        uid: user.uid,
+        exists: snap.exists(),
+        status: snap.exists() ? 'profile-found' : 'profile-not-found-onboarding-needed',
+      });
 
       // A missing profile is expected for a first login in a newly created
       // Firestore database. It is not a connectivity error: show onboarding.
@@ -167,7 +194,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       const data = snap.data() as Record<string, any>;
 
       // Refresh the non-sensitive directory projection after authenticated read.
-      await setDoc(doc(db, 'public_members', user.uid), {
+      await withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
         uid: user.uid,
         nama: data.nama || data.namaLengkap || user.displayName || 'Anggota',
         namaLengkap: data.nama || data.namaLengkap || user.displayName || 'Anggota',
@@ -182,7 +209,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         isDewan: data.isDewan === true,
         dewanJabatan: data.dewanJabatan || '',
         updatedAt: Date.now()
-      }, { merge: true });
+      }, { merge: true }), 10_000);
 
       // Pengguna yang sudah menyelesaikan profil
       if (data?.onboardingSelesai && data?.googleAuth) {
@@ -227,13 +254,16 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       });
       if (code === 'permission-denied') {
         setError('Firestore permission-denied: akses profil ditolak oleh Firestore Rules.');
-      } else if (code === 'unavailable' || /client is offline|network/i.test(e?.message || '')) {
-        setError('Firestore ' + code + ': HP terhubung ke internet, tetapi Firestore belum dapat dijangkau. Kirim kode dan tangkapan layar ini kepada admin.');
+      } else if (code === 'unavailable') {
+        setError('Firestore unavailable: layanan Firestore tidak dapat dijangkau. Periksa koneksi dan konfigurasi proyek.');
+      } else if (code === 'timeout') {
+        setError('Firestore timeout: proses membaca/menyelesaikan profil melebihi 10 detik. Periksa Firestore Rules dan koneksi.');
       } else {
         setError('Firestore ' + code + ': ' + (e?.message || 'Gagal memeriksa profil akun.'));
       }
     } finally {
       setLoading(false);
+      if (processingUidRef.current === user.uid) processingUidRef.current = null;
     }
   };
 
@@ -252,6 +282,15 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         await signInWithCredential(auth, webCredential);
       } else {
         await signInWithPopup(auth, googleProvider);
+      }
+      const signedInUser = auth.currentUser;
+      console.info('[GoogleAuth] Login Google berhasil', {
+        provider: Capacitor.isNativePlatform() ? 'native-google' : 'web-google',
+        uid: signedInUser?.uid || null,
+        email: signedInUser?.email || null,
+      });
+      if (signedInUser?.uid) {
+        console.info('[GoogleAuth] UID didapat', { uid: signedInUser.uid });
       }
     } catch (e: any) {
       setError(e?.message || 'Login Google gagal. Pastikan koneksi tersedia.');

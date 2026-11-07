@@ -21,7 +21,8 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
   const [pendingDewanPositions, setPendingDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
   const [savingDewan, setSavingDewan] = useState(false);
-  const isMainAdmin = currentUser.role === 'admin' && (currentUser.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com');
+  // Akses Admin dibuka sementara untuk semua instalasi sesuai mode rilis ini.
+  const isMainAdmin = currentUser.role === 'admin';
   const [userList, setUserList] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);

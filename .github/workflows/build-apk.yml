@@ -156,15 +156,14 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          html = Path("index.html").read_text()
+          html = Path("index.html").read_text().lower()
           cap = Path("capacitor.config.ts").read_text()
-          if re.search(r"""<meta[^>]+http-equiv=["']Content-Security-Policy""", html, re.I):
+          if "content-security-policy" in html:
               raise SystemExit("A Content-Security-Policy meta tag is present in index.html; inspect allowed Firestore origins.")
-          if re.search(r"\\bserver\\s*:\\s*\\{[^}]*\\burl\\s*:", cap, re.S):
-              raise SystemExit("Capacitor server.url is configured; this can redirect the WebView away from bundled assets.")
-          if re.search(r"\\ballowNavigation\\s*:", cap):
-              raise SystemExit("Capacitor allowNavigation is configured; inspect the allowed navigation hosts.")
+          if "url:" in cap:
+              raise SystemExit("Capacitor server.url may be configured; inspect WebView asset origin.")
+          if "allowNavigation" in cap:
+              raise SystemExit("Capacitor allowNavigation is configured; inspect allowed navigation hosts.")
           print("No index.html CSP, Capacitor server.url, or allowNavigation override is configured.")
           PY
 

@@ -421,7 +421,8 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         isDewan: false,
         dewanJabatan: '',
         updatedAt: Date.now()
-      }, { merge: true });
+      }, { merge: true }), 10_000);
+      console.info('[GoogleAuth] Hasil tulis direktori anggota', { uid: firebaseUser.uid, path: `public_members/${firebaseUser.uid}`, success: true });
       onComplete(profile as UserAccount);
     } catch (e: any) {
       const code = e?.code || 'unknown';

@@ -231,7 +231,8 @@ export const DEFAULT_ADMIN_ACCOUNT: UserAccount = {
   createdAt: "2026-07-01"
 };
 
-export const DEFAULT_SEED_MEMBERS: UserAccount[] = [DEFAULT_ADMIN_ACCOUNT];
+// The replacement Firebase project starts empty; never seed a fictitious admin/member.
+export const DEFAULT_SEED_MEMBERS: UserAccount[] = [];
 
 export async function seedDefaultMembers(): Promise<void> {
   try {

@@ -85,7 +85,7 @@ export function get8DewanPositions(): Dewan8Position[] {
 
 export function isUserInDewan(user?: UserAccount, positions?: Dewan8Position[]): boolean {
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' && user.email?.toLowerCase() === 'miralifa19@gmail.com') return true;
   const list = positions || get8DewanPositions();
   return Boolean(user.uid && list.some((position) => position.memberUid === user.uid));
 }

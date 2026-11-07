@@ -1,0 +1,38 @@
+name: Validate Pettalopo Mobile v1.4
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/prepare-v1.4
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: TypeScript, PDF, and web build checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: TypeScript check
+        run: bun run lint
+
+      - name: PDF export tests
+        run: bun run test:pdf
+
+      - name: Production web build
+        run: bun run build

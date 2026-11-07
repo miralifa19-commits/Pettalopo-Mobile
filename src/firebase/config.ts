@@ -1,13 +1,21 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, initializeAuth, indexedDBLocalPersistence } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+// This is the single Firebase app used by Authentication and Firestore.
+// The project config points to pettalopo-6f6f4; no named database is supplied,
+// so Firestore uses the project's (default) database.
+export const app = initializeApp(firebaseConfig);
 
-// Use the new project's default Firestore database; do not retain the old
-// AI Studio Starter Tier database ID.
+// Android WebView networks can fail to establish Firestore's default streaming
+// transport on some devices. Auto-detect and use long polling when appropriate.
+initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
+
+// Retrieve the already initialized default database from the same Firebase app.
 export const db = getFirestore(app);
 export const auth = Capacitor.isNativePlatform()
   ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
@@ -61,15 +69,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Test connection on boot per Skill requirement
+// Optional connectivity probe. The actual user profile is read after authentication.
 export async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('Firebase connection verified.');
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firebase connection: client appears offline.', error.message);
-    }
+    console.warn('Firestore connectivity probe did not complete:', error);
   }
 }
 

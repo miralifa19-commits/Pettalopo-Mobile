@@ -85,8 +85,16 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
         }
       });
 
+      const positionsForFirestore = pendingDewanPositions.map((position) => ({
+        id: position.id,
+        jabatan: position.jabatan,
+        satuan: position.satuan,
+        memberName: position.memberName,
+        ...(position.memberUid ? { memberUid: position.memberUid } : {}),
+        ...(position.sangga ? { sangga: position.sangga } : {})
+      }));
       batch.set(doc(db, 'config', 'dewan_kepengurusan'), {
-        positions: pendingDewanPositions,
+        positions: positionsForFirestore,
         updatedAt: Date.now(),
         updatedBy: currentUser.email || currentUser.nama
       }, { merge: true });

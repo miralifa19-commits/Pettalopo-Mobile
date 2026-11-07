@@ -1,174 +1,109 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Global Default Deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Helper functions
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isSignedIn() {
+    function signedIn() {
       return request.auth != null;
     }
 
+    // Only the explicitly trusted primary administrator can manage shared data.
+    // Add other administrators through a server-controlled custom claim in a later step.
     function isAdmin() {
-      return (
-        isSignedIn() && (
-          (request.auth.token.email == 'miralifa19@gmail.com') ||
-          (request.auth.token.email == 'amiruddin@smpialwasi-maros.sch.id') ||
-          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-        )
-      );
+      return signedIn()
+        && request.auth.token.email == 'miralifa19@gmail.com'
+        && request.auth.token.email_verified == true;
     }
 
-    function isMainAdmin() {
-      return isSignedIn() && request.auth.token.email == 'miralifa19@gmail.com';
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
     }
 
-    // Connection test rule (Mandatory per Firebase Skill)
-    match /test/connection {
-      allow read: if true;
+    function protectedProfileFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['role', 'isAdmin', 'isDewan', 'dewanJabatan']);
     }
 
-    // Admins collection
-    match /admins/{adminId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Connection probe: authenticated clients only.
+    match /test/{documentId} {
+      allow read: if signedIn();
+      allow write: if false;
     }
 
-    // Config collection (e.g. config/akses for sandi ambalan)
-    match /config/{configId} {
-      allow read: if isSignedIn();
-      allow write: if configId == 'dewan_kepengurusan' ? isMainAdmin() : isAdmin();
-    }
-
-    // Validation helper for Users
-    function isValidUser(data) {
-      return ((('nama' in data) && data.nama is string && data.nama.size() <= 150) ||
-              (('namaLengkap' in data) && data.namaLengkap is string && data.namaLengkap.size() <= 150));
-    }
-
-    // Users collection. Only Admin may appoint/remove Dewan status.
+    // Profiles: signed-in members may view the directory, but can only
+    // create/update their own profile. Privileged role fields are admin-only.
     match /users/{userId} {
-      allow read: if true;
-      allow create: if isValidId(userId) && isValidUser(incoming()) && (
-        isMainAdmin() ||
-        (isAdmin() &&
-          (!('role' in incoming()) || incoming().role != 'dewan') &&
-          (!('isDewan' in incoming()) || incoming().isDewan != true)) ||
-        (isSignedIn() && request.auth.uid == userId &&
-          (!('role' in incoming()) || incoming().role == 'anggota') &&
-          (!('isDewan' in incoming()) || incoming().isDewan == false) &&
-          (!('dewanJabatan' in incoming()) || incoming().dewanJabatan == ''))
-      );
-      allow update: if isValidId(userId) && isValidUser(incoming()) && (
-        isMainAdmin() ||
-        (isAdmin() &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan'])) ||
-        (isSignedIn() && request.auth.uid == userId &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan']))
-      );
+      allow read: if signedIn();
+      allow create: if isOwner(userId)
+        && (!('role' in request.resource.data) || request.resource.data.role == 'anggota')
+        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
+        && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
+        || isAdmin();
+      allow update: if (isOwner(userId) && protectedProfileFieldsUnchanged())
+        || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Validation helper for Attendance Sessions
-    function isValidSession(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.title is string && data.title.size() <= 200 &&
-             data.isOpen is bool;
+    // Admin directory and access configuration are not public.
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+    match /config/{configId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
 
-    // Attendance Sessions collection (Admin opens/closes roll call, all members view active status)
+    // Shared app content: all authenticated members may read; only admin writes.
     match /attendance_sessions/{sessionId} {
-      allow read: if true;
-      allow create, update: if isValidId(sessionId) && isValidSession(incoming());
-      allow delete: if isValidId(sessionId);
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
-
-    // Validation helper for Attendance Records
-    function isValidAttendanceRecord(data) {
-      return data.sessionId is string && data.sessionId.size() <= 128 &&
-             data.userName is string && data.userName.size() <= 150;
+    match /program_kerja/{itemId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
-
-    // Attendance Records collection (Members fill roll call, admin views/edits records)
-    match /attendance_records/{recordId} {
-      allow read: if true;
-      allow create, update: if isValidId(recordId) && isValidAttendanceRecord(incoming());
-      allow delete: if isValidId(recordId);
+    match /materi_belajar/{itemId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
-
-    // Validation helper for Program Kerja
-    function isValidProgramKerja(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.nama is string && data.nama.size() <= 200;
-    }
-
-    // Program Kerja collection (Visible to all viewers/members, managed by admin)
-    match /program_kerja/{prokerId} {
-      allow read: if true;
-      allow create, update: if isValidId(prokerId) && isValidProgramKerja(incoming());
-      allow delete: if isValidId(prokerId);
-    }
-
-    // Validation helper for Materi Belajar
-    function isValidMateri(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.judul is string && data.judul.size() <= 250;
-    }
-
-    // Materi Belajar collection
-    match /materi_belajar/{materiId} {
-      allow read: if true;
-      allow create, update: if isValidId(materiId) && isValidMateri(incoming());
-      allow delete: if isValidId(materiId);
-    }
-
-    // Validation helper for Ambalan Chat
-    function isValidChat(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.senderName is string && data.senderName.size() <= 150;
-    }
-
-    // Ambalan Chat collection (Realtime group chat & interactive lists)
-    match /ambalan_chats/{chatId} {
-      allow read: if true;
-      allow create, update: if isValidId(chatId) && isValidChat(incoming());
-      allow delete: if isValidId(chatId);
-    }
-
-    // Kegiatan Evaluations & Presensi Records
-    match /kegiatan_evaluations/{evalId} {
-      allow read: if true;
-      allow create, update: if isValidId(evalId);
-      allow delete: if isValidId(evalId);
-    }
-
-    // Active Running Kegiatan Session
     match /active_kegiatan/{sessionId} {
-      allow read: if true;
-      allow create, update: if isValidId(sessionId);
-      allow delete: if isValidId(sessionId);
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /ambalan_notifications/{notificationId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    // Ambalan Shared Notifications
-    match /ambalan_notifications/{notifId} {
-      allow read: if true;
-      allow create, update: if isValidId(notifId);
-      allow delete: if isValidId(notifId);
+    // Attendance: a member can submit/update only their own record.
+    // Admin can review and manage all records.
+    match /attendance_records/{recordId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Chat: authenticated members can read; senders own their messages.
+    match /ambalan_chats/{chatId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.senderId == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || (signedIn() && resource.data.senderId == request.auth.uid);
+    }
+
+    // Evaluations are shared records; writes are restricted to the admin.
+    match /kegiatan_evaluations/{evaluationId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // No unspecified collection or document is readable or writable.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

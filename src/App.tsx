@@ -518,7 +518,6 @@ export default function App() {
             setUser(googleUser);
             setIsGooglePortalOpen(false);
           }}
-          onSkip={() => setIsGooglePortalOpen(false)}
           onLogout={() => {
             setIsGooglePortalOpen(true);
             setShowPettalopoSplash(true);

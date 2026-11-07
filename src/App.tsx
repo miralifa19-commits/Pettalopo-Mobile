@@ -161,10 +161,14 @@ export default function App() {
 
 
 
-  // Persist and sync user
+  // Persist locally, but sync to Firestore only after the matching Google user is authenticated.
   useEffect(() => {
     localStorage.setItem('ambalan_user_account_v3', JSON.stringify(user));
-    syncUserProfile(user).catch(() => {});
+    if (auth.currentUser?.uid === user.uid) {
+      syncUserProfile(user).catch((error) => {
+        console.error('Authenticated profile sync failed:', error);
+      });
+    }
   }, [user]);
 
   // Persist program kerja locally
@@ -177,31 +181,27 @@ export default function App() {
     return subscribeTo8DewanPositions(setDewanPositions);
   }, [isGooglePortalOpen, user.uid]);
 
-  // Real-time Firestore sync for Members and current user's appointed Dewan status
+  // Read the public member directory only after Google authentication succeeds.
   useEffect(() => {
+    if (!auth.currentUser || auth.currentUser.uid !== user.uid) {
+      setAllMembers([]);
+      return;
+    }
+
     const unsubscribe = subscribeToAllMembers((members) => {
       setAllMembers(members || []);
-      if (members && members.length > 0) {
-        if (user.uid) {
-          const latestUser = members.find((member) => member.uid === user.uid);
-          if (latestUser) {
-            setUser((current) => {
-              if (
-                current.role === latestUser.role &&
-                Boolean(current.isDewan) === Boolean(latestUser.isDewan) &&
-                current.dewanJabatan === latestUser.dewanJabatan
-              ) return current;
-              return {
-                ...current,
-                role: latestUser.role,
-                isDewan: latestUser.isDewan === true,
-                dewanJabatan: latestUser.dewanJabatan || '',
-                jabatan: latestUser.jabatan || current.jabatan
-              };
-            });
-          }
-        }
+      const latestUser = members?.find((member) => member.uid === user.uid);
+      if (latestUser) {
+        setUser((current) => ({
+          ...current,
+          role: latestUser.role || current.role,
+          isDewan: latestUser.isDewan === true,
+          dewanJabatan: latestUser.dewanJabatan || '',
+          jabatan: latestUser.jabatan || current.jabatan
+        }));
       }
+    }, (error) => {
+      console.error('Public member directory read failed:', error);
     });
 
     return () => {
@@ -209,23 +209,23 @@ export default function App() {
     };
   }, [user.uid]);
 
-  // Real-time Firestore sync for Program Kerja
+  // Shared program data is read only after Firebase authentication.
   useEffect(() => {
+    if (!auth.currentUser || auth.currentUser.uid !== user.uid) return;
+
     const unsubscribe = subscribeToProgramKerja(
       (items) => {
-        if (items && items.length > 0) {
-          setProgramKerjaList(items);
-        }
+        if (items && items.length > 0) setProgramKerjaList(items);
       },
       (err) => {
-        console.warn('Real-time proker sync falling back to local storage:', err);
+        console.error('Authenticated program kerja read failed:', err);
       }
     );
 
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [user.uid]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">

@@ -193,7 +193,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     }
   };
 
-  // Hapus permanen hanya untuk akun yang sudah direset. Cloud Function juga memblokir email agar tidak dapat mendaftar ulang.
+  // Hapus profil Pettalopo hanya untuk akun yang sudah direset; email tetap diblokir agar tidak dapat mendaftar ulang.
   const handleDeleteAccount = async (targetUser: any) => {
     const targetUid = targetUser.id || targetUser.uid;
     const label = targetUser.nama || targetUser.namaLengkap || targetUser.email || targetUid;
@@ -205,7 +205,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       alert('Akun harus direset terlebih dahulu sebelum dapat dihapus.');
       return;
     }
-    if (!window.confirm(`HAPUS PERMANEN akun "${label}"?\n\nProfil akun di Pettalopo akan dihapus. Email ini akan diblokir agar tidak dapat membuat akun Pettalopo baru untuk spam. Tindakan ini tidak dapat dibatalkan.`)) return;
+    if (!window.confirm(`HAPUS AKUN DARI PETTALOPO "${label}"?\n\nProfil akun di Pettalopo akan dihapus. Email ini akan diblokir agar tidak dapat membuat akun Pettalopo baru untuk spam. Tindakan ini tidak dapat dibatalkan.`)) return;
 
     setBusyUserId(targetUid);
     try {
@@ -225,7 +225,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       await deleteDoc(doc(db, 'users', targetUid));
       setActionNotice(`Akun ${label} dihapus dari Pettalopo dan emailnya diblokir dari pendaftaran ulang.`);
     } catch (err: any) {
-      alert('Gagal menghapus akun: ' + (err?.message || 'Pastikan Firebase Cloud Function deleteResetAccount sudah diterapkan.'));
+      alert('Gagal menghapus akun: ' + (err?.message || 'Periksa Firestore Rules dan koneksi Firebase.'));
     } finally {
       setBusyUserId(null);
     }

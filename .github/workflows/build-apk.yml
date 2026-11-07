@@ -520,7 +520,7 @@ jobs:
               if not search_root.exists():
                   continue
               for xml_path in search_root.rglob("values.xml"):
-                  candidates.append(str(xml_path.relative_to(Path.cwd())))
+                  candidates.append(str(xml_path))
                   try:
                       root = ET.parse(xml_path).getroot()
                   except (ET.ParseError, OSError):

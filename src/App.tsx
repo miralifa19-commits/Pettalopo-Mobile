@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, Bell, Bookmark, CalendarDays, BookOpen, LifeBuoy, Info, Share2, Wrench } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -93,7 +93,34 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin';
+  const isMainAdmin = user.role === 'admin' && (
+    user.email?.toLowerCase() === 'miralifa19@gmail.com' ||
+    auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com'
+  );
   const isDewanAccount = isUserInDewan(user, dewanPositions);
+
+  const handleShareApp = async () => {
+    const shareUrl = 'https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/latest';
+    const shareData = {
+      title: 'Pettalopo Mobile',
+      text: 'Unduh dan gunakan aplikasi resmi Ambalan La Surullah Petta Lopo.',
+      url: shareUrl
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        window.alert('Tautan Pettalopo Mobile berhasil disalin.');
+      } else {
+        window.prompt('Salin tautan Pettalopo Mobile:', shareUrl);
+      }
+    } catch (error) {
+      if (!(error instanceof Error && error.name === 'AbortError')) {
+        console.warn('Bagikan aplikasi gagal:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (activeMenu === 'ruang_kerja_dewan' && !isDewanAccount) setActiveMenu('home');
@@ -258,25 +285,46 @@ export default function App() {
               <MoreVertical size={21} />
             </button>
             {isQuickMenuOpen && (
-              <div className="pettalopo-overflow-menu">
+              <div className="pettalopo-overflow-menu max-h-[72vh] overflow-y-auto">
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsNotificationsOpen(true); }}>
+                  <Bell size={17} /><span>Notifikasi</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('tersimpan'); }}>
+                  <Bookmark size={17} /><span>Tersimpan</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('dashboard'); }}>
+                  <CalendarDays size={17} /><span>Kalender Ambalan</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('panduan_aplikasi'); }}>
+                  <BookOpen size={17} /><span>Panduan Aplikasi</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pusat_bantuan'); }}>
+                  <LifeBuoy size={17} /><span>Pusat Bantuan</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('tentang_ambalan'); }}>
+                  <Info size={17} /><span>Tentang Ambalan</span>
+                </button>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); void handleShareApp(); }}>
+                  <Share2 size={17} /><span>Bagikan Aplikasi</span>
+                </button>
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
                   <Settings size={17} /><span>Pengaturan</span>
                 </button>
-                {(user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com') && (
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
+                  <UserRound size={17} /><span>Akun Saya</span>
+                </button>
+                {isMainAdmin && (
                   <button
                     type="button"
                     onClick={() => {
                       setIsQuickMenuOpen(false);
                       setActiveMenu('kelola_aplikasi');
                     }}
-                    className="font-bold text-[#e51c24]"
+                    className="font-bold text-[#e51c24] border-t border-slate-100"
                   >
-                    <span>🛠️</span><span>Kelola Aplikasi</span>
+                    <Wrench size={17} /><span>Kelola Aplikasi</span>
                   </button>
                 )}
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
-                  <UserRound size={17} /><span>Akun</span>
-                </button>
               </div>
             )}
           </div>
@@ -359,6 +407,19 @@ export default function App() {
 
           {activeMenu === 'pengumuman' && (
             <ComingSoonView title="Pengumuman" subtitle="Pusat informasi dan pengumuman Ambalan sedang disiapkan." icon="📢" onBackToDashboard={() => setActiveMenu('home')} />
+          )}
+
+          {activeMenu === 'tersimpan' && (
+            <ComingSoonView title="Tersimpan" subtitle="Kegiatan, materi, dan informasi yang disimpan akan ditampilkan di sini." icon="🔖" onBackToDashboard={() => setActiveMenu('home')} />
+          )}
+          {activeMenu === 'panduan_aplikasi' && (
+            <ComingSoonView title="Panduan Aplikasi" subtitle="Panduan penggunaan Pettalopo Mobile sedang disiapkan." icon="📘" onBackToDashboard={() => setActiveMenu('home')} />
+          )}
+          {activeMenu === 'pusat_bantuan' && (
+            <ComingSoonView title="Pusat Bantuan" subtitle="Informasi bantuan dan dukungan pengguna sedang disiapkan." icon="🛟" onBackToDashboard={() => setActiveMenu('home')} />
+          )}
+          {activeMenu === 'tentang_ambalan' && (
+            <ComingSoonView title="Tentang Ambalan" subtitle="Profil dan sejarah Ambalan La Surullah Petta Lopo." icon="⚜️" onBackToDashboard={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'pengaturan' && (

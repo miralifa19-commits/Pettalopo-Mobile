@@ -60,7 +60,8 @@ service cloud.firestore {
       allow get: if isMainAdmin() ||
         (isSignedIn() && resource.data.email == request.auth.token.email);
       allow list: if isMainAdmin();
-      allow create, update, delete: if false;
+      allow create: if isMainAdmin() && incoming().email is string && incoming().email.size() <= 254;
+      allow update, delete: if false;
     }
 
     // Validation helper for Users

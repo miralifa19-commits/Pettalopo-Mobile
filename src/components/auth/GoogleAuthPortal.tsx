@@ -6,6 +6,7 @@ import { doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../firebase/config';
 import { UserAccount } from '../../types';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
+import { FirestoreDiagnosticsPanel } from '../FirestoreDiagnosticsPanel';
 
 type GooglePortalProps = {
   open: boolean;
@@ -93,6 +94,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isThanking, setIsThanking] = useState(false);
+  const [showFirestoreDiagnostics, setShowFirestoreDiagnostics] = useState(false);
   const openRef = useRef(open);
   const processingUidRef = useRef<string | null>(null);
   useEffect(() => { openRef.current = open; }, [open]);
@@ -656,6 +658,19 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
               >
                 Lanjutkan dengan mode pratinjau
               </button>
+            </div>
+          )}
+
+          {firebaseUser && (
+            <div className="border-t border-slate-100 pt-3 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowFirestoreDiagnostics((current) => !current)}
+                className="w-full text-xs font-semibold text-[#e51c24] underline underline-offset-2"
+              >
+                {showFirestoreDiagnostics ? 'Tutup diagnostik koneksi Firestore' : 'Diagnostik koneksi Firestore'}
+              </button>
+              {showFirestoreDiagnostics && <FirestoreDiagnosticsPanel />}
             </div>
           )}
 

@@ -79,7 +79,7 @@ service cloud.firestore {
         (isAdmin() &&
           !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan', 'blacklisted'])) ||
         (isSignedIn() && request.auth.uid == userId &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan']))
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan', 'blacklisted']))
       );
       allow delete: if isAdmin();
     }

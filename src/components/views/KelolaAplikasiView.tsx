@@ -60,6 +60,14 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       alert('Satu anggota hanya dapat mengisi satu posisi Dewan Ambalan.');
       return;
     }
+    const invalidAssignment = assigned.find((position) => {
+      const member = userList.find((item) => item.id === position.memberUid || item.uid === position.memberUid);
+      return !isEligibleDewanCandidate(member);
+    });
+    if (invalidAssignment) {
+      alert('Anggota Purna, akun blacklist, atau anggota yang belum dapat diverifikasi usianya tidak boleh dilantik. Hapus pilihan tersebut terlebih dahulu.');
+      return;
+    }
 
     setSavingDewan(true);
     try {
@@ -159,7 +167,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
 
   const handleToggleBlacklist = async (targetUser: any) => {
     const targetUid = targetUser.id || targetUser.uid;
-    if (!isMainAdmin || !targetUid || targetUser.email?.toLowerCase() === 'miralifa19@gmail.com' || targetUid === auth.currentUser?.uid) {
+    if (!isMainAdmin || !targetUid || targetUser.role === 'admin' || targetUser.email?.toLowerCase() === 'miralifa19@gmail.com' || targetUid === auth.currentUser?.uid) {
       alert('Akun Admin Utama tidak dapat dimasukkan ke daftar blacklist.');
       return;
     }
@@ -222,6 +230,15 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     };
   };
 
+  const isEligibleDewanCandidate = (item: any) => {
+    if (!item || item.blacklisted === true) return false;
+    if (item.status === 'purna_ambalan' || item.statusKeanggotaan === 'purna_ambalan') return false;
+    const birth = item.tanggalLahir || item.ttl;
+    const birthInfo = birth ? formatBirthInfo(birth) : null;
+    const age = birthInfo ? Number.parseInt(birthInfo.ageText, 10) : Number(item.usiaTahun ?? item.usia);
+    return Number.isFinite(age) && age >= 14 && age < 21;
+  };
+
   const filteredUsers = userList.filter((u) => {
     const q = searchQuery.toLowerCase();
     const nameMatch = (u.nama || u.namaLengkap || '').toLowerCase().includes(q);
@@ -229,6 +246,17 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     const waMatch = (u.nomorWhatsApp || u.wa || '').includes(q);
     return nameMatch || emailMatch || waMatch;
   });
+
+  if (!isMainAdmin) {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-white p-6 text-center space-y-3">
+        <div className="text-3xl">🔒</div>
+        <h2 className="text-sm font-black text-slate-900">Akses Ditolak</h2>
+        <p className="text-xs text-slate-500">Kelola Aplikasi hanya dapat dibuka oleh Admin Utama.</p>
+        <button type="button" onClick={onBack} className="rounded-xl bg-[#e51c24] px-4 py-2.5 text-xs font-bold text-white">Kembali</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-24 font-sans select-none">
@@ -469,16 +497,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                 >
                   <option value="">— Belum ditetapkan —</option>
                   {userList
-                    .filter((item) => {
-                      if (!item.id || item.role === 'admin' || item.email?.toLowerCase() === 'miralifa19@gmail.com') return false;
-                      if (item.blacklisted === true) return false;
-                      if (item.status === 'purna_ambalan' || item.statusKeanggotaan === 'purna_ambalan') return false;
-                      const birth = item.tanggalLahir || item.ttl;
-                      const birthInfo = birth ? formatBirthInfo(birth) : null;
-                      const age = birthInfo ? Number.parseInt(birthInfo.ageText, 10) : Number(item.usiaTahun ?? item.usia);
-                      // Hanya calon berusia 14–20 tahun yang dapat dilantik sebagai Dewan Ambalan.
-                      return Number.isFinite(age) && age >= 14 && age < 21;
-                    })
+                    .filter((item) => item.id && item.role !== 'admin' && item.email?.toLowerCase() !== 'miralifa19@gmail.com' && isEligibleDewanCandidate(item))
                     .sort((a, b) => (a.nama || a.namaLengkap || '').localeCompare(b.nama || b.namaLengkap || '', 'id'))
                     .map((item) => {
                       const uid = item.id || item.uid;

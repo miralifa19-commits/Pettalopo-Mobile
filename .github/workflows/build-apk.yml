@@ -7,7 +7,6 @@ on:
       - main
       - perbaikan-pdf
       - update/surat-laporan-triwulan-2026-11-05
-      - fix/google-auth-release-1.4
 
 permissions:
   contents: write
@@ -486,6 +485,7 @@ jobs:
           PY
 
       - name: Publish GitHub Release
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -502,6 +502,7 @@ jobs:
           make_latest: true
 
       - name: Upload APK Artifact
+        if: steps.signing.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Pettalopo-Mobile-v${{ github.run_number }}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { FirestoreDiagnosticsPanel } from '../FirestoreDiagnosticsPanel';
 import { UserAccount } from '../../types';
 import { DEFAULT_8_DEWAN, Dewan8Position, subscribeTo8DewanPositions } from '../../data/dewanStructure';
 
@@ -513,6 +514,8 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
             ℹ️ Sistem pembaruan aplikasi otomatis (OTA Update) terpasang dan akan memindai berkas APK rilis baru secara otomatis saat dibuka.
           </div>
+
+          <FirestoreDiagnosticsPanel />
         </div>
       )}
     </div>

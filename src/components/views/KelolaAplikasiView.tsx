@@ -26,8 +26,12 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Subscribe ke koleksi users di Firestore
+  // Subscribe ke koleksi users di Firestore (hanya saat admin utama terotentikasi)
   useEffect(() => {
+    if (!auth.currentUser || !isMainAdmin) {
+      setLoading(false);
+      return;
+    }
     const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
       const items: any[] = [];
       snapshot.forEach((d) => {
@@ -41,7 +45,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     });
 
     return () => unsub();
-  }, []);
+  }, [isMainAdmin]);
 
   useEffect(() => {
     const unsub = subscribeTo8DewanPositions((positions) => {

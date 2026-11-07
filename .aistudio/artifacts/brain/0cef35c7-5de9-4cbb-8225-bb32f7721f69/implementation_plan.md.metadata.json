@@ -1,0 +1,6 @@
+{
+  "summary":  "Rencana implementasi perbaikan error login Google Firebase dan optimalisasi alur build APK Android via GitHub Actions untuk Pettalopo Mobile. Mengatasi kendala timeout pada autentikasi dan pembacaan profil Firestore, mengoptimalkan inisialisasi transport, serta memastikan verifikasi sertifikat SHA-1 dan workflow CI/CD berjalan sukses.",
+  "updatedAt":  "2026-11-07T14:58:30.356363397Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

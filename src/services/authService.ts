@@ -1,6 +1,10 @@
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { 
   signInWithPopup, 
-  signOut, 
+  signInWithCredential,
+  GoogleAuthProvider,
+  signOut as webSignOut, 
   User as FirebaseUser 
 } from 'firebase/auth';
 import { 
@@ -32,12 +36,23 @@ export function isPrimaryAdminEmail(email?: string | null): boolean {
 }
 
 /**
- * Masuk dengan Google menggunakan pop-up
+ * Masuk dengan Google: memakai native plugin @capacitor-firebase/authentication di Android WebView,
+ * dan fallback signInWithPopup di browser Web biasa.
  */
 export async function signInWithGoogle(): Promise<FirebaseUser> {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    if (Capacitor.isNativePlatform()) {
+      const res = await FirebaseAuthentication.signInWithGoogle();
+      if (!res.credential?.idToken) {
+        throw new Error('Token identitas Google tidak ditemukan dari login native.');
+      }
+      const credential = GoogleAuthProvider.credential(res.credential.idToken);
+      const userCred = await signInWithCredential(auth, credential);
+      return userCred.user;
+    } else {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    }
   } catch (error) {
     console.error('Login Google gagal:', error);
     throw error;
@@ -45,11 +60,18 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
 }
 
 /**
- * Keluar dari akun ambalan
+ * Keluar dari akun ambalan (membersihkan sesi native dan web SDK)
  */
 export async function signOutAmbalan(): Promise<void> {
   try {
-    await signOut(auth);
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await FirebaseAuthentication.signOut();
+      } catch (nativeErr) {
+        console.warn('Native signOut error:', nativeErr);
+      }
+    }
+    await webSignOut(auth);
   } catch (error) {
     console.error('Gagal keluar:', error);
     throw error;

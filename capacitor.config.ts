@@ -5,7 +5,16 @@ const config: CapacitorConfig = {
   appName: 'Pettalopo Mobile',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    allowNavigation: [
+      'firestore.googleapis.com',
+      'identitytoolkit.googleapis.com',
+      'securetoken.googleapis.com',
+      'accounts.google.com',
+      '*.googleapis.com',
+      '*.firebaseio.com',
+      '*.firebaseapp.com'
+    ]
   },
   plugins: {
     CapacitorHttp: {

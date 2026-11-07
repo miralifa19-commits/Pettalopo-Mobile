@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
-import { doc, getDocFromServer, setDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../firebase/config';
 import { UserAccount } from '../../types';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
@@ -93,9 +93,44 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isThanking, setIsThanking] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [diagTesting, setDiagTesting] = useState(false);
+  const [diagResult, setDiagResult] = useState<{
+    status: 'idle' | 'success' | 'error';
+    latencyMs?: number;
+    message?: string;
+    code?: string;
+  } | null>(null);
   const openRef = useRef(open);
   const processingUidRef = useRef<string | null>(null);
   useEffect(() => { openRef.current = open; }, [open]);
+
+  const runDiagnosticTest = async () => {
+    setDiagTesting(true);
+    setDiagResult(null);
+    const startTime = Date.now();
+    try {
+      const pingRef = doc(db, 'public_members', '_ping_connection_check');
+      await withFirestoreTimeout(getDocFromServer(pingRef), 10_000);
+      const latencyMs = Date.now() - startTime;
+      setDiagResult({
+        status: 'success',
+        latencyMs,
+        message: `Terhubung sukses ke Firestore pettalopo-6f6f4 database (default) dalam ${latencyMs} ms.`
+      });
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const code = err?.code || 'unknown';
+      setDiagResult({
+        status: 'error',
+        latencyMs,
+        code,
+        message: err?.message || 'Gagal berkomunikasi dengan Firestore.'
+      });
+    } finally {
+      setDiagTesting(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -137,8 +172,8 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     try {
       const ref = doc(db, 'users', user.uid);
 
-      // Refresh the Google credential before any Firestore operation.
-      await withFirestoreTimeout(user.getIdToken(true), 10_000);
+      // Gunakan token autentikasi yang sudah ada tanpa memaksa refresh jaringan yang memicu timeout
+      await withFirestoreTimeout(user.getIdToken(false), 8_000);
 
       // The primary administrator is trusted by the verified Google email.
       // Provision the admin profile before attempting a read: first login must
@@ -166,7 +201,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           onboardingSelesai: true,
           statusKeanggotaan: 'admin',
           updatedAt: Date.now()
-        }, { merge: true }), 10_000);
+        }, { merge: true }), 8_000);
         console.info('[GoogleAuth] Hasil tulis profil admin', { uid: user.uid, success: true });
         onComplete(admin);
         return;
@@ -178,7 +213,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         path: `users/${user.uid}`,
         databaseId: '(default)',
       });
-      const snap = await withFirestoreTimeout(getDocFromServer(ref), 10_000);
+      const snap = await withFirestoreTimeout(getDoc(ref), 8_000);
       console.info('[GoogleAuth] Hasil baca profil', {
         uid: user.uid,
         exists: snap.exists(),
@@ -195,9 +230,8 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
       const data = snap.data() as Record<string, any>;
 
-      // Refresh the non-sensitive directory projection after authenticated read.
-      console.info('[GoogleAuth] Mulai tulis direktori anggota', { uid: user.uid, path: `public_members/${user.uid}` });
-      await withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
+      // Sinkronisasi non-blocking direktori anggota publik
+      withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
         uid: user.uid,
         nama: data.nama || data.namaLengkap || user.displayName || 'Anggota',
         namaLengkap: data.nama || data.namaLengkap || user.displayName || 'Anggota',
@@ -212,8 +246,9 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         isDewan: data.isDewan === true,
         dewanJabatan: data.dewanJabatan || '',
         updatedAt: Date.now()
-      }, { merge: true }), 10_000);
-      console.info('[GoogleAuth] Hasil tulis direktori anggota', { uid: user.uid, success: true });
+      }, { merge: true }), 8_000).catch((err) => {
+        console.warn('[GoogleAuth] Penulisan direktori publik ditunda:', err);
+      });
 
       // Pengguna yang sudah menyelesaikan profil
       if (data?.onboardingSelesai && data?.googleAuth) {
@@ -259,9 +294,9 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       if (code === 'permission-denied') {
         setError('Firestore permission-denied: akses profil ditolak oleh Firestore Rules.');
       } else if (code === 'unavailable') {
-        setError('Firestore unavailable: layanan Firestore tidak dapat dijangkau. Periksa koneksi dan konfigurasi proyek.');
+        setError('Firestore unavailable: layanan Firestore tidak dapat dijangkau. Periksa koneksi internet Anda.');
       } else if (code === 'timeout') {
-        setError('Firestore timeout: proses membaca/menyelesaikan profil melebihi 10 detik. Periksa Firestore Rules dan koneksi.');
+        setError('Koneksi Firestore melebihi batas waktu (timeout). Silakan periksa jaringan internet Anda dan klik tombol "Coba Masuk Lagi" di bawah.');
       } else {
         setError('Firestore ' + code + ': ' + (e?.message || 'Gagal memeriksa profil akun.'));
       }
@@ -270,10 +305,6 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       if (processingUidRef.current === user.uid) processingUidRef.current = null;
     }
   };
-
-  useEffect(() => {
-    if (open && auth.currentUser) void finishLogin(auth.currentUser);
-  }, [open]);
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -297,7 +328,18 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         console.info('[GoogleAuth] UID didapat', { uid: signedInUser.uid });
       }
     } catch (e: any) {
-      setError(e?.message || 'Login Google gagal. Pastikan koneksi tersedia.');
+      console.error('[GoogleAuth] Login Google gagal:', e);
+      const code = String(e?.code || '');
+      const msg = String(e?.message || '');
+      if (code === 'auth/popup-closed-by-user' || msg.includes('closed-by-user')) {
+        setError('Jendela login Google ditutup sebelum proses selesai.');
+      } else if (code === 'auth/cancelled-popup-request') {
+        setError('Permintaan login Google dibatalkan.');
+      } else if (code === '10' || msg.includes('10:') || msg.includes('DEVELOPER_ERROR')) {
+        setError('Developer Error (Kode 10): Sidik jari SHA-1 APK Android belum terdaftar di Firebase Console pada package id.sch.smpialwasi_maros.ambalan.');
+      } else {
+        setError(msg || 'Login Google gagal. Pastikan koneksi internet tersedia.');
+      }
       setLoading(false);
     }
   };
@@ -402,11 +444,11 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       };
 
       console.info('[GoogleAuth] Mulai tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}` });
-      await withFirestoreTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 10_000);
+      await withFirestoreTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 8_000);
       console.info('[GoogleAuth] Hasil tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}`, success: true });
 
-      console.info('[GoogleAuth] Mulai tulis direktori anggota', { uid: firebaseUser.uid, path: `public_members/${firebaseUser.uid}` });
-      await withFirestoreTimeout(setDoc(doc(db, 'public_members', firebaseUser.uid), {
+      // Sinkronisasi direktori publik tanpa memblokir penyelesaian login
+      withFirestoreTimeout(setDoc(doc(db, 'public_members', firebaseUser.uid), {
         uid: firebaseUser.uid,
         nama: profile.nama,
         namaLengkap: profile.namaLengkap,
@@ -421,8 +463,9 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         isDewan: false,
         dewanJabatan: '',
         updatedAt: Date.now()
-      }, { merge: true }), 10_000);
-      console.info('[GoogleAuth] Hasil tulis direktori anggota', { uid: firebaseUser.uid, path: `public_members/${firebaseUser.uid}`, success: true });
+      }, { merge: true }), 8_000).catch((dirErr) => {
+        console.warn('[GoogleAuth] Penulisan direktori anggota ditunda:', dirErr);
+      });
       onComplete(profile as UserAccount);
     } catch (e: any) {
       const code = e?.code || 'unknown';
@@ -660,11 +703,113 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           )}
 
           {error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-[#e51c24] flex items-center gap-2">
-              <span>⚠️</span>
-              <span>{error}</span>
+            <div className="space-y-2">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-[#e51c24] flex items-start gap-2">
+                <span className="shrink-0 mt-0.5">⚠️</span>
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setError('');
+                  if (auth.currentUser) {
+                    void finishLogin(auth.currentUser);
+                  } else {
+                    void handleGoogle();
+                  }
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-[#e51c24] hover:bg-[#c9181f] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
+              >
+                <span>🔄</span>
+                <span>Coba Masuk Lagi</span>
+              </button>
             </div>
           )}
+
+          {/* Diagnostik Koneksi Firestore */}
+          <div className="pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowDiagnostic((prev) => !prev)}
+              className="w-full py-1.5 px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-800 flex items-center justify-between rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5">
+                <span>🔧</span>
+                <span>Diagnostik Koneksi Firestore</span>
+              </span>
+              <span className="text-[10px] text-slate-400">{showDiagnostic ? '▲ Sembunyikan' : '▼ Periksa Status'}</span>
+            </button>
+
+            {showDiagnostic && (
+              <div className="mt-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Proyek Firebase:</span>
+                    <span className="font-mono font-bold text-slate-800 text-[10px]">pettalopo-6f6f4</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Database ID:</span>
+                    <span className="font-mono font-bold text-slate-800 text-[10px]">(default)</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Platform:</span>
+                    <span className="font-mono font-bold text-slate-800 text-[10px]">
+                      {Capacitor.getPlatform()} ({Capacitor.isNativePlatform() ? 'Native WebView' : 'Browser Web'})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Transport:</span>
+                    <span className="font-mono font-bold text-slate-800 text-[10px]">Long Polling</span>
+                  </div>
+                </div>
+
+                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-400 block font-semibold">OAuth Web Client ID:</span>
+                  <span className="font-mono text-slate-700 break-all select-all block mt-0.5">
+                    392815401237-vamq2fm8khbpu42dlm08fg4c5obstoa3.apps.googleusercontent.com
+                  </span>
+                </div>
+
+                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-400 block font-semibold">Android Package ID:</span>
+                  <span className="font-mono text-slate-700 block mt-0.5">id.sch.smpialwasi_maros.ambalan</span>
+                </div>
+
+                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-400 block font-semibold">Sesi Auth Pengguna:</span>
+                  <span className="font-mono text-slate-700 block mt-0.5">
+                    {auth.currentUser ? `${auth.currentUser.email || auth.currentUser.uid} (Login OK)` : 'Belum Login'}
+                  </span>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={runDiagnosticTest}
+                    disabled={diagTesting}
+                    className="w-full py-2 px-3 rounded-xl bg-white border border-slate-300 hover:border-slate-400 font-semibold text-slate-700 text-xs shadow-xs disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>{diagTesting ? '⏳' : '⚡'}</span>
+                    <span>{diagTesting ? 'Menguji Koneksi Firestore (maks 10 dtk)...' : 'Tes Koneksi Firestore (10 dtk)'}</span>
+                  </button>
+
+                  {diagResult && (
+                    <div className={`mt-2 p-2.5 rounded-xl border text-[11px] leading-relaxed ${
+                      diagResult.status === 'success'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-red-50 border-red-200 text-red-700'
+                    }`}>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <span>{diagResult.status === 'success' ? '✅' : '❌'}</span>
+                        <span>{diagResult.status === 'success' ? 'Koneksi Berhasil' : `Gagal: [${diagResult.code}]`}</span>
+                      </div>
+                      <p className="mt-1 font-mono text-[10px] break-all">{diagResult.message}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

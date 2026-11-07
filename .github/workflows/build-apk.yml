@@ -14,6 +14,7 @@ on:
       - fix/firestore-auth-public-directory
       - fix/firestore-login-timeout-logging
       - fix/google-auth-release-1.4
+      - diagnostics/firestore-rest-probe
 
 permissions:
   contents: write
@@ -44,6 +45,12 @@ jobs:
           android = json.loads(Path("android/app/google-services.json").read_text())
           if web.get("projectId") != expected_project:
               raise SystemExit("Web Firebase config is not the Pettalopo production project.")
+          if web.get("authDomain") != "pettalopo-6f6f4.firebaseapp.com":
+              raise SystemExit("Web Firebase authDomain is not the Pettalopo production project.")
+          if web.get("appId") != "1:392815401237:web:4409ef8e162921c29a711c":
+              raise SystemExit("Web Firebase appId is not the Pettalopo production app.")
+          if not web.get("apiKey"):
+              raise SystemExit("Web Firebase apiKey is empty.")
           if android.get("project_info", {}).get("project_id") != expected_project:
               raise SystemExit("Android Google Services config is not the Pettalopo production project.")
           if web.get("messagingSenderId") != android.get("project_info", {}).get("project_number"):
@@ -144,6 +151,32 @@ jobs:
             mkdir -p android/app
             cp /tmp/pettalopo-google-services.json android/app/google-services.json
           fi
+
+      - name: Verify WebView network access and security policy
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text()
+          cap = Path("capacitor.config.ts").read_text()
+          if re.search(r'<meta[^>]+http-equiv=["\\']Content-Security-Policy', html, re.I):
+              raise SystemExit("A Content-Security-Policy meta tag is present in index.html; inspect allowed Firestore origins.")
+          if re.search(r'\\bserver\\s*:\\s*\\{[^}]*\\burl\\s*:', cap, re.S):
+              raise SystemExit("Capacitor server.url is configured; this can redirect the WebView away from bundled assets.")
+          if re.search(r'\\ballowNavigation\\s*:', cap):
+              raise SystemExit("Capacitor allowNavigation is configured; inspect the allowed navigation hosts.")
+          print("No index.html CSP, Capacitor server.url, or allowNavigation override is configured.")
+          PY
+
+      - name: Verify generated Android INTERNET permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml").read_text()
+          if 'android.permission.INTERNET' not in manifest:
+              raise SystemExit("Generated AndroidManifest.xml is missing android.permission.INTERNET.")
+          print("Generated Android manifest includes android.permission.INTERNET.")
+          PY
 
       - name: Configure Firebase Authentication Google dependencies
         run: |

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db, auth } from '../../firebase/config';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { UserAccount } from '../../types';
@@ -26,6 +27,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const functions = getFunctions();
 
   // Subscribe ke koleksi users di Firestore
   useEffect(() => {
@@ -148,14 +150,38 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     if (!confirm) return;
 
     try {
-      const userRef = doc(db, 'users', targetUser.id || targetUser.uid);
+      const targetUid = targetUser.id || targetUser.uid;
+      if (!targetUid) throw new Error('ID akun tidak ditemukan.');
+      const userRef = doc(db, 'users', targetUid);
       await updateDoc(userRef, {
         googleAuth: false,
         onboardingSelesai: false,
+        accountStatus: 'reset',
+        accountResetAt: Date.now(),
+        accountResetBy: auth.currentUser?.uid || currentUser.uid || '',
+        role: 'anggota',
+        isDewan: false,
+        dewanJabatan: '',
         updatedAt: Date.now()
       });
 
-      setActionNotice(`Akun ${targetUser.nama || targetUser.email} berhasil direset. Pengguna dapat login ulang.`);
+      // Lepaskan akun dari susunan 8 Roda Dewan bila sebelumnya dilantik.
+      const dewanConfigRef = doc(db, 'config', 'dewan_kepengurusan');
+      const dewanConfig = await getDoc(dewanConfigRef);
+      if (dewanConfig.exists()) {
+        const configData = dewanConfig.data();
+        const positions = Array.isArray(configData.positions) ? configData.positions : [];
+        const cleanedPositions = positions.map((position: any) =>
+          position.memberUid === targetUid
+            ? { ...position, memberUid: null, memberName: 'Belum ditetapkan' }
+            : position
+        );
+        if (positions.some((position: any) => position.memberUid === targetUid)) {
+          await updateDoc(dewanConfigRef, { positions: cleanedPositions, updatedAt: Date.now() });
+        }
+      }
+
+      setActionNotice(`Akun ${targetUser.nama || targetUser.email} berhasil direset. Akun sekarang dapat dihapus oleh Admin Utama.`);
       setTimeout(() => setActionNotice(null), 3500);
 
       // Jika mereset akun diri sendiri, berikan opsi login ulang langsung
@@ -166,6 +192,32 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       }
     } catch (err: any) {
       alert('Gagal mereset akun: ' + (err?.message || 'Periksa koneksi.'));
+    }
+  };
+
+  // Hapus permanen hanya untuk akun yang sudah direset. Cloud Function juga memblokir email agar tidak dapat mendaftar ulang.
+  const handleDeleteAccount = async (targetUser: any) => {
+    const targetUid = targetUser.id || targetUser.uid;
+    const label = targetUser.nama || targetUser.namaLengkap || targetUser.email || targetUid;
+    if (!isMainAdmin || !targetUid || targetUser.role === 'admin' || targetUser.email?.toLowerCase() === 'miralifa19@gmail.com') {
+      alert('Akun Admin Utama tidak dapat dihapus.');
+      return;
+    }
+    if (!targetUser.accountResetAt || targetUser.accountStatus !== 'reset' || targetUser.googleAuth === true) {
+      alert('Akun harus direset terlebih dahulu sebelum dapat dihapus.');
+      return;
+    }
+    if (!window.confirm(`HAPUS PERMANEN akun "${label}"?\n\nAkun Firebase dan profilnya akan dihapus. Email ini akan diblokir agar tidak dapat membuat akun Pettalopo baru untuk spam. Tindakan ini tidak dapat dibatalkan.`)) return;
+
+    setBusyUserId(targetUid);
+    try {
+      const deleteResetAccount = httpsCallable(functions, 'deleteResetAccount');
+      await deleteResetAccount({ targetUid });
+      setActionNotice(`Akun ${label} berhasil dihapus dan emailnya diblokir dari pendaftaran ulang.`);
+    } catch (err: any) {
+      alert('Gagal menghapus akun: ' + (err?.message || 'Pastikan Firebase Cloud Function deleteResetAccount sudah diterapkan.'));
+    } finally {
+      setBusyUserId(null);
     }
   };
 
@@ -410,6 +462,17 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                         {isMainAdmin && item.email?.toLowerCase() !== 'miralifa19@gmail.com' && (
                           <button
                             type="button"
+                            onClick={() => handleDeleteAccount(item)}
+                            disabled={busyUserId === (item.id || item.uid) || item.accountStatus !== 'reset' || !item.accountResetAt || item.googleAuth === true}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-[10px] font-bold border border-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={item.accountStatus === 'reset' ? 'Hapus akun yang sudah direset' : 'Reset akun terlebih dahulu'}
+                          >
+                            {busyUserId === (item.id || item.uid) ? 'Memproses…' : '🗑️ Hapus Akun'}
+                          </button>
+                        )}
+                        {isMainAdmin && item.email?.toLowerCase() !== 'miralifa19@gmail.com' && (
+                          <button
+                            type="button"
                             onClick={() => handleToggleBlacklist(item)}
                             disabled={busyUserId === (item.id || item.uid)}
                             className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold border disabled:opacity-50 ${item.blacklisted ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-red-700 text-white border-red-700'}`}
@@ -454,6 +517,16 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                         </div>
                       )}
 
+                      <div className="flex items-center justify-between gap-2 text-slate-600">
+                        <span>🆔 ID Akun:</span>
+                        <span className="font-mono text-[10px] text-slate-500 break-all text-right">{item.id || item.uid || '-'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>🧾 Status Akun:</span>
+                        <span className={item.accountStatus === 'reset' ? 'font-bold text-amber-700' : 'font-semibold text-slate-600'}>
+                          {item.accountStatus === 'reset' ? 'Sudah Direset · Siap Dihapus' : 'Aktif'}
+                        </span>
+                      </div>
                       {/* Status Login Google */}
                       <div className="flex items-center justify-between text-slate-600">
                         <span>🔐 Status Login Google:</span>

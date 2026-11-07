@@ -6,8 +6,9 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: Must pass firebaseConfig.firestoreDatabaseId as second argument
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Use the new project's default Firestore database; do not retain the old
+// AI Studio Starter Tier database ID.
+export const db = getFirestore(app);
 export const auth = Capacitor.isNativePlatform()
   ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
   : getAuth(app);

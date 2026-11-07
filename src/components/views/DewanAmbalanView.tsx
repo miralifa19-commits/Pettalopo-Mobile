@@ -602,38 +602,10 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
 
                     {(selectedMember.role === 'dewan' || Boolean(selectedMember.isDewan)) && (
                       <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-slate-600 shrink-0">Pilih Jabatan:</span>
-                        <select
-                          value={selectedMember.dewanJabatan || selectedMember.jabatan || 'Pradana Putra'}
-                          onChange={async (e) => {
-                            const newJabatan = e.target.value;
-                            const updated: UserAccount = {
-                              ...selectedMember,
-                              role: 'dewan',
-                              isDewan: true,
-                              dewanJabatan: newJabatan,
-                              jabatan: newJabatan
-                            };
-                            setSelectedMember(updated);
-                            await registerAmbalanUser(updated);
-                          }}
-                          className="text-[11px] font-bold px-2 py-1 rounded-lg bg-white border border-amber-300 text-slate-900 focus:outline-none flex-1"
-                        >
-                          {[
-                            'Pradana Putra',
-                            'Pradana Putri',
-                            'Pemangku Adat Putra',
-                            'Pemangku Adat Putri',
-                            'Kerani (Sekretaris)',
-                            'Hartaka (Bendahara)',
-                            'Sie Kegiatan & Operasional',
-                            'Sie Penelitian & Pengembangan',
-                            'Sie Hubungan Masyarakat',
-                            'Anggota Dewan Ambalan'
-                          ].map((title) => (
-                            <option key={title} value={title}>{title}</option>
-                          ))}
-                        </select>
+                        <span className="text-[10px] font-bold text-slate-600 shrink-0">Jabatan Dewan:</span>
+                        <strong className="text-[11px] text-slate-900 text-right">
+                          {selectedMember.dewanJabatan || selectedMember.jabatan || 'Dewan Ambalan'}
+                        </strong>
                       </div>
                     )}
                   </div>

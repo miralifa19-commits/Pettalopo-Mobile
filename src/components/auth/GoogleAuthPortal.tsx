@@ -102,20 +102,6 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     setError('');
     setLoading(true);
     try {
-      // Email yang pernah dihapus Admin Utama setelah reset tidak boleh membuat akun baru lagi.
-      if (user.email && user.email.toLowerCase() !== ADMIN_EMAIL) {
-        const blockedRef = doc(db, 'blocked_accounts', encodeURIComponent(user.email.trim().toLowerCase()));
-        const blockedSnap = await getDoc(blockedRef);
-        if (blockedSnap.exists()) {
-          if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut().catch(() => undefined);
-          await webSignOut(auth).catch(() => undefined);
-          setFirebaseUser(null);
-          setNeedsProfile(false);
-          setError('Akun ini telah dihapus dan tidak dapat didaftarkan kembali. Hubungi Admin Utama jika Anda merasa ini kekeliruan.');
-          return;
-        }
-      }
-
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : null;

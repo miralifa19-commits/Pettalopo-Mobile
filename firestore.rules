@@ -39,6 +39,7 @@ service cloud.firestore {
         && (!('role' in request.resource.data) || request.resource.data.role == 'anggota')
         && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
         && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
+        && (!('dewanJabatan' in request.resource.data) || request.resource.data.dewanJabatan == '')
         || isAdmin();
       allow update: if (isOwner(userId) && protectedProfileFieldsUnchanged())
         || isAdmin();

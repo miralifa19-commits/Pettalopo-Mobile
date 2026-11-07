@@ -45,8 +45,14 @@ export function ApkUpdater() {
         // Use Capacitor's native HTTP bridge. A WebView fetch to GitHub Release
         // assets can fail CORS after GitHub redirects the "latest" download URL.
         const response = await CapacitorHttp.get({
-          url: VERSION_URL,
-          headers: { Accept: 'application/json' },
+          // Cache-buster + no-cache headers ensure old APKs always read the
+          // current latest-release manifest rather than a cached v1.3 response.
+          url: `${VERSION_URL}?_=${Date.now()}`,
+          headers: {
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
+          },
           connectTimeout: 15000,
           readTimeout: 15000,
         });

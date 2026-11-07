@@ -159,6 +159,9 @@ export interface UserAccount {
   role: UserRole;
   isDewan?: boolean; // Tanda keanggotaan Dewan Ambalan
   blacklisted?: boolean; // Akses aplikasi diblokir oleh Admin Utama
+  accountStatus?: 'active' | 'reset'; // Status akun dalam siklus reset/hapus
+  accountResetAt?: number | null;
+  accountResetBy?: string | null;
   dewanJabatan?: string; // Jabatan spesifik Dewan Ambalan (e.g. Pradana, Kerani, Hartaka, Pemangku Adat)
   gudep: '10-035' | '10-036';
   satuan: 'Putra' | 'Putri';

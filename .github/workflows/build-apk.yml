@@ -47,9 +47,11 @@ jobs:
           if web.get("messagingSenderId") != android.get("project_info", {}).get("project_number"):
               raise SystemExit("Web and Android Firebase project numbers do not match.")
           source = Path("src/firebase/config.ts").read_text()
-          if "initializeApp(firebaseConfig)" not in source or "getFirestore(app)" not in source:
+          if "initializeApp(firebaseConfig)" not in source:
+              raise SystemExit("Firebase app must be initialized from firebase-applet-config.json.")
+          if not ("getFirestore(app)" in source or "initializeFirestore(app," in source):
               raise SystemExit("Firestore must use the Firebase app initialized from firebase-applet-config.json.")
-          if "firestoreDatabaseId" in source or "getFirestore(app," in source:
+          if "firestoreDatabaseId" in source or "getFirestore(app," in source or "initializeFirestore(app," not in source and "getFirestore(app)" not in source:
               raise SystemExit("A named Firestore database was configured; Pettalopo must use (default).")
           print("Firebase Web and Android both target pettalopo-6f6f4; Firestore uses (default).")
           PY

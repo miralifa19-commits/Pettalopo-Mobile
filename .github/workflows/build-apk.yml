@@ -40,6 +40,17 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Print release keystore SHA-1 and SHA-256
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Existing Pettalopo release signing secrets are missing."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/pettalopo-release.jks
+          keytool -list -v -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" | grep -E "SHA1:|SHA256:"
+          rm -f /tmp/pettalopo-release.jks
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:

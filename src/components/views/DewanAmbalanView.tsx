@@ -3,12 +3,6 @@ import { UserAccount, ProgramKerjaItem, ActiveKegiatanSession, AmbalanNotificati
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { ProgramKerjaView } from './ProgramKerjaView';
 import { CalendarDays, Dumbbell, ChevronRight, Crown, Users, Settings, RotateCcw, Check } from 'lucide-react';
-import { registerAmbalanUser } from '../../services/firebaseService';
-import { 
-  get8DewanPositions, 
-  save8DewanPositions, 
-  Dewan8Position 
-} from '../../data/dewanStructure';
 import { PersuratanAmbalanView } from './PersuratanAmbalanView';
 import { ComingSoonView } from './ComingSoonView';
 
@@ -65,46 +59,6 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   // Navigation State: 'menu' (tampilan utama 5 menu dewan) atau salah satu menu terpilih
   const [activeMenu, setActiveMenu] = useState<DewanMenuId | 'menu'>('menu');
   const [selectedProkerType, setSelectedProkerType] = useState<'Kegiatan' | 'Latihan Rutin' | null>(null);
-
-  // 8 Roda Dewan Kepengurusan State
-  const [dewan8List, setDewan8List] = useState<Dewan8Position[]>(() => get8DewanPositions());
-  const [showManageDewanModal, setShowManageDewanModal] = useState(false);
-  const [editingPosition, setEditingPosition] = useState<Dewan8Position | null>(null);
-
-  const handleUpdateDewanMember = async (positionId: string, memberUidOrName: string) => {
-    const selected = allMembers.find(m => (m.uid && m.uid === memberUidOrName) || m.nama === memberUidOrName);
-    const targetPos = dewan8List.find(p => p.id === positionId);
-    if (!targetPos) return;
-
-    const newName = selected ? selected.nama : memberUidOrName;
-    const newUid = selected?.uid;
-    const newSangga = selected?.sangga;
-
-    const updated = dewan8List.map(p => {
-      if (p.id === positionId) {
-        return {
-          ...p,
-          memberUid: newUid,
-          memberName: newName,
-          sangga: newSangga
-        };
-      }
-      return p;
-    });
-
-    setDewan8List(updated);
-    save8DewanPositions(updated);
-
-    if (selected) {
-      await registerAmbalanUser({
-        ...selected,
-        role: 'dewan',
-        isDewan: true,
-        dewanJabatan: targetPos.jabatan,
-        jabatan: targetPos.jabatan
-      });
-    }
-  };
 
   // ==========================================
   // 1. KELOLA PROGRAM KERJA STATE

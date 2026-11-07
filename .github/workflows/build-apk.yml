@@ -513,15 +513,31 @@ jobs:
           ]
           if not web_clients:
               raise SystemExit("Firebase config has no OAuth web client (client_type 3).")
-          values = Path("android/app/build/generated/res/google-services/release/values/values.xml")
-          if not values.is_file():
-              raise SystemExit("Google Services generated values.xml is missing.")
-          root = ET.parse(values).getroot()
-          generated = next(
-              (node.text for node in root.findall("string")
-               if node.attrib.get("name") == "default_web_client_id"),
-              None
-          )
+          build_dir = Path("android/app/build")
+          generated = None
+          candidates = []
+          for search_root in (build_dir / "generated", build_dir / "intermediates"):
+              if not search_root.exists():
+                  continue
+              for xml_path in search_root.rglob("values.xml"):
+                  candidates.append(str(xml_path.relative_to(Path.cwd())))
+                  try:
+                      root = ET.parse(xml_path).getroot()
+                  except (ET.ParseError, OSError):
+                      continue
+                  value = next(
+                      (node.text for node in root.iter("string")
+                       if node.attrib.get("name") == "default_web_client_id"),
+                      None
+                  )
+                  if value:
+                      generated = value
+                      break
+              if generated:
+                  break
+          if generated is None:
+              print("Google Services values XML candidates:", candidates[:20])
+              raise SystemExit("Generated default_web_client_id resource was not found.")
           if generated not in web_clients:
               raise SystemExit("Generated default_web_client_id does not match the configured OAuth web client.")
           print("Google Sign-In web client resource verified; client ID value is intentionally hidden.")

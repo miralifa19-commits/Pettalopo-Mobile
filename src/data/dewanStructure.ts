@@ -85,7 +85,7 @@ export function get8DewanPositions(): Dewan8Position[] {
 
 export function isUserInDewan(user?: UserAccount, positions?: Dewan8Position[]): boolean {
   if (!user) return false;
-  if (user.role === 'admin' || user.role === 'dewan' || user.isDewan === true) return true;
+  if (user.role === 'admin') return true;
   const list = positions || get8DewanPositions();
   return Boolean(user.uid && list.some((position) => position.memberUid === user.uid));
 }
@@ -94,5 +94,5 @@ export function getUserDewanJabatan(user?: UserAccount, positions?: Dewan8Positi
   if (!user) return null;
   const list = positions || get8DewanPositions();
   const found = user.uid ? list.find((position) => position.memberUid === user.uid) : undefined;
-  return found?.jabatan || (user.role === 'admin' ? 'Pembina / Admin' : user.dewanJabatan || null);
+  return found?.jabatan || (user.role === 'admin' ? 'Pembina / Admin' : null);
 }

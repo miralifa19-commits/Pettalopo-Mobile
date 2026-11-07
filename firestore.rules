@@ -55,6 +55,14 @@ service cloud.firestore {
       allow write: if configId == 'dewan_kepengurusan' ? isMainAdmin() : isAdmin();
     }
 
+    // Email yang sudah dihapus tetap diblokir dari pendaftaran ulang.
+    match /blocked_accounts/{accountId} {
+      allow get: if isMainAdmin() ||
+        (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow list: if isMainAdmin();
+      allow create, update, delete: if false;
+    }
+
     // Validation helper for Users
     function isValidUser(data) {
       return ((('nama' in data) && data.nama is string && data.nama.size() <= 150) ||

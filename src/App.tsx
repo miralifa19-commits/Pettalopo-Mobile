@@ -189,8 +189,12 @@ export default function App() {
 
 
 
-  // Persist and sync user
+  // Hanya akun Firebase yang benar-benar terautentikasi yang boleh disimpan dan disinkronkan.
   useEffect(() => {
+    if (!auth.currentUser || auth.currentUser.uid !== user.uid) {
+      localStorage.removeItem('ambalan_user_account_v3');
+      return;
+    }
     localStorage.setItem('ambalan_user_account_v3', JSON.stringify(user));
     syncUserProfile(user).catch(() => {});
   }, [user]);

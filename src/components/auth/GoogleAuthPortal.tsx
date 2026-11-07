@@ -10,7 +10,6 @@ import { LOGO_IMAGE_PATH } from '../../data/scoutData';
 type GooglePortalProps = {
   open: boolean;
   onComplete: (user: UserAccount) => void;
-  onSkip: () => void;
   onLogout?: () => void;
 };
 
@@ -67,7 +66,7 @@ export function computeScoutAge(birthDateStr: string) {
   };
 }
 
-export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete, onSkip, onLogout }) => {
+export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete, onLogout }) => {
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
   const [namaAsli, setNamaAsli] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
@@ -103,6 +102,20 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     setError('');
     setLoading(true);
     try {
+      // Email yang pernah dihapus Admin Utama setelah reset tidak boleh membuat akun baru lagi.
+      if (user.email && user.email.toLowerCase() !== ADMIN_EMAIL) {
+        const blockedRef = doc(db, 'blocked_accounts', encodeURIComponent(user.email.trim().toLowerCase()));
+        const blockedSnap = await getDoc(blockedRef);
+        if (blockedSnap.exists()) {
+          if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut().catch(() => undefined);
+          await webSignOut(auth).catch(() => undefined);
+          setFirebaseUser(null);
+          setNeedsProfile(false);
+          setError('Akun ini telah dihapus dan tidak dapat didaftarkan kembali. Hubungi Admin Utama jika Anda merasa ini kekeliruan.');
+          return;
+        }
+      }
+
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : null;
@@ -526,13 +539,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={onSkip}
-                className="w-full text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
-              >
-                Lanjutkan dengan mode pratinjau
-              </button>
+
             </div>
           )}
 

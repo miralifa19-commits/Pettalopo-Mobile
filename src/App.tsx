@@ -91,6 +91,11 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin';
+  const isDewanAccount = isAdmin || user.role === 'dewan' || user.isDewan === true;
+
+  useEffect(() => {
+    if (activeMenu === 'ruang_kerja_dewan' && !isDewanAccount) setActiveMenu('home');
+  }, [activeMenu, isDewanAccount]);
 
   // Logout akun: keluar dari Firebase native & web, hapus penyimpanan lokal, dan kembali ke halaman login
   const handleLogout = async () => {
@@ -166,18 +171,37 @@ export default function App() {
     localStorage.setItem('ambalan_program_kerja', JSON.stringify(programKerjaList));
   }, [programKerjaList]);
 
-  // Real-time Firestore sync for Members
+  // Real-time Firestore sync for Members and current user's appointed Dewan status
   useEffect(() => {
     const unsubscribe = subscribeToAllMembers((members) => {
       if (members && members.length > 0) {
         setAllMembers(members);
+        if (user.uid) {
+          const latestUser = members.find((member) => member.uid === user.uid);
+          if (latestUser) {
+            setUser((current) => {
+              if (
+                current.role === latestUser.role &&
+                Boolean(current.isDewan) === Boolean(latestUser.isDewan) &&
+                current.dewanJabatan === latestUser.dewanJabatan
+              ) return current;
+              return {
+                ...current,
+                role: latestUser.role,
+                isDewan: latestUser.isDewan === true,
+                dewanJabatan: latestUser.dewanJabatan || '',
+                jabatan: latestUser.jabatan || current.jabatan
+              };
+            });
+          }
+        }
       }
     });
 
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [user.uid]);
 
   // Real-time Firestore sync for Program Kerja
   useEffect(() => {
@@ -228,6 +252,9 @@ export default function App() {
             </button>
             {isQuickMenuOpen && (
               <div className="pettalopo-overflow-menu">
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
+                  <Settings size={17} /><span>Pengaturan</span>
+                </button>
                 {(user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com') && (
                   <button
                     type="button"
@@ -240,9 +267,6 @@ export default function App() {
                     <span>🛠️</span><span>Kelola Aplikasi</span>
                   </button>
                 )}
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
-                  <Settings size={17} /><span>Pengaturan</span>
-                </button>
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
                   <UserRound size={17} /><span>Akun</span>
                 </button>
@@ -280,7 +304,7 @@ export default function App() {
           {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
           {activeMenu === 'mabigus' && <ComingSoonView title="Mabigus" subtitle="Informasi Majelis Pembimbing Gugus Depan sedang disiapkan." icon="🛡️" onBackToDashboard={() => setActiveMenu('home')} />}
           {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
-          {activeMenu === 'ruang_kerja_dewan' && (
+          {activeMenu === 'ruang_kerja_dewan' && isDewanAccount && (
             <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
           )}
 
@@ -402,13 +426,15 @@ export default function App() {
         </main>
 
         {activeMenu !== 'chat' && (
-          <nav className="pettalopo-bottom-nav" aria-label="Navigasi utama">
+          <nav className={`pettalopo-bottom-nav ${isDewanAccount ? 'pettalopo-bottom-nav-dewan' : 'pettalopo-bottom-nav-four'}`} aria-label="Navigasi utama">
             <button type="button" onClick={() => setActiveMenu('home')} aria-current={activeMenu === 'home' ? 'page' : undefined}><Home size={19}/><span>Home</span></button>
             <button type="button" onClick={() => setActiveMenu('presensi')} aria-current={activeMenu === 'presensi' ? 'page' : undefined}><CalendarCheck size={19}/><span>Presensi</span></button>
-            <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
-              <Users size={19} />
-              <span>Ruang Kerja<br />Dewan Ambalan</span>
-            </button>
+            {isDewanAccount && (
+              <button type="button" className="pettalopo-nav-dewan" onClick={() => setActiveMenu('ruang_kerja_dewan')} aria-current={activeMenu === 'ruang_kerja_dewan' ? 'page' : undefined}>
+                <Users size={19} />
+                <span>Ruang Kerja<br />Dewan Ambalan</span>
+              </button>
+            )}
             <button type="button" onClick={() => setActiveMenu('chat')}><MessageCircle size={19}/><span>Ruang Ambalan</span></button>
             <button type="button" onClick={() => setActiveMenu('pengumuman')} aria-current={activeMenu === 'pengumuman' ? 'page' : undefined}><Megaphone size={19}/><span>Pengumuman</span></button>
           </nav>

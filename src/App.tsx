@@ -173,7 +173,10 @@ export default function App() {
     localStorage.setItem('ambalan_program_kerja', JSON.stringify(programKerjaList));
   }, [programKerjaList]);
 
-  useEffect(() => subscribeTo8DewanPositions(setDewanPositions), []);
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    return subscribeTo8DewanPositions(setDewanPositions);
+  }, [isGooglePortalOpen, user.uid]);
 
   // Real-time Firestore sync for Members and current user's appointed Dewan status
   useEffect(() => {

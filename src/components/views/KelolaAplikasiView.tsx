@@ -25,6 +25,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
   // Subscribe ke koleksi users di Firestore
   useEffect(() => {
@@ -153,6 +154,35 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       }
     } catch (err: any) {
       alert('Gagal mereset akun: ' + (err?.message || 'Periksa koneksi.'));
+    }
+  };
+
+  const handleToggleBlacklist = async (targetUser: any) => {
+    const targetUid = targetUser.id || targetUser.uid;
+    if (!isMainAdmin || !targetUid || targetUser.email?.toLowerCase() === 'miralifa19@gmail.com' || targetUid === auth.currentUser?.uid) {
+      alert('Akun Admin Utama tidak dapat dimasukkan ke daftar blacklist.');
+      return;
+    }
+    const nextBlacklisted = targetUser.blacklisted !== true;
+    const label = targetUser.nama || targetUser.namaLengkap || targetUser.email || 'pengguna';
+    if (!window.confirm(nextBlacklisted
+      ? `Masukkan akun "${label}" ke blacklist? Pengguna tidak dapat masuk ke Pettalopo Mobile sampai akses dipulihkan.`
+      : `Pulihkan akses akun "${label}"?`)) return;
+
+    setBusyUserId(targetUid);
+    try {
+      await updateDoc(doc(db, 'users', targetUid), {
+        blacklisted: nextBlacklisted,
+        blacklistUpdatedAt: Date.now(),
+        blacklistUpdatedBy: auth.currentUser?.uid || currentUser.uid || ''
+      });
+      setActionNotice(nextBlacklisted
+        ? `Akun ${label} masuk blacklist.`
+        : `Akses akun ${label} telah dipulihkan.`);
+    } catch (err: any) {
+      alert('Gagal memperbarui blacklist: ' + (err?.message || 'Periksa koneksi.'));
+    } finally {
+      setBusyUserId(null);
     }
   };
 
@@ -313,6 +343,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                             {item.email || '-'}
                           </p>
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            {item.blacklisted && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-700 text-white">⛔ Blacklist</span>}
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                               item.email?.toLowerCase() === 'miralifa19@gmail.com' || item.role === 'admin'
                                 ? 'bg-purple-100 text-purple-700'
@@ -334,15 +365,27 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Tombol Reset Akun Google */}
-                      <button
-                        type="button"
-                        onClick={() => handleResetGoogleAccount(item)}
-                        className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 active:bg-red-200 text-[#e51c24] text-[10px] font-bold border border-red-200 transition-colors shrink-0 cursor-pointer"
-                        title="Reset akun Google pengguna agar bisa login ulang"
-                      >
-                        🔄 Reset Akun
-                      </button>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleResetGoogleAccount(item)}
+                          disabled={busyUserId === (item.id || item.uid)}
+                          className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#e51c24] text-[10px] font-bold border border-red-200 disabled:opacity-50"
+                          title="Reset status login Google pengguna"
+                        >
+                          🔄 Reset Akun
+                        </button>
+                        {isMainAdmin && item.email?.toLowerCase() !== 'miralifa19@gmail.com' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBlacklist(item)}
+                            disabled={busyUserId === (item.id || item.uid)}
+                            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold border disabled:opacity-50 ${item.blacklisted ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-red-700 text-white border-red-700'}`}
+                          >
+                            {busyUserId === (item.id || item.uid) ? 'Memproses…' : item.blacklisted ? 'Pulihkan Akses' : 'Blacklist'}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Informasi Detail */}
@@ -401,7 +444,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
           <div className="rounded-2xl border border-red-100 bg-white p-4 space-y-2">
             <h3 className="text-sm font-black text-slate-900">Delapan Roda Kepengurusan</h3>
             <p className="text-[11px] leading-relaxed text-slate-500">
-              Tetapkan anggota terpilih untuk setiap posisi. Perubahan akan tersimpan di Firestore dan berlaku di seluruh perangkat. Satu anggota hanya dapat mengisi satu posisi.
+              Tetapkan anggota aktif usia 14–20 tahun untuk setiap posisi. Anggota Purna (21 tahun ke atas), akun blacklist, dan akun Admin tidak ditampilkan. Satu anggota hanya dapat mengisi satu posisi.
             </p>
           </div>
 
@@ -426,7 +469,16 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                 >
                   <option value="">— Belum ditetapkan —</option>
                   {userList
-                    .filter((item) => item.id && item.role !== 'admin' && item.email?.toLowerCase() !== 'miralifa19@gmail.com')
+                    .filter((item) => {
+                      if (!item.id || item.role === 'admin' || item.email?.toLowerCase() === 'miralifa19@gmail.com') return false;
+                      if (item.blacklisted === true) return false;
+                      if (item.status === 'purna_ambalan' || item.statusKeanggotaan === 'purna_ambalan') return false;
+                      const birth = item.tanggalLahir || item.ttl;
+                      const birthInfo = birth ? formatBirthInfo(birth) : null;
+                      const age = birthInfo ? Number.parseInt(birthInfo.ageText, 10) : Number(item.usiaTahun ?? item.usia);
+                      // Hanya calon berusia 14–20 tahun yang dapat dilantik sebagai Dewan Ambalan.
+                      return Number.isFinite(age) && age >= 14 && age < 21;
+                    })
                     .sort((a, b) => (a.nama || a.namaLengkap || '').localeCompare(b.nama || b.namaLengkap || '', 'id'))
                     .map((item) => {
                       const uid = item.id || item.uid;
@@ -480,11 +532,11 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
           <div className="divide-y divide-slate-100 text-xs">
             <div className="py-2.5 flex justify-between">
               <span className="text-slate-500 font-medium">Versi Aplikasi (Version Name)</span>
-              <span className="font-bold text-slate-900 font-mono">1.2</span>
+              <span className="font-bold text-slate-900 font-mono">1.4</span>
             </div>
             <div className="py-2.5 flex justify-between">
               <span className="text-slate-500 font-medium">Android Version Code</span>
-              <span className="font-bold text-slate-900 font-mono">12</span>
+              <span className="font-bold text-slate-900 font-mono">14</span>
             </div>
             <div className="py-2.5 flex justify-between">
               <span className="text-slate-500 font-medium">ID Paket (Package ID)</span>

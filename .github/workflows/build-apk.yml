@@ -31,6 +31,50 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Verify Firebase project and default Firestore database
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected_project = "pettalopo-6f6f4"
+          web = json.loads(Path("firebase-applet-config.json").read_text())
+          android = json.loads(Path("android/app/google-services.json").read_text())
+          if web.get("projectId") != expected_project:
+              raise SystemExit("Web Firebase config is not the Pettalopo production project.")
+          if android.get("project_info", {}).get("project_id") != expected_project:
+              raise SystemExit("Android Google Services config is not the Pettalopo production project.")
+          if web.get("messagingSenderId") != android.get("project_info", {}).get("project_number"):
+              raise SystemExit("Web and Android Firebase project numbers do not match.")
+          source = Path("src/firebase/config.ts").read_text()
+          if "initializeApp(firebaseConfig)" not in source or "getFirestore(app)" not in source:
+              raise SystemExit("Firestore must use the Firebase app initialized from firebase-applet-config.json.")
+          if "firestoreDatabaseId" in source or "getFirestore(app," in source:
+              raise SystemExit("A named Firestore database was configured; Pettalopo must use (default).")
+          print("Firebase Web and Android both target pettalopo-6f6f4; Firestore uses (default).")
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          # Split the legacy ID so this guard does not match its own source.
+          legacy_project = "optimum-" + "habitat-fbvhw"
+          scan_suffixes = {".ts", ".tsx", ".js", ".jsx", ".json", ".yml", ".yaml", ".gradle", ".properties", ".rules", ".xml"}
+          ignored = {".git", "node_modules", "dist", "build"}
+          matches = []
+          for path in Path(".").rglob("*"):
+              if not path.is_file() or path.suffix.lower() not in scan_suffixes:
+                  continue
+              if any(part in ignored for part in path.parts):
+                  continue
+              try:
+                  if legacy_project in path.read_text(encoding="utf-8"):
+                      matches.append(str(path))
+              except (UnicodeDecodeError, OSError):
+                  pass
+          if matches:
+              raise SystemExit("Legacy Firebase project ID remains in: " + ", ".join(matches))
+          print("No legacy Firebase project ID remains in tracked configuration/source files.")
+          PY
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 

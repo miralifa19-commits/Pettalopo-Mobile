@@ -53,8 +53,9 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/pettalopo-release.jks
-          keytool -list -v -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" | grep -E "SHA1:|SHA256:"
+          keytool -list -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null
           rm -f /tmp/pettalopo-release.jks
+          echo "Existing Pettalopo release signing key verified."
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -455,8 +456,8 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release.jks
-          echo "Release certificate fingerprints (register both in Firebase):"
-          keytool -list -v -keystore android/app/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" | grep -E "SHA1:|SHA256:"
+          keytool -list -keystore android/app/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "Existing release signing key loaded; certificate details are not printed."
           export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
           echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"

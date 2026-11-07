@@ -217,7 +217,10 @@ export default function App() {
         if (user.uid) {
           const latestUser = members.find((member) => member.uid === user.uid);
           if (latestUser) {
-            if (latestUser.blacklisted === true && user.email?.toLowerCase() !== 'miralifa19@gmail.com') {
+            if (
+              (latestUser.blacklisted === true || latestUser.accountStatus === 'reset') &&
+              user.email?.toLowerCase() !== 'miralifa19@gmail.com'
+            ) {
               void handleLogout();
               return;
             }

@@ -425,6 +425,9 @@ jobs:
           body: |
             ## Catatan Rilis v1.4
 
+            - Menu titik tiga dilengkapi Notifikasi, Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, Tentang Ambalan, Bagikan Aplikasi, Pengaturan, dan Akun Saya.
+            - Admin Utama memperoleh menu ke-10: Kelola Aplikasi, berisi Versi APK, Kelola User (reset dan blacklist), serta Kelola Dewan Ambalan.
+            - Pemilihan Dewan hanya menampilkan anggota aktif berusia 14–20 tahun; anggota Purna tidak ditampilkan.
             - Pengelolaan 8 Roda Dewan Ambalan dipusatkan di Kelola Aplikasi dan hanya dapat dilakukan Admin Utama.
             - Akses Ruang Kerja Dewan Ambalan dibatasi untuk anggota yang dilantik sebagai Dewan dan Admin Utama.
             - Akses grup disesuaikan: anggota usia 14–20 tahun ke grup Ambalan, usia 21 tahun ke atas ke grup Purna, sedangkan Dewan dapat mengakses grup Dewan dan Ambalan.

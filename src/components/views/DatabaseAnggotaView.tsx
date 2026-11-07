@@ -149,7 +149,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
       nama: formNama.trim(),
       role: finalRole,
       isDewan: preserveDewan,
-      dewanJabatan: finalDewanJabatan,
+      dewanJabatan: finalDewanJabatan || '',
       gudep: formGudep,
       satuan: formSatuan,
       sangga: formSangga,

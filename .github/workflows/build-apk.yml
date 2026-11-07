@@ -195,12 +195,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p android/app
-          if [ -n "${GOOGLE_SERVICES_JSON:-}" ]; then
-            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          if [ -s android/app/google-services.json ]; then
+            # Prefer the explicitly committed Android config for the new Firebase project.
+            :
           elif [ -s firebase/google-services.json ]; then
             cp firebase/google-services.json android/app/google-services.json
+          elif [ -n "${GOOGLE_SERVICES_JSON:-}" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           else
-            echo "::error::Firebase config missing. Provide GitHub secret GOOGLE_SERVICES_JSON or commit firebase/google-services.json."
+            echo "::error::Firebase config missing. Add android/app/google-services.json or firebase/google-services.json."
             exit 1
           fi
           python3 - <<'PY'

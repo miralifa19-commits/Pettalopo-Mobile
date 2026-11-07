@@ -73,7 +73,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       const nextIds = new Set(assignedIds);
 
       previousIds.forEach((uid) => {
-        if (!nextIds.has(uid)) {
+        if (!nextIds.has(uid) && userList.some((item) => item.id === uid || item.uid === uid)) {
           batch.update(doc(db, 'users', uid), { role: 'anggota', isDewan: false, dewanJabatan: '' });
         }
       });

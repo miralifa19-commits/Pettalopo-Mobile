@@ -310,12 +310,16 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                               item.email?.toLowerCase() === 'miralifa19@gmail.com' || item.role === 'admin'
                                 ? 'bg-purple-100 text-purple-700'
+                                : (item.role === 'dewan' || item.isDewan === true)
+                                ? 'bg-red-100 text-red-700'
                                 : (item.status === 'purna_ambalan' || item.statusKeanggotaan === 'purna_ambalan')
                                 ? 'bg-amber-100 text-amber-800'
                                 : 'bg-blue-100 text-blue-700'
                             }`}>
                               {item.email?.toLowerCase() === 'miralifa19@gmail.com'
                                 ? '🛡️ Admin Utama'
+                                : (item.role === 'dewan' || item.isDewan === true)
+                                ? `⚜️ ${item.dewanJabatan || 'Dewan Ambalan'}`
                                 : (item.status === 'purna_ambalan' || item.statusKeanggotaan === 'purna_ambalan')
                                 ? '🎖️ Purna Ambalan'
                                 : `⚜️ ${item.tingkat || 'Calon Penegak'}`}

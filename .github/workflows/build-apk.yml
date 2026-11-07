@@ -482,6 +482,43 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --stacktrace
 
+      - name: Verify Android Google Sign-In web client resource
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          android = next(
+              (client for client in config.get("client", [])
+               if client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+               == "id.sch.smpialwasi_maros.ambalan"),
+              None
+          )
+          if android is None:
+              raise SystemExit("Android Firebase client is missing.")
+          web_clients = [
+              item.get("client_id") for item in android.get("oauth_client", [])
+              if item.get("client_type") == 3 and item.get("client_id")
+          ]
+          if not web_clients:
+              raise SystemExit("Firebase config has no OAuth web client (client_type 3).")
+          values = Path("android/app/build/generated/res/google-services/release/values/values.xml")
+          if not values.is_file():
+              raise SystemExit("Google Services generated values.xml is missing.")
+          root = ET.parse(values).getroot()
+          generated = next(
+              (node.text for node in root.findall("string")
+               if node.attrib.get("name") == "default_web_client_id"),
+              None
+          )
+          if generated not in web_clients:
+              raise SystemExit("Generated default_web_client_id does not match the configured OAuth web client.")
+          print("Google Sign-In web client resource verified; client ID value is intentionally hidden.")
+          PY
+
       - name: Prepare signed APK and Auto Update manifest
         if: steps.signing.outcome == 'success'
         run: |

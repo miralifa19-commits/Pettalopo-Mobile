@@ -24,6 +24,7 @@ import {
   get8DewanPositions, 
   isUserInDewan, 
   getUserDewanJabatan, 
+  subscribeTo8DewanPositions,
   Dewan8Position 
 } from '../../data/dewanStructure';
 
@@ -61,9 +62,6 @@ interface MessageItem {
   associatedProker?: ProgramKerjaItem;
 }
 
-// 21 Tahun 1 Hari dalam hitungan hari (21 * 365.25 + 1 = 7671.25 hari)
-const DAYS_IN_21_YEARS_1_DAY = Math.floor(21 * 365.25 + 1);
-
 export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   currentUser,
   programKerjaList = [],
@@ -71,42 +69,29 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 }) => {
   // Screen: 'list' (Halaman luar 3 grup) vs 'room' (Halaman dalam grup terpilih)
   const [currentScreen, setCurrentScreen] = useState<'list' | 'room'>('list');
-  const [activeGroupId, setActiveGroupId] = useState<GroupId>('dewan_ambalan');
+  const [activeGroupId, setActiveGroupId] = useState<GroupId>('ambalan_aktif');
 
-  // Age simulation state (memungkinkan pengguna mencoba simulasi umur 17 tahun vs 21 tahun 1 hari)
-  const [simulatedAgeMode, setSimulatedAgeMode] = useState<'auto' | 'penegak_aktif' | 'purna_21'>(
-    (currentUser.usia ?? 17) >= 21 ? 'purna_21' : 'auto'
-  );
-
-  // Perhitungan umur dan status Purna Ambalan
+  // Umur dihitung dari tanggal lahir profil; anggota Dewan tetap memiliki akses Ambalan selama masa jabatan.
   const userAgeInfo = useMemo(() => {
-    if (simulatedAgeMode === 'purna_21') {
-      return {
-        isPurna: true,
-        ageYears: 21,
-        ageDays: DAYS_IN_21_YEARS_1_DAY,
-        displayLabel: '21 Tahun 1 Hari (Purna Ambalan)'
-      };
+    const birthValue = (currentUser as any).tanggalLahir || currentUser.ttl;
+    let years = currentUser.usia ?? (currentUser as any).usiaTahun ?? 17;
+    if (birthValue) {
+      const birth = new Date(`${birthValue}T00:00:00`);
+      if (!Number.isNaN(birth.getTime())) {
+        const today = new Date();
+        years = today.getFullYear() - birth.getFullYear();
+        const beforeBirthday = today.getMonth() < birth.getMonth() ||
+          (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
+        if (beforeBirthday) years--;
+      }
     }
-    if (simulatedAgeMode === 'penegak_aktif') {
-      return {
-        isPurna: false,
-        ageYears: 17,
-        ageDays: Math.floor(17 * 365.25),
-        displayLabel: '17 Tahun (Penegak Aktif)'
-      };
-    }
-
-    // Default based on user account
-    const usia = currentUser.usia ?? 17;
-    const isPurna = usia >= 21;
+    const isPurna = years >= 21;
     return {
       isPurna,
-      ageYears: usia,
-      ageDays: Math.floor(usia * 365.25),
-      displayLabel: isPurna ? '21 Tahun 1 Hari (Purna Ambalan)' : `${usia} Tahun (Penegak Aktif)`
+      ageYears: years,
+      displayLabel: isPurna ? '21 tahun ke atas (Purna Ambalan)' : `${years} tahun (Anggota Ambalan)`
     };
-  }, [simulatedAgeMode, currentUser.usia]);
+  }, [currentUser.usia, currentUser.ttl, (currentUser as any).tanggalLahir, (currentUser as any).usiaTahun]);
 
   // Cari kegiatan 1 pekan ke depan dari program kerja
   const upcomingOneWeekProker = useMemo(() => {
@@ -235,22 +220,12 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 
   // 8 Roda Dewan Ambalan Otomatis State
   const [dewan8Positions, setDewan8Positions] = useState<Dewan8Position[]>(() => get8DewanPositions());
-  const [dewanSimulationMode, setDewanSimulationMode] = useState<boolean>(false);
   const [dewanBlockedModal, setDewanBlockedModal] = useState<boolean>(false);
 
-  useEffect(() => {
-    setDewan8Positions(get8DewanPositions());
-  }, [currentScreen]);
+  useEffect(() => subscribeTo8DewanPositions(setDewan8Positions), []);
 
-  const userDewanJabatan = useMemo(() => {
-    if (dewanSimulationMode) return 'Pradana Putra (Simulasi)';
-    return getUserDewanJabatan(currentUser, dewan8Positions);
-  }, [currentUser, dewan8Positions, dewanSimulationMode]);
-
-  const isCurrentUserDewan = useMemo(() => {
-    if (dewanSimulationMode) return true;
-    return isUserInDewan(currentUser, dewan8Positions);
-  }, [currentUser, dewan8Positions, dewanSimulationMode]);
+  const userDewanJabatan = useMemo(() => getUserDewanJabatan(currentUser, dewan8Positions), [currentUser, dewan8Positions]);
+  const isCurrentUserDewan = useMemo(() => isUserInDewan(currentUser, dewan8Positions), [currentUser, dewan8Positions]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -264,7 +239,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   // Handler memilih grup
   const handleSelectGroup = (groupId: GroupId) => {
     // Cek proteksi usia: Jika anggota berumur 21 tahun 1 hari dan mencoba masuk ke grup ambalan aktif
-    if (groupId === 'ambalan_aktif' && userAgeInfo.isPurna) {
+    if (groupId === 'ambalan_aktif' && userAgeInfo.isPurna && !isCurrentUserDewan) {
       setPurnaBlockedModal(true);
       return;
     }
@@ -402,7 +377,12 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 
           {/* List Grup Ambalan Tanpa Banner (Dewan Ambalan, Ambalan La Surullah Petta Lopo, Purna Ambalan) */}
           <div className="p-4 space-y-2.5 flex-1 overflow-y-auto">
-            {GROUPS.map((grp) => {
+            {(isCurrentUserDewan
+              ? GROUPS.filter((group) => group.id !== 'purna_ambalan')
+              : userAgeInfo.isPurna
+              ? GROUPS.filter((group) => group.id === 'purna_ambalan')
+              : GROUPS.filter((group) => group.id === 'ambalan_aktif')
+            ).map((grp) => {
               return (
                 <div
                   key={grp.id}
@@ -732,22 +712,10 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
             </div>
 
             <p className="text-[10px] text-slate-500 text-center leading-normal">
-              Admin ambalan dapat mengganti dan memindahkan 8 roda kepengurusan melalui <strong>Menu Dewan Ambalan</strong>.
+              Hak akses Dewan diberikan dan dialihkan oleh Admin Utama melalui menu <strong>Kelola Aplikasi → Kelola Dewan</strong>.
             </p>
 
             <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setDewanSimulationMode(true);
-                  setDewanBlockedModal(false);
-                  setActiveGroupId('dewan_ambalan');
-                  setCurrentScreen('room');
-                }}
-                className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all cursor-pointer"
-              >
-                Coba Masuk (Mode Simulasi Dewan)
-              </button>
               <button
                 type="button"
                 onClick={() => setDewanBlockedModal(false)}

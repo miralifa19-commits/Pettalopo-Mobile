@@ -109,7 +109,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       // explicitly from the server. Retry transient Android WebView network
       // failures; never treat a transport failure as a missing user document.
       await user.getIdToken(true);
-      let snap;
+      let snap: Awaited<ReturnType<typeof getDocFromServer>> | null = null;
       let lastReadError: any;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {

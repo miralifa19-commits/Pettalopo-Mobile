@@ -15,6 +15,7 @@ on:
       - fix/firestore-login-timeout-logging
       - fix/google-auth-release-1.4
       - fix/firestore-diagnostics-rest-sdk
+      - release/admin-open-access-1.10
 
 permissions:
   contents: write
@@ -606,7 +607,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": "Perbaikan login Google."
+              "catatan": "Mode akses terbuka sementara tanpa halaman Login Google; akses Admin dan Ruang Kerja Dewan tersedia untuk semua pengguna."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
@@ -620,10 +621,12 @@ jobs:
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
           generate_release_notes: false
           body: |
-            Perbaikan login Google pada APK Android release.
+            Mode akses terbuka sementara pada APK Android release.
 
-            - Memastikan plugin Firebase Authentication terintegrasi pada Android.
-            - Memastikan konfigurasi Firebase dan Google Services tersedia saat build.
+            - Menghapus halaman Login Google dari alur pembukaan aplikasi.
+            - Membuat sesi Firebase Anonymous otomatis agar Firestore tetap dapat diakses.
+            - Membuka fitur Admin, Kelola Aplikasi, dan Ruang Kerja Dewan untuk semua pengguna.
+            - Menggunakan versi 1.10 (versionCode 20).
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json

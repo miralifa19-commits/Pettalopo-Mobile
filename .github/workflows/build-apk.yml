@@ -76,7 +76,21 @@ jobs:
         run: bun run build
 
       - name: Create Android Project
-        run: npx cap add android
+        run: |
+          set -euo pipefail
+          # Keep the user-provided Firebase config while replacing the
+          # intentionally partial android/app folder with a fresh Capacitor project.
+          if [ -s android/app/google-services.json ]; then
+            cp android/app/google-services.json /tmp/pettalopo-google-services.json
+          elif [ -s firebase/google-services.json ]; then
+            cp firebase/google-services.json /tmp/pettalopo-google-services.json
+          fi
+          rm -rf android
+          npx cap add android
+          if [ -s /tmp/pettalopo-google-services.json ]; then
+            mkdir -p android/app
+            cp /tmp/pettalopo-google-services.json android/app/google-services.json
+          fi
 
       - name: Configure Firebase Authentication Google dependencies
         run: |

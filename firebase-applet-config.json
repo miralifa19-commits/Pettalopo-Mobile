@@ -1,12 +1,10 @@
 {
-  "projectId": "optimum-habitat-fbvhw",
-  "appId": "1:558686818453:web:0ea8ff034a28ddeea50b9c",
-  "apiKey": "AIzaSyCXJwKoEg66icOMab5K3brkzRcFfopzzzs",
-  "authDomain": "optimum-habitat-fbvhw.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-pettalopomobile-0cef35c7-5de9-4cbb-8225-bb32f7721f69",
-  "storageBucket": "optimum-habitat-fbvhw.firebasestorage.app",
-  "messagingSenderId": "558686818453",
-  "measurementId": "",
-  "oAuthClientId": "558686818453-41orhrkkgk8gm0dmqu1hq1gu6siq9t88.apps.googleusercontent.com",
+  "apiKey": "AIzaSyDqUwx9lc_IE9rr8oe8oQdJQQ-EyY4TW2g",
+  "authDomain": "pettalopo-6f6f4.firebaseapp.com",
+  "projectId": "pettalopo-6f6f4",
+  "storageBucket": "pettalopo-6f6f4.firebasestorage.app",
+  "messagingSenderId": "392815401237",
+  "appId": "1:392815401237:web:4409ef8e162921c29a711c",
+  "oAuthClientId": "392815401237-vamq2fm8khbpu42dlm08fg4c5obstoa3.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

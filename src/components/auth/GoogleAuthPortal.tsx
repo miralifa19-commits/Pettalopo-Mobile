@@ -377,7 +377,14 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }, { merge: true });
       onComplete(profile as UserAccount);
     } catch (e: any) {
-      setError(e?.message || 'Gagal menyimpan profil akun.');
+      const code = e?.code || 'unknown';
+      console.error('Google onboarding Firestore write failed:', {
+        code,
+        message: e?.message,
+        projectId: auth.app.options.projectId,
+        userId: firebaseUser?.uid
+      });
+      setError('Firestore ' + code + ': ' + (e?.message || 'Gagal menyimpan profil akun.'));
     } finally {
       setLoading(false);
     }

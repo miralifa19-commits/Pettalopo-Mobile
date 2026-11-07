@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, getDoc, updateDoc, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, updateDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { UserAccount } from '../../types';
@@ -205,25 +205,13 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       alert('Akun harus direset terlebih dahulu sebelum dapat dihapus.');
       return;
     }
-    if (!window.confirm(`HAPUS AKUN DARI PETTALOPO "${label}"?\n\nProfil akun di Pettalopo akan dihapus. Email ini akan diblokir agar tidak dapat membuat akun Pettalopo baru untuk spam. Tindakan ini tidak dapat dibatalkan.`)) return;
+    if (!window.confirm(`HAPUS AKUN DARI PETTALOPO "${label}"?\n\nProfil akun Pettalopo akan dihapus dari daftar pengguna aktif. Email tidak akan diblokir dan dapat digunakan kembali untuk mendaftar. Tindakan ini tidak dapat dibatalkan.`)) return;
 
     setBusyUserId(targetUid);
     try {
-      const email = String(targetUser.email || '').trim().toLowerCase();
-      if (!email) throw new Error('Email akun tidak tersedia. Akun tidak dapat dihapus dengan aman.');
-
-      // Simpan blokir permanen berdasarkan email terlebih dahulu agar UID baru dari Google tidak dapat mendaftar ulang.
-      await setDoc(doc(db, 'blocked_accounts', encodeURIComponent(email)), {
-        email,
-        formerUid: targetUid,
-        reason: 'deleted_after_admin_reset',
-        blockedAt: Date.now(),
-        blockedBy: auth.currentUser?.uid || currentUser.uid || ''
-      });
-
-      // Hapus profil dari daftar pengguna Pettalopo. Catatan blokir tetap disimpan.
+      // Hapus profil dari koleksi pengguna. Tidak membuat daftar blokir atau menyimpan email terhapus.
       await deleteDoc(doc(db, 'users', targetUid));
-      setActionNotice(`Akun ${label} dihapus dari Pettalopo dan emailnya diblokir dari pendaftaran ulang.`);
+      setActionNotice(`Akun ${label} berhasil dihapus dari daftar pengguna Pettalopo.`);
     } catch (err: any) {
       alert('Gagal menghapus akun: ' + (err?.message || 'Periksa Firestore Rules dan koneksi Firebase.'));
     } finally {

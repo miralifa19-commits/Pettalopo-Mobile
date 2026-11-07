@@ -57,11 +57,22 @@ service cloud.firestore {
               (('namaLengkap' in data) && data.namaLengkap is string && data.namaLengkap.size() <= 150));
     }
 
-    // Users collection (Members & Admin can create/view scout profiles)
+    // Users collection. Only Admin may appoint/remove Dewan status.
     match /users/{userId} {
       allow read: if true;
-      allow create, update: if isValidId(userId) && isValidUser(incoming());
-      allow delete: if isValidId(userId);
+      allow create: if isValidId(userId) && isValidUser(incoming()) && (
+        isAdmin() ||
+        (isSignedIn() && request.auth.uid == userId &&
+          (!('role' in incoming()) || incoming().role == 'anggota') &&
+          (!('isDewan' in incoming()) || incoming().isDewan == false) &&
+          (!('dewanJabatan' in incoming()) || incoming().dewanJabatan == ''))
+      );
+      allow update: if isValidId(userId) && isValidUser(incoming()) && (
+        isAdmin() ||
+        (isSignedIn() && request.auth.uid == userId &&
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan']))
+      );
+      allow delete: if isAdmin();
     }
 
     // Validation helper for Attendance Sessions

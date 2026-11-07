@@ -63,17 +63,17 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Dependencies
+        run: bun install
 
       - name: TypeScript check
-        run: npm run lint
+        run: bun run lint
 
       - name: Test PDF export with short and multi-page letters
-        run: npm run test:pdf
+        run: bun run test:pdf
 
       - name: Build Web Application
-        run: npm run build
+        run: bun run build
 
       - name: Create Android Project
         run: npx cap add android

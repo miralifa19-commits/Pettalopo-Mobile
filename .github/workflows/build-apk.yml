@@ -419,6 +419,8 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release.jks
+          echo "Release certificate fingerprints (register both in Firebase):"
+          keytool -list -v -keystore android/app/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" | grep -E "SHA1:|SHA256:"
           export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
           echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
@@ -465,7 +467,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": f"Pembaruan Pettalopo Mobile versi {version}."
+              "catatan": "Perbaikan login Google."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))

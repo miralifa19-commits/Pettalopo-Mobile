@@ -30,6 +30,7 @@ import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
+import { get8DewanPositions, isUserInDewan, subscribeTo8DewanPositions, Dewan8Position } from './data/dewanStructure';
 import { 
   subscribeToProgramKerja, 
   syncUserProfile, 
@@ -50,6 +51,7 @@ export default function App() {
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
+  const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(() => get8DewanPositions());
 
   // User Account State with Role (Admin vs Anggota)
   const [user, setUser] = useState<UserAccount>(() => {
@@ -91,7 +93,7 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin';
-  const isDewanAccount = isAdmin || user.role === 'dewan' || user.isDewan === true;
+  const isDewanAccount = isUserInDewan(user, dewanPositions);
 
   useEffect(() => {
     if (activeMenu === 'ruang_kerja_dewan' && !isDewanAccount) setActiveMenu('home');
@@ -170,6 +172,8 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('ambalan_program_kerja', JSON.stringify(programKerjaList));
   }, [programKerjaList]);
+
+  useEffect(() => subscribeTo8DewanPositions(setDewanPositions), []);
 
   // Real-time Firestore sync for Members and current user's appointed Dewan status
   useEffect(() => {

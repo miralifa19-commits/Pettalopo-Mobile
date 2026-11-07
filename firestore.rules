@@ -9,8 +9,11 @@ service cloud.firestore {
     // Add other administrators through a server-controlled custom claim in a later step.
     function isAdmin() {
       return signedIn()
-        && request.auth.token.email == 'miralifa19@gmail.com'
-        && request.auth.token.email_verified == true;
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'miralifa19@gmail.com',
+          'amiruddin@smpialwasi-maros.sch.id'
+        ];
     }
 
     function isOwner(userId) {

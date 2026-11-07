@@ -227,6 +227,13 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   const userDewanJabatan = useMemo(() => getUserDewanJabatan(currentUser, dewan8Positions), [currentUser, dewan8Positions]);
   const isCurrentUserDewan = useMemo(() => isUserInDewan(currentUser, dewan8Positions), [currentUser, dewan8Positions]);
 
+  useEffect(() => {
+    if (activeGroupId === 'dewan_ambalan' && !isCurrentUserDewan) {
+      setCurrentScreen('list');
+      setActiveGroupId(userAgeInfo.isPurna ? 'purna_ambalan' : 'ambalan_aktif');
+    }
+  }, [activeGroupId, isCurrentUserDewan, userAgeInfo.isPurna]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

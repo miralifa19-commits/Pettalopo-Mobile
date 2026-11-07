@@ -27,19 +27,6 @@ import {
 } from '../../services/firebaseService';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 
-const DEWAN_JABATAN_OPTIONS = [
-  'Pradana Putra',
-  'Pradana Putri',
-  'Pemangku Adat Putra',
-  'Pemangku Adat Putri',
-  'Kerani (Sekretaris)',
-  'Hartaka (Bendahara)',
-  'Sie Kegiatan & Operasional',
-  'Sie Penelitian & Pengembangan',
-  'Sie Hubungan Masyarakat',
-  'Anggota Dewan Ambalan'
-];
-
 interface DatabaseAnggotaViewProps {
   allMembers: UserAccount[];
   currentUser: UserAccount;
@@ -70,9 +57,6 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
   const [formNama, setFormNama] = useState('');
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
-  const [formRole, setFormRole] = useState<UserRole>('anggota');
-  const [formIsDewan, setFormIsDewan] = useState(false);
-  const [formDewanJabatan, setFormDewanJabatan] = useState('Pradana Putra');
   const [formGudep, setFormGudep] = useState<'10-035' | '10-036'>('10-035');
   const [formSatuan, setFormSatuan] = useState<'Putra' | 'Putri'>('Putra');
   const [formSangga, setFormSangga] = useState<'Perintis' | 'Penegas' | 'Pendobrak' | 'Pencoba' | 'Pelaksana'>('Perintis');
@@ -112,42 +96,12 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     setTimeout(() => setCopiedId(null), 1800);
   };
 
-  // Quick toggle Dewan Ambalan status
-  const handleQuickToggleDewan = async (targetUser: UserAccount) => {
-    const isDewanNow = targetUser.role === 'dewan' || Boolean(targetUser.isDewan);
-    if (isDewanNow) {
-      const confirmRemove = window.confirm(`Lepaskan Kak ${targetUser.nama} dari status Dewan Ambalan?`);
-      if (!confirmRemove) return;
-      const updated: UserAccount = {
-        ...targetUser,
-        role: targetUser.role === 'admin' ? 'admin' : 'anggota',
-        isDewan: false,
-        dewanJabatan: undefined,
-        jabatan: 'Anggota Sangga'
-      };
-      await registerAmbalanUser(updated);
-    } else {
-      const defaultPos = targetUser.satuan === 'Putri' ? 'Pradana Putri' : 'Pradana Putra';
-      const updated: UserAccount = {
-        ...targetUser,
-        role: 'dewan',
-        isDewan: true,
-        dewanJabatan: defaultPos,
-        jabatan: defaultPos
-      };
-      await registerAmbalanUser(updated);
-    }
-  };
-
   // Open Edit/Add Modal
   const handleOpenAddModal = () => {
     setEditingUser(null);
     setFormNama('');
     setFormUsername('');
     setFormPassword('ambalan10035');
-    setFormRole('anggota');
-    setFormIsDewan(false);
-    setFormDewanJabatan('Pradana Putra');
     setFormGudep('10-035');
     setFormSatuan('Putra');
     setFormSangga('Perintis');
@@ -163,10 +117,6 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     setFormNama(user.nama);
     setFormUsername(user.username);
     setFormPassword(user.password || 'ambalan10035');
-    setFormRole(user.role);
-    const isUserDewan = user.role === 'dewan' || Boolean(user.isDewan);
-    setFormIsDewan(isUserDewan);
-    setFormDewanJabatan(user.dewanJabatan || user.jabatan || (user.satuan === 'Putri' ? 'Pradana Putri' : 'Pradana Putra'));
     setFormGudep(user.gudep);
     setFormSatuan(user.satuan);
     setFormSangga(user.sangga);
@@ -185,10 +135,12 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
     const cleanUsername = formUsername.trim().toLowerCase().replace(/\s+/g, '_');
     const uid = editingUser?.uid || `user_${cleanUsername}_${Date.now()}`;
 
-    const isDewan = formIsDewan;
-    const finalRole: UserRole = formRole === 'admin' ? 'admin' : (isDewan ? 'dewan' : 'anggota');
-    const finalDewanJabatan = isDewan ? formDewanJabatan : undefined;
-    const finalJabatan = isDewan ? formDewanJabatan : (formJabatan.trim() || 'Anggota Sangga');
+    // Database anggota tidak mengangkat Dewan. Status dan jabatan Dewan hanya dikelola dari Kelola Aplikasi.
+    const preserveAdmin = editingUser?.role === 'admin';
+    const preserveDewan = editingUser?.role === 'dewan' || Boolean(editingUser?.isDewan);
+    const finalRole: UserRole = preserveAdmin ? 'admin' : preserveDewan ? 'dewan' : 'anggota';
+    const finalDewanJabatan = preserveDewan ? editingUser?.dewanJabatan : undefined;
+    const finalJabatan = preserveDewan ? (editingUser?.jabatan || finalDewanJabatan || 'Dewan Ambalan') : (formJabatan.trim() || 'Anggota Sangga');
 
     const updatedAccount: UserAccount = {
       uid,
@@ -196,7 +148,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
       password: formPassword.trim() || 'ambalan10035',
       nama: formNama.trim(),
       role: finalRole,
-      isDewan: isDewan,
+      isDewan: preserveDewan,
       dewanJabatan: finalDewanJabatan,
       gudep: formGudep,
       satuan: formSatuan,
@@ -492,20 +444,6 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
 
                   {/* Action buttons: Jadikan Dewan, Edit, Switch Account, Delete */}
                   <div className="flex items-center gap-1.5">
-                    {member.role !== 'admin' && (
-                      <button
-                        onClick={() => handleQuickToggleDewan(member)}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
-                          isDewan
-                            ? 'bg-red-50 text-[#e51c24] border-red-200 hover:bg-red-100'
-                            : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                        }`}
-                        title={isDewan ? 'Lepaskan dari Dewan Ambalan' : 'Jadikan Dewan Ambalan'}
-                      >
-                        {isDewan ? 'Cabut Dewan' : '+ Jadi Dewan'}
-                      </button>
-                    )}
-
                     {onSelectUserForTesting && (
                       <button
                         onClick={() => onSelectUserForTesting(member)}
@@ -690,40 +628,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                 </div>
               </div>
 
-              {/* PENGATURAN STATUS DEWAN AMBALAN */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="block font-bold text-slate-800 text-xs">Jadikan Dewan Ambalan</span>
-                    <span className="text-[10px] text-slate-500">Mendapatkan hak akses penuh setara Admin</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formIsDewan}
-                    onChange={(e) => setFormIsDewan(e.target.checked)}
-                    className="w-4 h-4 text-[#e51c24] rounded accent-[#e51c24] cursor-pointer"
-                  />
-                </div>
-
-                {formIsDewan && (
-                  <div className="pt-2 border-t border-slate-200">
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Jabatan di Dewan Ambalan:
-                    </label>
-                    <select
-                      value={formDewanJabatan}
-                      onChange={(e) => setFormDewanJabatan(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800"
-                    >
-                      {DEWAN_JABATAN_OPTIONS.map((pos) => (
-                        <option key={pos} value={pos}>{pos}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
                     Jabatan Biasa
@@ -737,19 +642,7 @@ export const DatabaseAnggotaView: React.FC<DatabaseAnggotaViewProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Role Akun
-                  </label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value as UserRole)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
-                  >
-                    <option value="anggota">Anggota Biasa</option>
-                    <option value="admin">Pembina / Admin Utama</option>
-                  </select>
-                </div>
+
               </div>
 
               <div>

@@ -207,7 +207,7 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, isGooglePortalOpen]);
 
   // Shared program data is read only after Firebase authentication.
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, isGooglePortalOpen]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">

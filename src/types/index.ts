@@ -23,7 +23,11 @@ export type ActiveMenu =
   | 'latihan_rutin'
   | 'akun'
   | 'database'
-  | 'kelola_aplikasi';
+  | 'kelola_aplikasi'
+  | 'tersimpan'
+  | 'panduan_aplikasi'
+  | 'pusat_bantuan'
+  | 'tentang_ambalan';
 
 export interface KegiatanEvaluation {
   id: string;
@@ -154,6 +158,7 @@ export interface UserAccount {
   nama: string;
   role: UserRole;
   isDewan?: boolean; // Tanda keanggotaan Dewan Ambalan
+  blacklisted?: boolean; // Akses aplikasi diblokir oleh Admin Utama
   dewanJabatan?: string; // Jabatan spesifik Dewan Ambalan (e.g. Pradana, Kerani, Hartaka, Pemangku Adat)
   gudep: '10-035' | '10-036';
   satuan: 'Putra' | 'Putri';

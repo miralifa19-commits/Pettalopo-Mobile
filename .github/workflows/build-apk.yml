@@ -416,7 +416,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": "Pembaruan v1.4\\n\\n- Login Google diwajibkan; jalur masuk pratinjau tanpa autentikasi dihapus.\\n- Admin Utama dapat mengelola 8 posisi Dewan Ambalan dan hak akses Ruang Kerja Dewan.\\n- Kelola Akun menyediakan Reset Akun dan Hapus Akun; penghapusan menghapus profil aktif dari Firestore tanpa membuat blokir email.\\n- Menu titik tiga menambahkan pintasan Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, dan Tentang Ambalan.\\n- Penyempurnaan navigasi, sinkronisasi profil, dan pengelolaan keanggotaan."
+              "catatan": "Pembaruan v1.4\n\n- Login Google diwajibkan; jalur masuk pratinjau tanpa autentikasi dihapus.\n- Admin Utama dapat mengelola 8 posisi Dewan Ambalan dan hak akses Ruang Kerja Dewan.\n- Kelola Akun menyediakan Reset Akun dan Hapus Akun; penghapusan menghapus profil aktif dari Firestore tanpa membuat blokir email.\n- Menu titik tiga menambahkan pintasan Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, dan Tentang Ambalan; beberapa konten masih disempurnakan.\n- Penyempurnaan navigasi, sinkronisasi profil, dan pengelolaan keanggotaan."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))

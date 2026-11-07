@@ -193,7 +193,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     }
   };
 
-  // Hapus profil Pettalopo hanya untuk akun yang sudah direset; email tetap diblokir agar tidak dapat mendaftar ulang.
+  // Hapus profil Pettalopo hanya untuk akun yang sudah direset; email tidak diblokir dan dapat digunakan kembali.
   const handleDeleteAccount = async (targetUser: any) => {
     const targetUid = targetUser.id || targetUser.uid;
     const label = targetUser.nama || targetUser.namaLengkap || targetUser.email || targetUid;

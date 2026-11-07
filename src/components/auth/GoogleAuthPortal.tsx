@@ -107,6 +107,18 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : null;
 
+      // Blacklist hanya berlaku untuk akun anggota; Admin Utama tetap dilindungi.
+      if (user.email?.toLowerCase() !== ADMIN_EMAIL && data?.blacklisted === true) {
+        if (Capacitor.isNativePlatform()) {
+          await FirebaseAuthentication.signOut().catch(() => undefined);
+        }
+        await webSignOut(auth).catch(() => undefined);
+        setFirebaseUser(null);
+        setNeedsProfile(false);
+        setError('Akun ini masuk daftar blacklist. Hubungi Admin Utama Ambalan untuk meminta pemulihan akses.');
+        return;
+      }
+
       // Akun Admin Utama
       if (user.email?.toLowerCase() === ADMIN_EMAIL) {
         const admin: UserAccount = {

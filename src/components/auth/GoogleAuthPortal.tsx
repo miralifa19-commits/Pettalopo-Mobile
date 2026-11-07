@@ -105,10 +105,40 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     try {
       const ref = doc(db, 'users', user.uid);
 
-      // Refresh the Google credential before accessing Firestore, then read
-      // explicitly from the server. Retry transient Android WebView network
-      // failures; never treat a transport failure as a missing user document.
+      // Refresh the Google credential before any Firestore operation.
       await user.getIdToken(true);
+
+      // The primary administrator is trusted by the verified Google email.
+      // Provision the admin profile before attempting a read: first login must
+      // not be mistaken for an ordinary member onboarding flow.
+      if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
+        const admin: UserAccount = {
+          uid: user.uid,
+          username: user.email.split('@')[0],
+          email: user.email,
+          nama: user.displayName || 'Admin Utama',
+          role: 'admin',
+          gudep: '10-035',
+          satuan: 'Putra',
+          tingkat: 'Penegak Garuda',
+          sangga: 'Perintis',
+          jabatan: 'Admin Utama Pettalopo',
+          nomorKta: '',
+          foto: user.photoURL || '',
+          createdAt: new Date().toISOString().slice(0, 10)
+        };
+        await setDoc(ref, {
+          ...admin,
+          googleAuth: true,
+          onboardingSelesai: true,
+          statusKeanggotaan: 'admin',
+          updatedAt: Date.now()
+        }, { merge: true });
+        onComplete(admin);
+        return;
+      }
+
+      // Members read only their own private profile document.
       let snap: Awaited<ReturnType<typeof getDocFromServer>> | null = null;
       let lastReadError: any;
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -136,33 +166,23 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
       const data = snap.data() as Record<string, any>;
 
-      // Akun Admin Utama
-      if (user.email?.toLowerCase() === ADMIN_EMAIL) {
-        const admin: UserAccount = {
-          uid: user.uid,
-          username: user.email.split('@')[0],
-          email: user.email,
-          nama: user.displayName || 'Admin Utama',
-          role: 'admin',
-          gudep: '10-035',
-          satuan: 'Putra',
-          tingkat: 'Penegak Garuda',
-          sangga: 'Perintis',
-          jabatan: 'Admin Utama Pettalopo',
-          nomorKta: '',
-          foto: user.photoURL || '',
-          createdAt: new Date().toISOString().slice(0, 10)
-        };
-        await setDoc(ref, {
-          ...admin,
-          googleAuth: true,
-          onboardingSelesai: true,
-          statusKeanggotaan: 'admin',
-          updatedAt: Date.now()
-        }, { merge: true });
-        onComplete(admin);
-        return;
-      }
+      // Refresh the non-sensitive directory projection after authenticated read.
+      await setDoc(doc(db, 'public_members', user.uid), {
+        uid: user.uid,
+        nama: data.nama || data.namaLengkap || user.displayName || 'Anggota',
+        namaLengkap: data.nama || data.namaLengkap || user.displayName || 'Anggota',
+        gudep: data.gudep || '10-035',
+        satuan: data.satuan || 'Putra',
+        tingkat: data.tingkat || 'Calon Penegak',
+        sangga: data.sangga || 'Perintis',
+        jabatan: data.jabatan || 'Calon Penegak',
+        foto: data.foto || data.fotoUrl || user.photoURL || '',
+        fotoUrl: data.foto || data.fotoUrl || user.photoURL || '',
+        role: data.role || 'anggota',
+        isDewan: data.isDewan === true,
+        dewanJabatan: data.dewanJabatan || '',
+        updatedAt: Date.now()
+      }, { merge: true });
 
       // Pengguna yang sudah menyelesaikan profil
       if (data?.onboardingSelesai && data?.googleAuth) {
@@ -197,18 +217,20 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
     } catch (e: any) {
       const code = e?.code || 'unknown';
-      console.error('Google login Firestore profile read failed:', {
+      console.error('Google login Firestore operation failed:', {
         code,
         message: e?.message,
+        name: e?.name,
+        stack: e?.stack,
         projectId: auth.app.options.projectId,
         userId: user?.uid,
       });
       if (code === 'permission-denied') {
-        setError('Akses profil ditolak oleh aturan Firestore. Periksa Firestore Rules untuk koleksi users.');
+        setError('Firestore permission-denied: akses profil ditolak oleh Firestore Rules.');
       } else if (code === 'unavailable' || /client is offline|network/i.test(e?.message || '')) {
-        setError('HP terhubung ke internet, tetapi aplikasi belum dapat menjangkau Firestore. Coba lagi; jika berulang, kirim tangkapan layar pesan ini kepada admin.');
+        setError('Firestore ' + code + ': HP terhubung ke internet, tetapi Firestore belum dapat dijangkau. Kirim kode dan tangkapan layar ini kepada admin.');
       } else {
-        setError(e?.message || 'Gagal memeriksa profil akun.');
+        setError('Firestore ' + code + ': ' + (e?.message || 'Gagal memeriksa profil akun.'));
       }
     } finally {
       setLoading(false);
@@ -337,9 +359,32 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true });
+      await setDoc(doc(db, 'public_members', firebaseUser.uid), {
+        uid: firebaseUser.uid,
+        nama: profile.nama,
+        namaLengkap: profile.namaLengkap,
+        gudep: profile.gudep,
+        satuan: profile.satuan,
+        tingkat: profile.tingkat,
+        sangga: profile.sangga,
+        jabatan: profile.jabatan,
+        foto: profile.foto,
+        fotoUrl: profile.fotoUrl,
+        role: 'anggota',
+        isDewan: false,
+        dewanJabatan: '',
+        updatedAt: Date.now()
+      }, { merge: true });
       onComplete(profile as UserAccount);
     } catch (e: any) {
-      setError(e?.message || 'Gagal menyimpan profil akun.');
+      const code = e?.code || 'unknown';
+      console.error('Google onboarding Firestore write failed:', {
+        code,
+        message: e?.message,
+        projectId: auth.app.options.projectId,
+        userId: firebaseUser?.uid
+      });
+      setError('Firestore ' + code + ': ' + (e?.message || 'Gagal menyimpan profil akun.'));
     } finally {
       setLoading(false);
     }

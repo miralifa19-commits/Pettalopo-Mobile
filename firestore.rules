@@ -5,15 +5,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Only the explicitly trusted primary administrator can manage shared data.
-    // Add other administrators through a server-controlled custom claim in a later step.
     function isAdmin() {
       return signedIn()
         && request.auth.token.email_verified == true
-        && request.auth.token.email in [
-          'miralifa19@gmail.com',
-          'amiruddin@smpialwasi-maros.sch.id'
-        ];
+        && request.auth.token.email == 'miralifa19@gmail.com';
     }
 
     function isOwner(userId) {
@@ -25,31 +20,48 @@ service cloud.firestore {
         .hasAny(['role', 'peran', 'isAdmin', 'isDewan', 'dewanJabatan', 'statusKeanggotaan', 'nonaktif']);
     }
 
-    // Connection probe: authenticated clients only.
-    match /test/{documentId} {
-      allow read: if signedIn();
-      allow write: if false;
-    }
-
-    // Profiles: signed-in members may view the directory, but can only
-    // create/update their own profile. Privileged role fields are admin-only.
+    // Private profile: only the owner and primary admin can read it.
     match /users/{userId} {
-      allow read: if signedIn();
-      allow create: if isOwner(userId)
-        && (!('role' in request.resource.data) || request.resource.data.role == 'anggota')
-        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
-        && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
-        && (!('dewanJabatan' in request.resource.data) || request.resource.data.dewanJabatan == '')
-        && (!('peran' in request.resource.data) || request.resource.data.peran == 'anggota')
-        && (!('statusKeanggotaan' in request.resource.data) || request.resource.data.statusKeanggotaan != 'admin')
-        && (!('nonaktif' in request.resource.data) || request.resource.data.nonaktif == false)
-        || isAdmin();
-      allow update: if (isOwner(userId) && protectedProfileFieldsUnchanged())
-        || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin()
+        || (isOwner(userId)
+          && (!('role' in request.resource.data) || request.resource.data.role == 'anggota')
+          && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
+          && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
+          && (!('dewanJabatan' in request.resource.data) || request.resource.data.dewanJabatan == '')
+          && (!('peran' in request.resource.data) || request.resource.data.peran == 'anggota')
+          && (!('statusKeanggotaan' in request.resource.data) || request.resource.data.statusKeanggotaan != 'admin')
+          && (!('nonaktif' in request.resource.data) || request.resource.data.nonaktif == false));
+      allow update: if isAdmin() || (isOwner(userId) && protectedProfileFieldsUnchanged());
       allow delete: if isAdmin();
     }
 
-    // Admin directory and access configuration are not public.
+    // Limited member directory. It contains no birth date, phone number,
+    // home address, credentials, or private account metadata.
+    match /public_members/{userId} {
+      allow read: if signedIn();
+      allow create: if isAdmin()
+        || (isOwner(userId)
+          && (!('role' in request.resource.data) || request.resource.data.role == 'anggota')
+          && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
+          && (!('dewanJabatan' in request.resource.data) || request.resource.data.dewanJabatan == '')
+          && request.resource.data.keys().hasOnly([
+            'uid', 'nama', 'namaLengkap', 'gudep', 'satuan', 'tingkat',
+            'sangga', 'jabatan', 'foto', 'fotoUrl', 'role', 'isDewan',
+            'dewanJabatan', 'updatedAt'
+          ]));
+      allow update: if isAdmin()
+        || (isOwner(userId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['role', 'isDewan', 'dewanJabatan'])
+          && request.resource.data.keys().hasOnly([
+            'uid', 'nama', 'namaLengkap', 'gudep', 'satuan', 'tingkat',
+            'sangga', 'jabatan', 'foto', 'fotoUrl', 'role', 'isDewan',
+            'dewanJabatan', 'updatedAt'
+          ]));
+      allow delete: if isAdmin();
+    }
+
     match /admins/{adminId} {
       allow read, write: if isAdmin();
     }
@@ -57,11 +69,23 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+    match /test/{documentId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
 
-    // Shared app content: all authenticated members may read; only admin writes.
     match /attendance_sessions/{sessionId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
+    }
+    match /attendance_records/{recordId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
     }
     match /program_kerja/{itemId} {
       allow read: if signedIn();
@@ -79,38 +103,20 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
-
-    // Attendance: a member can submit/update only their own record.
-    // Admin can review and manage all records.
-    match /attendance_records/{recordId} {
-      allow read: if signedIn();
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin()
-        || (signedIn()
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
-
-    // Chat: authenticated members can read; senders own their messages.
     match /ambalan_chats/{chatId} {
       allow read: if signedIn();
-      allow create: if signedIn()
-        && request.resource.data.senderId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.senderId == request.auth.uid;
       allow update, delete: if isAdmin()
         || (signedIn() && resource.data.senderId == request.auth.uid);
     }
-
-    // Evaluations are shared records; writes are restricted to the admin.
     match /kegiatan_evaluations/{evaluationId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    // No unspecified collection or document is readable or writable.
+    // Fallback: no other path is accessible unless explicitly allowed above.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
   }
 }

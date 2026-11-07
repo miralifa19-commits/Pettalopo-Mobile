@@ -172,7 +172,6 @@ export function subscribeToProgramKerja(
           items.push({ ...docSnap.data(), id: docSnap.id } as ProgramKerjaItem);
         });
         if (items.length < 24 && DEFAULT_PROGRAM_KERJA_ITEMS.length > 0) {
-          seedDefaultProgramKerja(DEFAULT_PROGRAM_KERJA_ITEMS).catch(() => {});
           // Combine existing with missing defaults
           const existingIds = new Set(items.map(i => i.id));
           const combined = [...items, ...DEFAULT_PROGRAM_KERJA_ITEMS.filter(d => !existingIds.has(d.id))];
@@ -232,7 +231,8 @@ export const DEFAULT_ADMIN_ACCOUNT: UserAccount = {
   createdAt: "2026-07-01"
 };
 
-export const DEFAULT_SEED_MEMBERS: UserAccount[] = [DEFAULT_ADMIN_ACCOUNT];
+// The replacement Firebase project starts empty; never seed a fictitious admin/member.
+export const DEFAULT_SEED_MEMBERS: UserAccount[] = [];
 
 export async function seedDefaultMembers(): Promise<void> {
   try {
@@ -323,8 +323,9 @@ export function subscribeToAllMembers(
 
         // Jika database belum memiliki data sama sekali, pastikan akun Admin Utama tersinkron
         if (members.length === 0) {
-          syncUserProfile(DEFAULT_ADMIN_ACCOUNT).catch(() => {});
-          callback([DEFAULT_ADMIN_ACCOUNT]);
+          // The new Firebase project starts empty. Do not create a placeholder
+          // administrator profile; show an empty member list until real users sign in.
+          callback([]);
         } else {
           callback(members);
         }
@@ -391,8 +392,8 @@ export function subscribeToAmbalanChats(
           messages.push({ ...docSnap.data(), id: docSnap.id } as import('../types').ChatMessage);
         });
         if (messages.length === 0) {
-          seedDefaultChats().catch(() => {});
-          callback(DEFAULT_INITIAL_CHATS);
+          // Do not seed demonstration conversations into the new production database.
+          callback([]);
         } else {
           messages.sort((a, b) => (a.createdAtNumber || 0) - (b.createdAtNumber || 0));
           callback(messages);

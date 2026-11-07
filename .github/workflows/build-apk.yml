@@ -1,5 +1,9 @@
 name: Build Android APK - Ambalan La Surullah
 
+concurrency:
+  group: pettalopo-android-build-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -7,6 +11,7 @@ on:
       - main
       - perbaikan-pdf
       - update/surat-laporan-triwulan-2026-11-05
+      - fix/google-auth-release-1.4
 
 permissions:
   contents: write
@@ -20,6 +25,7 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.PETTALOPO_KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.PETTALOPO_KEY_PASSWORD }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
     steps:
       - name: Checkout Repository
@@ -39,6 +45,18 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Print release keystore SHA-1 and SHA-256
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Existing Pettalopo release signing secrets are missing."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/pettalopo-release.jks
+          keytool -list -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null
+          rm -f /tmp/pettalopo-release.jks
+          echo "Existing Pettalopo release signing key verified."
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -50,18 +68,8 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install Dependencies and refresh bun.lock
+      - name: Install Dependencies
         run: bun install
-
-      - name: Commit resolved bun.lock on feature branch
-        run: |
-          if ! git diff --quiet -- bun.lock; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add bun.lock
-            git commit -m "Update bun lockfile for PDF export"
-            git push
-          fi
 
       - name: TypeScript check
         run: bun run lint
@@ -73,7 +81,43 @@ jobs:
         run: bun run build
 
       - name: Create Android Project
-        run: npx cap add android
+        run: |
+          set -euo pipefail
+          # Keep the user-provided Firebase config while replacing the
+          # intentionally partial android/app folder with a fresh Capacitor project.
+          if [ -s android/app/google-services.json ]; then
+            cp android/app/google-services.json /tmp/pettalopo-google-services.json
+          elif [ -s firebase/google-services.json ]; then
+            cp firebase/google-services.json /tmp/pettalopo-google-services.json
+          fi
+          rm -rf android
+          npx cap add android
+          if [ -s /tmp/pettalopo-google-services.json ]; then
+            mkdir -p android/app
+            cp /tmp/pettalopo-google-services.json android/app/google-services.json
+          fi
+
+      - name: Configure Firebase Authentication Google dependencies
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("android/variables.gradle")
+          if not path.exists():
+              raise SystemExit("Capacitor variables.gradle was not generated.")
+          source = path.read_text()
+          if "rgcfaIncludeGoogle" not in source:
+              match = re.search(r"ext\s*\{", source)
+              if not match:
+                  raise SystemExit("Could not find ext block in android/variables.gradle.")
+              source = source[:match.end()] + "\n    rgcfaIncludeGoogle = true\n    androidxCredentialsVersion = '1.3.0'" + source[match.end():]
+          else:
+              source = re.sub(r"rgcfaIncludeGoogle\s*=\s*[^\n]+", "rgcfaIncludeGoogle = true", source)
+              if "androidxCredentialsVersion" not in source:
+                  source = source.replace("rgcfaIncludeGoogle = true", "rgcfaIncludeGoogle = true\n    androidxCredentialsVersion = '1.3.0'", 1)
+          path.write_text(source)
+          print("Google Sign-In native dependencies enabled for Capacitor Firebase Authentication.")
+          PY
 
       - name: Apply Pettalopo Mobile App Icon
         run: |
@@ -140,6 +184,64 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Verify Capacitor Firebase Authentication registration
+        run: |
+          set -e
+          if ! grep -R -q "capacitor-firebase-authentication" android/app android/capacitor.settings.gradle android/capacitor.build.gradle 2>/dev/null; then
+            echo "::error::Firebase Authentication native plugin was not registered by npx cap sync."
+            exit 1
+          fi
+          echo "Capacitor Firebase Authentication is registered in the generated Android project."
+
+      - name: Configure Firebase Android and Google Services plugin
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          set -euo pipefail
+          mkdir -p android/app
+          if [ -s android/app/google-services.json ]; then
+            # Prefer the explicitly committed Android config for the new Firebase project.
+            :
+          elif [ -s firebase/google-services.json ]; then
+            cp firebase/google-services.json android/app/google-services.json
+          elif [ -n "${GOOGLE_SERVICES_JSON:-}" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          else
+            echo "::error::Firebase config missing. Add android/app/google-services.json or firebase/google-services.json."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          expected = "id.sch.smpialwasi_maros.ambalan"
+          clients = config.get("client", [])
+          packages = [c.get("client_info", {}).get("android_client_info", {}).get("package_name") for c in clients]
+          if expected not in packages:
+              raise SystemExit(f"google-services.json has no Android client for {expected}; found: {packages}")
+          root = Path("android/build.gradle")
+          app = Path("android/app/build.gradle")
+          root_text = root.read_text()
+          app_text = app.read_text()
+          plugin_line = "id 'com.google.gms.google-services' version '4.5.0' apply false"
+          if "com.google.gms.google-services" not in root_text:
+              if "plugins {" in root_text:
+                  root_text = root_text.replace("plugins {", "plugins {\n    " + plugin_line, 1)
+              elif "buildscript {" in root_text:
+                  marker = "dependencies {"
+                  if marker not in root_text:
+                      raise SystemExit("Cannot locate root Gradle buildscript dependencies block.")
+                  root_text = root_text.replace(marker, marker + "\n        classpath 'com.google.gms:google-services:4.5.0'", 1)
+              else:
+                  raise SystemExit("Unsupported generated root Gradle layout; Google Services plugin not configured.")
+              root.write_text(root_text)
+          if "com.google.gms.google-services" not in app_text:
+              app_text += "\n\napply plugin: 'com.google.gms.google-services'\n"
+              app.write_text(app_text)
+          print("Firebase Android client and Google Services Gradle plugin verified.")
+          PY
+          test -s android/app/google-services.json
 
       - name: Configure Capacitor FileProvider paths for PDF opening
         run: |
@@ -347,7 +449,6 @@ jobs:
 
       - name: Configure permanent APK signing
         id: signing
-        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
         run: |
           set -e
           if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
@@ -355,6 +456,8 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release.jks
+          keytool -list -keystore android/app/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "Existing release signing key loaded; certificate details are not printed."
           export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
           echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
@@ -382,18 +485,63 @@ jobs:
           PY
 
       - name: Build Release APK
-        if: steps.signing.outcome == 'success'
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --stacktrace
 
-      - name: Build Debug APK (fallback when permanent signing is not configured)
-        if: steps.signing.outcome == 'skipped'
+      - name: Verify Android Google Sign-In web client resource
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          android = next(
+              (client for client in config.get("client", [])
+               if client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+               == "id.sch.smpialwasi_maros.ambalan"),
+              None
+          )
+          if android is None:
+              raise SystemExit("Android Firebase client is missing.")
+          web_clients = [
+              item.get("client_id") for item in android.get("oauth_client", [])
+              if item.get("client_type") == 3 and item.get("client_id")
+          ]
+          if not web_clients:
+              raise SystemExit("Firebase config has no OAuth web client (client_type 3).")
+          build_dir = Path("android/app/build")
+          generated = None
+          candidates = []
+          for search_root in (build_dir / "generated", build_dir / "intermediates"):
+              if not search_root.exists():
+                  continue
+              for xml_path in search_root.rglob("values.xml"):
+                  candidates.append(str(xml_path))
+                  try:
+                      root = ET.parse(xml_path).getroot()
+                  except (ET.ParseError, OSError):
+                      continue
+                  value = next(
+                      (node.text for node in root.iter("string")
+                       if node.attrib.get("name") == "default_web_client_id"),
+                      None
+                  )
+                  if value:
+                      generated = value
+                      break
+              if generated:
+                  break
+          if generated is None:
+              print("Google Services values XML candidates:", candidates[:20])
+              raise SystemExit("Generated default_web_client_id resource was not found.")
+          if generated not in web_clients:
+              raise SystemExit("Generated default_web_client_id does not match the configured OAuth web client.")
+          print("Google Sign-In web client resource verified; client ID value is intentionally hidden.")
+          PY
 
       - name: Prepare signed APK and Auto Update manifest
         if: steps.signing.outcome == 'success'
@@ -409,30 +557,35 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": f"Pembaruan Pettalopo Mobile versi {version}."
+              "catatan": "Perbaikan login Google."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
           PY
 
       - name: Publish GitHub Release
-        if: steps.signing.outcome == 'success'
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          generate_release_notes: false
+          body: |
+            Perbaikan login Google pada APK Android release.
+
+            - Memastikan plugin Firebase Authentication terintegrasi pada Android.
+            - Memastikan konfigurasi Firebase dan Google Services tersedia saat build.
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json
           make_latest: true
 
       - name: Upload APK Artifact
+        if: steps.signing.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Pettalopo-Mobile-v${{ github.run_number }}
           path: |
             android/app/build/outputs/apk/release/pettalopo.apk
-            android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14

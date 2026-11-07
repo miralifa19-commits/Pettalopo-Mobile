@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -22,14 +22,20 @@ import { LaporanView } from './components/views/LaporanView';
 import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
+import { KelolaAplikasiView } from './components/views/KelolaAplikasiView';
 import { ApkUpdater } from './components/ApkUpdater';
+import { signOut as webSignOut } from 'firebase/auth';
+import { auth } from './firebase/config';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
 import { 
   subscribeToProgramKerja, 
   syncUserProfile, 
   subscribeToAllMembers,
-  DEFAULT_SEED_MEMBERS 
+  DEFAULT_SEED_MEMBERS,
+  DEFAULT_ADMIN_ACCOUNT 
 } from './services/firebaseService';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
 
@@ -41,9 +47,6 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
-  const pullStartY = useRef<number | null>(null);
-  const pullHoldTimer = useRef<number | null>(null);
-  const [pullHoldReady, setPullHoldReady] = useState(false);
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
@@ -88,6 +91,26 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin';
+
+  // Logout akun: keluar dari Firebase native & web, hapus penyimpanan lokal, dan kembali ke halaman login
+  const handleLogout = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await FirebaseAuthentication.signOut();
+        } catch (e) {
+          console.warn('Capacitor Firebase signOut error:', e);
+        }
+      }
+      await webSignOut(auth);
+    } catch (e) {
+      console.warn('Firebase signOut error:', e);
+    }
+    localStorage.removeItem('ambalan_user_account_v3');
+    setUser(DEFAULT_ADMIN_ACCOUNT);
+    setActiveMenu('home');
+    setIsGooglePortalOpen(true);
+  };
 
   // Android hardware/system back button: close overlays first, then return to Home.
   // Pressing Back again while already on Home exits the native application.
@@ -205,6 +228,18 @@ export default function App() {
             </button>
             {isQuickMenuOpen && (
               <div className="pettalopo-overflow-menu">
+                {(user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      setActiveMenu('kelola_aplikasi');
+                    }}
+                    className="font-bold text-[#e51c24]"
+                  >
+                    <span>🛠️</span><span>Kelola Aplikasi</span>
+                  </button>
+                )}
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
                   <Settings size={17} /><span>Pengaturan</span>
                 </button>
@@ -216,42 +251,7 @@ export default function App() {
           </div>
         </header>
         )}
-        <main
-          className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28"
-          onTouchStart={(event) => {
-            pullStartY.current = event.currentTarget.scrollTop <= 0
-              ? (event.touches[0]?.clientY ?? null)
-              : null;
-            setPullHoldReady(false);
-            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
-            if (pullStartY.current !== null) {
-              pullHoldTimer.current = window.setTimeout(() => setPullHoldReady(true), 3000);
-            }
-          }}
-          onTouchEnd={(event) => {
-            const startY = pullStartY.current;
-            pullStartY.current = null;
-            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
-            pullHoldTimer.current = null;
-            const endY = event.changedTouches[0]?.clientY;
-            if (pullHoldReady && startY !== null && endY !== undefined &&
-                endY - startY > 55 && event.currentTarget.scrollTop <= 0) {
-              window.location.reload();
-            }
-            setPullHoldReady(false);
-          }}
-          onTouchCancel={() => {
-            pullStartY.current = null;
-            if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
-            pullHoldTimer.current = null;
-            setPullHoldReady(false);
-          }}
-        >
-          {pullHoldReady && (
-            <div className="sticky top-1 z-40 mx-auto mb-2 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#e51c24] shadow-lg border border-red-200">
-              <RefreshCw size={16} className="animate-spin" /> Lepaskan untuk memuat ulang
-            </div>
-          )}
+        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -357,10 +357,18 @@ export default function App() {
           {activeMenu === 'akun' && (
             <AkunView
               user={user}
-              onUpdateUser={setUser}
-              onNavigateToDatabase={() => setActiveMenu('database')}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-              onLogout={() => setIsGooglePortalOpen(true)}
+              onLogout={handleLogout}
+              onBack={() => setActiveMenu('home')}
+            />
+          )}
+
+          {activeMenu === 'kelola_aplikasi' && (
+            <KelolaAplikasiView
+              currentUser={user}
+              onBack={() => setActiveMenu('home')}
+              onTriggerReLogin={() => {
+                handleLogout();
+              }}
             />
           )}
 

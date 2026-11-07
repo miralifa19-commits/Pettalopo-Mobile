@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../firebase/config';
 import { UserAccount } from '../../types';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
@@ -104,7 +104,27 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     setLoading(true);
     try {
       const ref = doc(db, 'users', user.uid);
-      const snap = await getDoc(ref);
+
+      // Refresh the Google credential before accessing Firestore, then read
+      // explicitly from the server. Retry transient Android WebView network
+      // failures; never treat a transport failure as a missing user document.
+      await user.getIdToken(true);
+      let snap;
+      let lastReadError: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          snap = await getDocFromServer(ref);
+          lastReadError = null;
+          break;
+        } catch (readError: any) {
+          lastReadError = readError;
+          const isTransient = readError?.code === 'unavailable'
+            || /client is offline|network|timeout/i.test(readError?.message || '');
+          if (!isTransient || attempt === 2) throw readError;
+          await new Promise((resolve) => window.setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+      if (lastReadError || !snap) throw lastReadError || new Error('Firestore tidak mengembalikan hasil pembacaan.');
 
       // A missing profile is expected for a first login in a newly created
       // Firestore database. It is not a connectivity error: show onboarding.
@@ -176,7 +196,20 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         setNeedsProfile(true);
       }
     } catch (e: any) {
-      setError(e?.message || 'Gagal memeriksa profil akun. Periksa koneksi internet.');
+      const code = e?.code || 'unknown';
+      console.error('Google login Firestore profile read failed:', {
+        code,
+        message: e?.message,
+        projectId: auth.app.options.projectId,
+        userId: user?.uid,
+      });
+      if (code === 'permission-denied') {
+        setError('Akses profil ditolak oleh aturan Firestore. Periksa Firestore Rules untuk koleksi users.');
+      } else if (code === 'unavailable' || /client is offline|network/i.test(e?.message || '')) {
+        setError('HP terhubung ke internet, tetapi aplikasi belum dapat menjangkau Firestore. Coba lagi; jika berulang, kirim tangkapan layar pesan ini kepada admin.');
+      } else {
+        setError(e?.message || 'Gagal memeriksa profil akun.');
+      }
     } finally {
       setLoading(false);
     }

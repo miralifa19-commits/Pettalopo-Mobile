@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { UserAccount } from '../../types';
+import { DEFAULT_8_DEWAN, Dewan8Position, subscribeTo8DewanPositions } from '../../data/dewanStructure';
 
 interface KelolaAplikasiViewProps {
   currentUser: UserAccount;
@@ -15,7 +16,11 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   onBack,
   onTriggerReLogin
 }) => {
-  const [activeTab, setActiveTab] = useState<'pengguna' | 'versi'>('pengguna');
+  const [activeTab, setActiveTab] = useState<'pengguna' | 'dewan' | 'versi'>('pengguna');
+  const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
+  const [pendingDewanPositions, setPendingDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
+  const [savingDewan, setSavingDewan] = useState(false);
+  const isMainAdmin = currentUser.role === 'admin' && (currentUser.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com');
   const [userList, setUserList] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,6 +42,64 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
 
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeTo8DewanPositions((positions) => {
+      setDewanPositions(positions);
+      setPendingDewanPositions(positions);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSaveDewanAssignments = async () => {
+    if (!isMainAdmin || savingDewan) return;
+    const assigned = pendingDewanPositions.filter((position) => position.memberUid);
+    const assignedIds = assigned.map((position) => position.memberUid as string);
+    if (new Set(assignedIds).size !== assignedIds.length) {
+      alert('Satu anggota hanya dapat mengisi satu posisi Dewan Ambalan.');
+      return;
+    }
+
+    setSavingDewan(true);
+    try {
+      const batch = writeBatch(db);
+      const previousIds = new Set(dewanPositions.map((position) => position.memberUid).filter(Boolean) as string[]);
+      const nextIds = new Set(assignedIds);
+
+      previousIds.forEach((uid) => {
+        if (!nextIds.has(uid)) {
+          batch.update(doc(db, 'users', uid), { role: 'anggota', isDewan: false, dewanJabatan: '' });
+        }
+      });
+
+      pendingDewanPositions.forEach((position) => {
+        if (!position.memberUid) return;
+        const member = userList.find((item) => item.id === position.memberUid || item.uid === position.memberUid);
+        if (member) {
+          batch.update(doc(db, 'users', position.memberUid), {
+            role: 'dewan',
+            isDewan: true,
+            dewanJabatan: position.jabatan,
+            jabatan: position.jabatan
+          });
+        }
+      });
+
+      batch.set(doc(db, 'config', 'dewan_kepengurusan'), {
+        positions: pendingDewanPositions,
+        updatedAt: Date.now(),
+        updatedBy: currentUser.email || currentUser.nama
+      }, { merge: true });
+      await batch.commit();
+      setDewanPositions(pendingDewanPositions);
+      setActionNotice('Susunan 8 Roda Dewan Ambalan berhasil disimpan dan disinkronkan ke semua perangkat.');
+      setTimeout(() => setActionNotice(null), 4000);
+    } catch (err: any) {
+      alert('Gagal menyimpan susunan Dewan Ambalan: ' + (err?.message || 'Periksa koneksi internet.'));
+    } finally {
+      setSavingDewan(false);
+    }
+  };
 
   // Format nomor WhatsApp agar bisa langsung membuka aplikasi WA
   const formatWaUrl = (waNumber?: string) => {
@@ -133,7 +196,7 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       />
 
       {/* Tab Switcher */}
-      <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+      <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl">
         <button
           type="button"
           onClick={() => setActiveTab('pengguna')}
@@ -146,6 +209,19 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
           <span>👥</span>
           <span>Pengguna ({userList.length})</span>
         </button>
+
+        {isMainAdmin && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('dewan')}
+            className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'dewan' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <span>⚜️</span>
+            <span>Kelola Dewan</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -298,6 +374,67 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB KELOLA DEWAN AMBALAN: KHUSUS ADMIN UTAMA */}
+      {activeTab === 'dewan' && isMainAdmin && (
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-red-100 bg-white p-4 space-y-2">
+            <h3 className="text-sm font-black text-slate-900">Delapan Roda Kepengurusan</h3>
+            <p className="text-[11px] leading-relaxed text-slate-500">
+              Tetapkan anggota terpilih untuk setiap posisi. Perubahan akan tersimpan di Firestore dan berlaku di seluruh perangkat. Satu anggota hanya dapat mengisi satu posisi.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {pendingDewanPositions.map((position) => (
+              <div key={position.id} className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-xs text-slate-900">{position.jabatan}</strong>
+                  <span className="text-[10px] font-bold text-slate-500">{position.satuan}</span>
+                </div>
+                <select
+                  value={position.memberUid || ''}
+                  onChange={(event) => {
+                    const uid = event.target.value;
+                    const member = userList.find((item) => item.id === uid || item.uid === uid);
+                    setPendingDewanPositions((current) => current.map((item) => item.id === position.id
+                      ? { ...item, memberUid: uid || undefined, memberName: member?.nama || member?.namaLengkap || 'Belum ditetapkan', sangga: member?.sangga || undefined }
+                      : item
+                    ));
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800"
+                >
+                  <option value="">— Belum ditetapkan —</option>
+                  {userList
+                    .filter((item) => item.id && item.role !== 'admin' && item.email?.toLowerCase() !== 'miralifa19@gmail.com')
+                    .sort((a, b) => (a.nama || a.namaLengkap || '').localeCompare(b.nama || b.namaLengkap || '', 'id'))
+                    .map((item) => {
+                      const uid = item.id || item.uid;
+                      const occupiedElsewhere = pendingDewanPositions.some((other) => other.id !== position.id && other.memberUid === uid);
+                      return (
+                        <option key={uid} value={uid} disabled={occupiedElsewhere}>
+                          {item.nama || item.namaLengkap || item.email || uid}{occupiedElsewhere ? ' (sudah mengisi posisi)' : ''}
+                        </option>
+                      );
+                    })}
+                </select>
+                <p className="text-[10px] text-slate-500">
+                  {position.memberUid ? `Terpilih: ${position.memberName}` : 'Posisi belum memiliki anggota.'}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveDewanAssignments}
+            disabled={savingDewan}
+            className="w-full rounded-xl bg-[#e51c24] px-4 py-3 text-xs font-black text-white disabled:opacity-50"
+          >
+            {savingDewan ? 'Menyimpan susunan...' : 'Simpan Susunan 8 Roda Dewan'}
+          </button>
         </div>
       )}
 

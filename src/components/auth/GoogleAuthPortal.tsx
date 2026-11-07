@@ -18,7 +18,7 @@ function withFirestoreTimeout<T>(promise: Promise<T>, timeoutMs = 10_000): Promi
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
-      const error = new Error(`Firestore tidak merespons dalam ${timeoutMs / 1000} detik.`);
+      const error = new Error(`Operasi tidak merespons dalam ${timeoutMs / 1000} detik.`);
       (error as Error & { code?: string }).code = 'timeout';
       reject(error);
     }, timeoutMs);
@@ -159,6 +159,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           foto: user.photoURL || '',
           createdAt: new Date().toISOString().slice(0, 10)
         };
+        console.info('[GoogleAuth] Mulai tulis profil admin', { uid: user.uid, path: `users/${user.uid}` });
         await withFirestoreTimeout(setDoc(ref, {
           ...admin,
           googleAuth: true,
@@ -166,6 +167,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           statusKeanggotaan: 'admin',
           updatedAt: Date.now()
         }, { merge: true }), 10_000);
+        console.info('[GoogleAuth] Hasil tulis profil admin', { uid: user.uid, success: true });
         onComplete(admin);
         return;
       }
@@ -194,6 +196,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       const data = snap.data() as Record<string, any>;
 
       // Refresh the non-sensitive directory projection after authenticated read.
+      console.info('[GoogleAuth] Mulai tulis direktori anggota', { uid: user.uid, path: `public_members/${user.uid}` });
       await withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
         uid: user.uid,
         nama: data.nama || data.namaLengkap || user.displayName || 'Anggota',
@@ -210,6 +213,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         dewanJabatan: data.dewanJabatan || '',
         updatedAt: Date.now()
       }, { merge: true }), 10_000);
+      console.info('[GoogleAuth] Hasil tulis direktori anggota', { uid: user.uid, success: true });
 
       // Pengguna yang sudah menyelesaikan profil
       if (data?.onboardingSelesai && data?.googleAuth) {
@@ -397,8 +401,12 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         updatedAt: Date.now()
       };
 
-      await setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true });
-      await setDoc(doc(db, 'public_members', firebaseUser.uid), {
+      console.info('[GoogleAuth] Mulai tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}` });
+      await withFirestoreTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 10_000);
+      console.info('[GoogleAuth] Hasil tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}`, success: true });
+
+      console.info('[GoogleAuth] Mulai tulis direktori anggota', { uid: firebaseUser.uid, path: `public_members/${firebaseUser.uid}` });
+      await withFirestoreTimeout(setDoc(doc(db, 'public_members', firebaseUser.uid), {
         uid: firebaseUser.uid,
         nama: profile.nama,
         namaLengkap: profile.namaLengkap,

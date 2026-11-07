@@ -32,11 +32,11 @@ function normalizePositions(value: unknown): Dewan8Position[] {
     if (!saved) return base;
     return {
       ...base,
-      memberUid: typeof saved.memberUid === 'string' ? saved.memberUid : undefined,
       memberName: typeof saved.memberName === 'string' && saved.memberName.trim()
         ? saved.memberName
         : 'Belum ditetapkan',
-      sangga: typeof saved.sangga === 'string' ? saved.sangga : undefined
+      ...(typeof saved.memberUid === 'string' && saved.memberUid ? { memberUid: saved.memberUid } : {}),
+      ...(typeof saved.sangga === 'string' && saved.sangga ? { sangga: saved.sangga } : {})
     };
   });
 }

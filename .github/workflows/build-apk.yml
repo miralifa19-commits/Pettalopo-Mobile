@@ -421,7 +421,14 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          generate_release_notes: false
+          body: |
+            ## Catatan Rilis v1.4
+
+            - Pengelolaan 8 Roda Dewan Ambalan dipusatkan di Kelola Aplikasi dan hanya dapat dilakukan Admin Utama.
+            - Akses Ruang Kerja Dewan Ambalan dibatasi untuk anggota yang dilantik sebagai Dewan dan Admin Utama.
+            - Akses grup disesuaikan: anggota usia 14–20 tahun ke grup Ambalan, usia 21 tahun ke atas ke grup Purna, sedangkan Dewan dapat mengakses grup Dewan dan Ambalan.
+            - Penyempurnaan pergantian kepengurusan, pencabutan akses Dewan lama, dan sinkronisasi data keanggotaan.
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json

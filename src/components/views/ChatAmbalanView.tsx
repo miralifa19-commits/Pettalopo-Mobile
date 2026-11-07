@@ -88,6 +88,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     const isPurna = years >= 21;
     return {
       isPurna,
+      isCalonPenegak: years >= 14 && years < 21,
       ageYears: years,
       displayLabel: isPurna ? '21 tahun ke atas (Purna Ambalan)' : `${years} tahun (Anggota Ambalan)`
     };
@@ -124,14 +125,14 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     {
       id: 'ambalan_aktif',
       title: 'Ambalan La Surullah Petta Lopo',
-      subtitle: 'Forum kebersamaan penegak aktif (usia 16 s.d. 20 tahun)',
+      subtitle: 'Grup anggota Ambalan (usia 14 sampai sebelum 21 tahun)',
       categoryBadge: 'Penegak Bantara & Laksana Aktif',
       icon: <Users className="text-[#c81e28]" size={22} />
     },
     {
       id: 'purna_ambalan',
       title: 'Purna Ambalan La Surullah Petta Lopo',
-      subtitle: 'Wadah silaturahmi alumni & purna penegak (usia 21 tahun 1 hari ke atas)',
+      subtitle: 'Wadah silaturahmi alumni dan purna Ambalan (usia 21 tahun ke atas)',
       categoryBadge: 'Purna Bakti & Alumni Ambalan',
       icon: <GraduationCap className="text-[#c81e28]" size={22} />
     }
@@ -174,7 +175,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
           id: 'ambalan-sys-1',
           senderId: 'system',
           senderName: 'Sistem Ambalan',
-          text: '📢 [Aturan Ambalan]: Sesuai ketentuan Gerakan Pramuka, anggota yang telah genap berusia 21 tahun 1 hari secara otomatis dialihkan ke grup Purna Ambalan La Surullah Petta Lopo.',
+          text: '📢 [Aturan Ambalan]: Sesuai ketentuan Gerakan Pramuka, anggota yang telah genap berusia 21 tahun secara otomatis dialihkan ke grup Purna Ambalan La Surullah Petta Lopo.',
           time: 'Info',
           isMe: false,
           isSystemNotice: true
@@ -242,10 +243,17 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 
   const activeGroup = GROUPS.find((g) => g.id === activeGroupId) || GROUPS[0];
   const activeMessages = messagesByGroup[activeGroupId] || [];
+  const visibleGroups = isCurrentUserDewan
+    ? GROUPS.filter((group) => group.id !== 'purna_ambalan')
+    : userAgeInfo.isPurna
+    ? GROUPS.filter((group) => group.id === 'purna_ambalan')
+    : userAgeInfo.isCalonPenegak
+    ? GROUPS.filter((group) => group.id === 'ambalan_aktif')
+    : [];
 
   // Handler memilih grup
   const handleSelectGroup = (groupId: GroupId) => {
-    // Cek proteksi usia: Jika anggota berumur 21 tahun 1 hari dan mencoba masuk ke grup ambalan aktif
+    // Cek proteksi usia: anggota non-Dewan berusia 21 tahun ke atas masuk grup Purna
     if (groupId === 'ambalan_aktif' && userAgeInfo.isPurna && !isCurrentUserDewan) {
       setPurnaBlockedModal(true);
       return;
@@ -384,12 +392,12 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 
           {/* List Grup Ambalan Tanpa Banner (Dewan Ambalan, Ambalan La Surullah Petta Lopo, Purna Ambalan) */}
           <div className="p-4 space-y-2.5 flex-1 overflow-y-auto">
-            {(isCurrentUserDewan
-              ? GROUPS.filter((group) => group.id !== 'purna_ambalan')
-              : userAgeInfo.isPurna
-              ? GROUPS.filter((group) => group.id === 'purna_ambalan')
-              : GROUPS.filter((group) => group.id === 'ambalan_aktif')
-            ).map((grp) => {
+            {visibleGroups.length === 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs text-slate-600">
+                Akses grup Ambalan tersedia setelah memasuki usia Calon Penegak (14 tahun).
+              </div>
+            )}
+            {visibleGroups.map((grp) => {
               return (
                 <div
                   key={grp.id}
@@ -651,7 +659,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
                 Transisi ke Purna Ambalan
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Berdasarkan AD/ART Gerakan Pramuka, anggota yang telah mencapai umur <strong>21 tahun 1 hari</strong> secara otomatis beralih status dari Penegak Aktif menjadi <strong>Purna Ambalan La Surullah Petta Lopo</strong>.
+                Berdasarkan AD/ART Gerakan Pramuka, anggota yang telah mencapai umur <strong>21 tahun</strong> secara otomatis beralih status dari Penegak Aktif menjadi <strong>Purna Ambalan La Surullah Petta Lopo</strong>.
               </p>
             </div>
 

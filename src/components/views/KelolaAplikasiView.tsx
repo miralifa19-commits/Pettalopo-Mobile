@@ -138,6 +138,10 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
 
   // Fungsi reset akun google agar bisa login ulang
   const handleResetGoogleAccount = async (targetUser: any) => {
+    if (!isMainAdmin || targetUser.role === 'admin' || targetUser.email?.toLowerCase() === 'miralifa19@gmail.com') {
+      alert('Akun Admin tidak dapat direset dari panel Kelola User.');
+      return;
+    }
     const confirm = window.confirm(
       `Yakin ingin mereset akun Google milik "${targetUser.nama || targetUser.namaLengkap || targetUser.email}"?\n\nSetelah direset, data login Google akan diatur ulang sehingga pengguna dapat masuk atau mengisi profil kembali.`
     );

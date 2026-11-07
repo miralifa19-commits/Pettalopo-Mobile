@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../../firebase/config';
+import { auth, db } from '../firebase/config';
 
 type TestResult = {
   status: 'idle' | 'running' | 'success' | 'error' | 'timeout';

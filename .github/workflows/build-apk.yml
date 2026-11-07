@@ -76,14 +76,14 @@ jobs:
               raise SystemExit("Capacitor variables.gradle was not generated.")
           source = path.read_text()
           if "rgcfaIncludeGoogle" not in source:
-              match = re.search(r"ext\\s*\\{", source)
+              match = re.search(r"ext\s*\{", source)
               if not match:
                   raise SystemExit("Could not find ext block in android/variables.gradle.")
-              source = source[:match.end()] + "\\n    rgcfaIncludeGoogle = true\\n    androidxCredentialsVersion = '1.3.0'" + source[match.end():]
+              source = source[:match.end()] + "\n    rgcfaIncludeGoogle = true\n    androidxCredentialsVersion = '1.3.0' + source[match.end():]
           else:
-              source = re.sub(r"rgcfaIncludeGoogle\\s*=\\s*[^\\n]+", "rgcfaIncludeGoogle = true", source)
+              source = re.sub(r"rgcfaIncludeGoogle\s*=\s*[^\n]+", "rgcfaIncludeGoogle = true", source)
               if "androidxCredentialsVersion" not in source:
-                  source = source.replace("rgcfaIncludeGoogle = true", "rgcfaIncludeGoogle = true\\n    androidxCredentialsVersion = '1.3.0'", 1)
+                  source = source.replace("rgcfaIncludeGoogle = true", "rgcfaIncludeGoogle = true\n    androidxCredentialsVersion = '1.3.0', 1)
           path.write_text(source)
           print("Google Sign-In native dependencies enabled for Capacitor Firebase Authentication.")
           PY

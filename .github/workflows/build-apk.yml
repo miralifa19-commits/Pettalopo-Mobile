@@ -20,7 +20,7 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.PETTALOPO_KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.PETTALOPO_KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.PETTALOPO_KEY_PASSWORD }}
-      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
     steps:
       - name: Checkout Repository
@@ -165,15 +165,15 @@ jobs:
 
       - name: Configure Firebase Android and Google Services plugin
         env:
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           set -euo pipefail
-          if [ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
-            echo "::error::GitHub Actions secret GOOGLE_SERVICES_JSON_BASE64 is missing."
+          if [ -z "${GOOGLE_SERVICES_JSON:-}" ]; then
+            echo "::error::GitHub Actions secret GOOGLE_SERVICES_JSON is missing."
             exit 1
           fi
           mkdir -p android/app
-          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           python3 - <<'PY'
           import json
           from pathlib import Path

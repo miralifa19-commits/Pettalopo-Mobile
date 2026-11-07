@@ -35,7 +35,6 @@ import {
   subscribeToProgramKerja, 
   syncUserProfile, 
   subscribeToAllMembers,
-  DEFAULT_SEED_MEMBERS,
   DEFAULT_ADMIN_ACCOUNT 
 } from './services/firebaseService';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
@@ -50,7 +49,7 @@ export default function App() {
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
   // Live All Members in Ambalan
-  const [allMembers, setAllMembers] = useState<UserAccount[]>(DEFAULT_SEED_MEMBERS);
+  const [allMembers, setAllMembers] = useState<UserAccount[]>([]);
   const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(() => get8DewanPositions());
 
   // User Account State with Role (Admin vs Anggota)
@@ -181,8 +180,8 @@ export default function App() {
   // Real-time Firestore sync for Members and current user's appointed Dewan status
   useEffect(() => {
     const unsubscribe = subscribeToAllMembers((members) => {
+      setAllMembers(members || []);
       if (members && members.length > 0) {
-        setAllMembers(members);
         if (user.uid) {
           const latestUser = members.find((member) => member.uid === user.uid);
           if (latestUser) {

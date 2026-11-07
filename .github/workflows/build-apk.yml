@@ -198,7 +198,7 @@ jobs:
           app = Path("android/app/build.gradle")
           root_text = root.read_text()
           app_text = app.read_text()
-          plugin_line = "id 'com.google.gms.google-services' version '4.4.4' apply false"
+          plugin_line = "id 'com.google.gms.google-services' version '4.5.0' apply false"
           if "com.google.gms.google-services" not in root_text:
               if "plugins {" in root_text:
                   root_text = root_text.replace("plugins {", "plugins {\n    " + plugin_line, 1)
@@ -206,7 +206,7 @@ jobs:
                   marker = "dependencies {"
                   if marker not in root_text:
                       raise SystemExit("Cannot locate root Gradle buildscript dependencies block.")
-                  root_text = root_text.replace(marker, marker + "\n        classpath 'com.google.gms:google-services:4.4.4'", 1)
+                  root_text = root_text.replace(marker, marker + "\n        classpath 'com.google.gms:google-services:4.5.0'", 1)
               else:
                   raise SystemExit("Unsupported generated root Gradle layout; Google Services plugin not configured.")
               root.write_text(root_text)

@@ -318,6 +318,21 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${p.version}\nversion_code=${p.androidVersionCode}\n`);
           NODE
 
+      - name: Validate v1.4 release metadata
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          package = json.loads(Path("package.json").read_text())
+          if package.get("version") != "1.4" or int(package.get("androidVersionCode", 0)) != 14:
+              raise SystemExit("Release harus v1.4 dengan versionCode 14.")
+          config = Path("capacitor.config.ts").read_text()
+          expected = "id.sch.smpialwasi_maros.ambalan"
+          if expected not in config:
+              raise SystemExit("applicationId tidak sesuai dengan aplikasi yang sudah terpasang.")
+          print("Versi 1.4, versionCode 14, dan applicationId terverifikasi.")
+          PY
+
       - name: Set Android app version
         run: |
           python - <<'PY'
@@ -344,7 +359,12 @@ jobs:
             echo "Signing secrets are not configured."
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release.jks
+          if [ "$KEY_ALIAS" != "pettalopo_key" ]; then
+            echo "::error::Alias signing harus tetap pettalopo_key."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/pettalopo-release-key.jks
+          keytool -list -keystore android/app/pettalopo-release-key.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/tmp/pettalopo-keystore-check.txt
           export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
           echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
@@ -359,7 +379,7 @@ jobs:
           signing = """
               signingConfigs {
                   release {
-                      storeFile file("pettalopo-release.jks")
+                      storeFile file("pettalopo-release-key.jks")
                       storePassword System.getenv("KEYSTORE_PASSWORD")
                       keyAlias System.getenv("KEY_ALIAS")
                       keyPassword System.getenv("KEY_PASSWORD")

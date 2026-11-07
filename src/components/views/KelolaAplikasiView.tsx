@@ -63,7 +63,13 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     setSavingDewan(true);
     try {
       const batch = writeBatch(db);
-      const previousIds = new Set(dewanPositions.map((position) => position.memberUid).filter(Boolean) as string[]);
+      const previousIds = new Set<string>([
+        ...dewanPositions.map((position) => position.memberUid).filter(Boolean) as string[],
+        ...userList
+          .filter((item) => item.role === 'dewan' || item.isDewan === true)
+          .map((item) => item.id || item.uid)
+          .filter((uid): uid is string => Boolean(uid))
+      ]);
       const nextIds = new Set(assignedIds);
 
       previousIds.forEach((uid) => {

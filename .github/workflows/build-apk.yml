@@ -12,6 +12,7 @@ on:
       - perbaikan-pdf
       - update/surat-laporan-triwulan-2026-11-05
       - fix/firestore-auth-public-directory
+      - fix/firestore-login-timeout-logging
       - fix/google-auth-release-1.4
 
 permissions:

@@ -77,7 +77,7 @@ service cloud.firestore {
       allow update: if isValidId(userId) && isValidUser(incoming()) && (
         isMainAdmin() ||
         (isAdmin() &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan'])) ||
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan', 'blacklisted'])) ||
         (isSignedIn() && request.auth.uid == userId &&
           !incoming().diff(existing()).affectedKeys().hasAny(['role', 'isDewan', 'dewanJabatan']))
       );

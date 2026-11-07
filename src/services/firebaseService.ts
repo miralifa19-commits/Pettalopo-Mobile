@@ -28,6 +28,7 @@ const SESSIONS_PATH = 'attendance_sessions';
 const RECORDS_PATH = 'attendance_records';
 const PROKER_PATH = 'program_kerja';
 const USERS_PATH = 'users';
+const PUBLIC_MEMBERS_PATH = 'public_members';
 
 // Realtime active attendance session
 export function subscribeToActiveSession(
@@ -246,12 +247,29 @@ export async function seedDefaultMembers(): Promise<void> {
 }
 
 export async function syncUserProfile(user: UserAccount): Promise<void> {
-  if (!user.uid && !user.username) return;
-  const uid = user.uid || `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+  // Never write placeholder/local preview accounts or another user's profile.
+  const signedInUser = auth.currentUser;
+  if (!signedInUser || !user.uid || signedInUser.uid !== user.uid) return;
+
+  const uid = user.uid;
   const path = `${USERS_PATH}/${uid}`;
+  const publicProfile = {
+    uid,
+    nama: user.nama || '',
+    namaLengkap: user.nama || '',
+    gudep: user.gudep || '',
+    satuan: user.satuan || '',
+    tingkat: user.tingkat || '',
+    sangga: user.sangga || '',
+    jabatan: user.jabatan || '',
+    foto: (user as any).foto || '',
+    fotoUrl: (user as any).foto || '',
+    updatedAt: Date.now()
+  };
+
   try {
-    const docRef = doc(db, USERS_PATH, uid);
-    await setDoc(docRef, { ...user, uid }, { merge: true });
+    await setDoc(doc(db, USERS_PATH, uid), { ...user, uid }, { merge: true });
+    await setDoc(doc(db, PUBLIC_MEMBERS_PATH, uid), publicProfile, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -306,37 +324,32 @@ export function subscribeToAllMembers(
   callback: (members: UserAccount[]) => void,
   onError?: (err: unknown) => void
 ) {
+  // The directory is a deliberately limited public projection. Private fields
+  // (birth date, WhatsApp, address and other account data) stay in users/{uid}.
+  if (!auth.currentUser) {
+    callback([]);
+    return () => {};
+  }
+
   try {
-    const q = query(collection(db, USERS_PATH));
+    const q = query(collection(db, PUBLIC_MEMBERS_PATH));
     return onSnapshot(
       q,
       (snapshot) => {
         const members: UserAccount[] = [];
         snapshot.forEach((docSnap) => {
-          // Bersihkan data dummy lama jika masih tersisa di Firestore
-          if (docSnap.id.startsWith('member_putra_') || docSnap.id.startsWith('member_putri_')) {
-            deleteDoc(doc(db, USERS_PATH, docSnap.id)).catch(() => {});
-          } else {
-            members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
-          }
+          members.push({ ...docSnap.data(), uid: docSnap.id } as UserAccount);
         });
-
-        // Jika database belum memiliki data sama sekali, pastikan akun Admin Utama tersinkron
-        if (members.length === 0) {
-          // The new Firebase project starts empty. Do not create a placeholder
-          // administrator profile; show an empty member list until real users sign in.
-          callback([]);
-        } else {
-          callback(members);
-        }
+        callback(members);
       },
       (error) => {
         if (onError) onError(error);
-        handleFirestoreError(error, OperationType.GET, USERS_PATH);
+        handleFirestoreError(error, OperationType.LIST, PUBLIC_MEMBERS_PATH);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, USERS_PATH);
+    if (onError) onError(error);
+    handleFirestoreError(error, OperationType.LIST, PUBLIC_MEMBERS_PATH);
   }
 }
 

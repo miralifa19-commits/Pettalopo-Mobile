@@ -409,7 +409,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": f"Pembaruan Pettalopo Mobile versi {version}."
+              "catatan": "Pembaruan v1.4\\n\\n- Pengelolaan 8 Roda Dewan Ambalan oleh Admin Utama.\\n- Akses Ruang Kerja Dewan hanya untuk anggota yang dilantik dan Admin Utama.\\n- Penyesuaian akses grup Ambalan, Dewan, dan Purna berdasarkan usia serta jabatan.\\n- Penyempurnaan pergantian kepengurusan dan sinkronisasi keanggotaan Dewan."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))

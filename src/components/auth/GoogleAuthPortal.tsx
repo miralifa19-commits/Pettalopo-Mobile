@@ -105,7 +105,16 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     try {
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
-      const data = snap.exists() ? snap.data() : null;
+
+      // A missing profile is expected for a first login in a newly created
+      // Firestore database. It is not a connectivity error: show onboarding.
+      if (!snap.exists()) {
+        setNamaAsli(user.displayName || '');
+        setPhoto(user.photoURL || '');
+        setNeedsProfile(true);
+        return;
+      }
+      const data = snap.data();
 
       // Akun Admin Utama
       if (user.email?.toLowerCase() === ADMIN_EMAIL) {

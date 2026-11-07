@@ -2,11 +2,12 @@ name: Build Android APK - Ambalan La Surullah
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - perbaikan-pdf
-      - update/surat-laporan-triwulan-2026-11-05
+    inputs:
+      confirm_release:
+        description: "Konfirmasi terbitkan Pettalopo Mobile v1.4 dari cabang release/prepare-v1.4"
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -50,18 +51,8 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install Dependencies and refresh bun.lock
-        run: bun install
-
-      - name: Commit resolved bun.lock on feature branch
-        run: |
-          if ! git diff --quiet -- bun.lock; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add bun.lock
-            git commit -m "Update bun lockfile for PDF export"
-            git push
-          fi
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
 
       - name: TypeScript check
         run: bun run lint
@@ -347,7 +338,6 @@ jobs:
 
       - name: Configure permanent APK signing
         id: signing
-        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
         run: |
           set -e
           if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
@@ -382,21 +372,38 @@ jobs:
           PY
 
       - name: Build Release APK
-        if: steps.signing.outcome == 'success'
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --stacktrace
 
-      - name: Build Debug APK (fallback when permanent signing is not configured)
-        if: steps.signing.outcome == 'skipped'
+      - name: Verify APK identity and signing continuity with v1.3
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          test -s "$APK"
+          "$APKSIGNER" verify --verbose "$APK"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | grep -F "name='id.sch.smpialwasi_maros.ambalan'"
+          echo "$BADGING" | grep -F "versionCode='14'"
+          echo "$BADGING" | grep -F "versionName='1.4'"
+          mkdir -p /tmp/pettalopo-signing-check
+          curl --fail --location --silent --show-error \
+            "https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v1.3/pettalopo.apk" \
+            --output /tmp/pettalopo-signing-check/v1.3.apk
+          "$APKSIGNER" verify --verbose /tmp/pettalopo-signing-check/v1.3.apk
+          NEW_CERT="$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+          OLD_CERT="$("$APKSIGNER" verify --print-certs /tmp/pettalopo-signing-check/v1.3.apk | sed -n 's/.*Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+          if [ -z "$NEW_CERT" ] || [ -z "$OLD_CERT" ] || [ "$NEW_CERT" != "$OLD_CERT" ]; then
+            echo "::error::Sertifikat APK v1.4 tidak sama dengan APK v1.3. Rilis dibatalkan agar anggota tidak kehilangan kemampuan update."
+            exit 1
+          fi
+          echo "applicationId, versionCode, versionName, dan sertifikat penandatangan terverifikasi."
+          echo "Sertifikat SHA-256: $NEW_CERT"
 
       - name: Prepare signed APK and Auto Update manifest
-        if: steps.signing.outcome == 'success'
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/pettalopo.apk
           python3 - <<'PY'
@@ -409,29 +416,35 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": "Pembaruan v1.4\n\n- Menu titik tiga dilengkapi 9 menu pengguna dan menu ke-10 Kelola Aplikasi khusus Admin Utama.\n- Kelola User mendukung reset akun dan blacklist akses aplikasi.\n- Kelola Dewan mengatur 8 Roda; calon hanya anggota aktif usia 14–20 tahun, bukan Purna.\n- Akses Ruang Kerja Dewan dibatasi untuk anggota yang dilantik dan Admin Utama.\n- Penyempurnaan akses grup Ambalan, Dewan, Purna, dan pergantian kepengurusan."
+              "catatan": "Pembaruan v1.4\\n\\n- Login Google diwajibkan; jalur masuk pratinjau tanpa autentikasi dihapus.\\n- Admin Utama dapat mengelola 8 posisi Dewan Ambalan dan hak akses Ruang Kerja Dewan.\\n- Kelola Akun menyediakan Reset Akun dan Hapus Akun; penghapusan menghapus profil aktif dari Firestore tanpa membuat blokir email.\\n- Menu titik tiga menambahkan pintasan Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, dan Tentang Ambalan.\\n- Penyempurnaan navigasi, sinkronisasi profil, dan pengelolaan keanggotaan."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
           PY
 
       - name: Publish GitHub Release
-        if: steps.signing.outcome == 'success'
+        if: ${{ inputs.confirm_release }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
           generate_release_notes: false
           body: |
-            ## Catatan Rilis v1.4
+            ## Pettalopo Mobile v1.4
 
-            - Menu titik tiga dilengkapi Notifikasi, Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, Tentang Ambalan, Bagikan Aplikasi, Pengaturan, dan Akun Saya.
-            - Admin Utama memperoleh menu ke-10: Kelola Aplikasi, berisi Versi APK, Kelola User (reset dan blacklist), serta Kelola Dewan Ambalan.
-            - Pemilihan Dewan hanya menampilkan anggota aktif berusia 14–20 tahun; anggota Purna tidak ditampilkan.
-            - Pengelolaan 8 Roda Dewan Ambalan dipusatkan di Kelola Aplikasi dan hanya dapat dilakukan Admin Utama.
-            - Akses Ruang Kerja Dewan Ambalan dibatasi untuk anggota yang dilantik sebagai Dewan dan Admin Utama.
-            - Akses grup disesuaikan: anggota usia 14–20 tahun ke grup Ambalan, usia 21 tahun ke atas ke grup Purna, sedangkan Dewan dapat mengakses grup Dewan dan Ambalan.
-            - Penyempurnaan pergantian kepengurusan, pencabutan akses Dewan lama, dan sinkronisasi data keanggotaan.
+            ### Perubahan
+            - Login Google diwajibkan; opsi masuk mode pratinjau tanpa autentikasi dihapus.
+            - Admin Utama dapat mengelola delapan posisi Dewan Ambalan dan penetapan anggota.
+            - Akses Ruang Kerja Dewan dibatasi sesuai status pelantikan Dewan dan Admin Utama.
+            - Kelola Akun menyediakan Reset Akun dan Hapus Akun. Hapus Akun hanya tersedia setelah reset dan menghapus profil pengguna dari koleksi aktif Firestore; email tidak dimasukkan ke daftar blokir.
+            - Menu titik tiga menambahkan pintasan Tersimpan, Kalender Ambalan, Panduan Aplikasi, Pusat Bantuan, dan Tentang Ambalan.
+            - Penyempurnaan sinkronisasi profil, pengelolaan keanggotaan, dan navigasi aplikasi.
+
+            ### Kompatibilitas pembaruan
+            - applicationId dipertahankan: id.sch.smpialwasi_maros.ambalan.
+            - APK ditandatangani menggunakan keystore rilis yang tersimpan di GitHub Secrets.
+            - Sertifikat penandatangan wajib sama dengan APK v1.3 agar dapat diperbarui langsung di perangkat anggota.
+          target_commitish: ${{ github.sha }}
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json
@@ -440,9 +453,9 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Pettalopo-Mobile-v${{ github.run_number }}
+          name: Pettalopo-Mobile-v1.4-release
           path: |
             android/app/build/outputs/apk/release/pettalopo.apk
-            android/app/build/outputs/apk/debug/app-debug.apk
+            version.json
           if-no-files-found: error
           retention-days: 14

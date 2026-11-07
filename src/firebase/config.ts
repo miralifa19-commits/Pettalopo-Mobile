@@ -10,9 +10,11 @@ export const app = initializeApp(firebaseConfig);
 // Force long polling for Android WebView. Auto-detection did not resolve the
 // offline error on the user's device, so do not allow the SDK to select
 // the streaming transport on this native WebView build.
+// initializeFirestore(app, settings, databaseId) targets the named database.
+// Explicitly use the Firebase project's "(default)" database.
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-});
+}, '(default)');
 
 export const auth = Capacitor.isNativePlatform()
   ? initializeAuth(app, { persistence: indexedDBLocalPersistence })

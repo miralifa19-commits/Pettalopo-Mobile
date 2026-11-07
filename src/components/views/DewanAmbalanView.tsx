@@ -513,45 +513,7 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const isDewanNow = selectedMember.role === 'dewan' || Boolean(selectedMember.isDewan);
-                          if (isDewanNow) {
-                            const ok = window.confirm(`Lepaskan Kak ${selectedMember.nama} dari status Dewan Ambalan?`);
-                            if (!ok) return;
-                            const updated: UserAccount = {
-                              ...selectedMember,
-                              role: selectedMember.role === 'admin' ? 'admin' : 'anggota',
-                              isDewan: false,
-                              dewanJabatan: undefined,
-                              jabatan: 'Anggota Sangga'
-                            };
-                            setSelectedMember(updated);
-                            await registerAmbalanUser(updated);
-                          } else {
-                            const defaultTitle = selectedMember.satuan === 'Putri' ? 'Pradana Putri' : 'Pradana Putra';
-                            const updated: UserAccount = {
-                              ...selectedMember,
-                              role: 'dewan',
-                              isDewan: true,
-                              dewanJabatan: defaultTitle,
-                              jabatan: defaultTitle
-                            };
-                            setSelectedMember(updated);
-                            await registerAmbalanUser(updated);
-                          }
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shadow-2xs cursor-pointer ${
-                          (selectedMember.role === 'dewan' || Boolean(selectedMember.isDewan))
-                            ? 'bg-red-100 hover:bg-red-200 text-red-700 border border-red-300'
-                            : 'bg-amber-400 hover:bg-amber-500 text-slate-950 font-black'
-                        }`}
-                      >
-                        {(selectedMember.role === 'dewan' || Boolean(selectedMember.isDewan))
-                          ? 'Cabut dari Dewan'
-                          : '👑 Jadikan Dewan Ambalan'}
-                      </button>
+
                     </div>
 
                     {(selectedMember.role === 'dewan' || Boolean(selectedMember.isDewan)) && (

@@ -22,7 +22,7 @@ service cloud.firestore {
 
     function protectedProfileFieldsUnchanged() {
       return !request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny(['role', 'isAdmin', 'isDewan', 'dewanJabatan']);
+        .hasAny(['role', 'peran', 'isAdmin', 'isDewan', 'dewanJabatan', 'statusKeanggotaan', 'nonaktif']);
     }
 
     // Connection probe: authenticated clients only.
@@ -40,6 +40,9 @@ service cloud.firestore {
         && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
         && (!('isDewan' in request.resource.data) || request.resource.data.isDewan == false)
         && (!('dewanJabatan' in request.resource.data) || request.resource.data.dewanJabatan == '')
+        && (!('peran' in request.resource.data) || request.resource.data.peran == 'anggota')
+        && (!('statusKeanggotaan' in request.resource.data) || request.resource.data.statusKeanggotaan != 'admin')
+        && (!('nonaktif' in request.resource.data) || request.resource.data.nonaktif == false)
         || isAdmin();
       allow update: if (isOwner(userId) && protectedProfileFieldsUnchanged())
         || isAdmin();

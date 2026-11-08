@@ -127,10 +127,14 @@ export default function App() {
   // Pantau sesi autentikasi Firebase; pertahankan login yang telah berhasil
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
+      const hasGoogleProvider = !!firebaseUser
+        && !firebaseUser.isAnonymous
+        && firebaseUser.providerData?.some((provider) => provider.providerId === 'google.com');
+
+      if (hasGoogleProvider) {
         setIsGooglePortalOpen(false);
       } else {
-        // Tanpa sesi Firebase aktif, selalu tampilkan portal login Google.
+        // Sesi anonim/cache lokal bukan login; wajib melalui Google Sign-In AI Studio.
         setIsGooglePortalOpen(true);
       }
     });

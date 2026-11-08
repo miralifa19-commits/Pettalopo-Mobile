@@ -114,6 +114,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Public Ambalan identity; changes are restricted to the existing primary admin.
+    match /ambalan_profile/{profileId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Fallback: no other path is accessible unless explicitly allowed above.
     match /{document=**} {
       allow read, write: if isAdmin();

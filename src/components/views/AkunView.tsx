@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { UserAccount } from '../../types';
 import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
+import { auth } from '../../firebase/config';
 
 interface AkunViewProps {
   user: UserAccount;
@@ -52,11 +53,13 @@ export const AkunView: React.FC<AkunViewProps> = ({
   onLogout,
   onBack
 }) => {
-  const photoUrl = user.foto || 
-    (user as any).fotoUrl || 
-    (user as any).photoURL || 
-    (user as any).photo || 
-    (user as any).avatarUrl;
+  const photoUrl = user.foto ||
+    (user as any).fotoUrl ||
+    (user as any).photoURL ||
+    (user as any).photo ||
+    (user as any).avatarUrl ||
+    auth.currentUser?.photoURL ||
+    '';
 
   const birthDateFormatted = formatBirthDate((user as any).tanggalLahir || user.ttl);
   const statusAnggota = getScoutMemberStatus(user);

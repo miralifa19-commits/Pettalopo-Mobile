@@ -18,7 +18,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       setShowShine(true);
     }, 450);
 
-    // 2. Kilauan selesai menyapu 1 kali saja setelah 1.8 detik
+    // 2. Kilauan selesai menyapu 1 kali saja sebelum splash berakhir
     const shineStopTimeout = setTimeout(() => {
       setShowShine(false);
     }, 900);

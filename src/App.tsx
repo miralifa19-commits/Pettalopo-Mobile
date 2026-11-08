@@ -55,8 +55,8 @@ export default function App() {
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [selectedDashboardMonthIndex, setSelectedDashboardMonthIndex] = useState<number | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  // Hilangkan flash screen saat membuka aplikasi sesuai instruksi
-  const [showPettalopoSplash, setShowPettalopoSplash] = useState(false);
+  // Splash React singkat; portal login tetap dibuka setelah splash selesai.
+  const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
   // Simpan tampilan aktif terakhir setiap berpindah menu
   useEffect(() => {

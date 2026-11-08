@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LOGO_IMAGE_PATH } from '../data/scoutData';
 
 interface SplashScreenProps {
@@ -8,26 +8,29 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [isFading, setIsFading] = useState(false);
   const [showShine, setShowShine] = useState(false);
+  const onFinishRef = useRef(onFinish);
+
+  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
 
   useEffect(() => {
-    // 1. Logo tampil biasa dulu selama 1.2 detik
+    // Logo tampil singkat; keseluruhan splash berlangsung 2 detik.
     const shineStartTimeout = setTimeout(() => {
       setShowShine(true);
-    }, 1200);
+    }, 450);
 
     // 2. Kilauan selesai menyapu 1 kali saja setelah 1.8 detik
     const shineStopTimeout = setTimeout(() => {
       setShowShine(false);
-    }, 3200);
+    }, 1250);
 
     // 3. Fading out transisi
     const fadeTimeout = setTimeout(() => {
       setIsFading(true);
-    }, 3800);
+    }, 1650);
 
     const finishTimeout = setTimeout(() => {
-      onFinish();
-    }, 4200);
+      onFinishRef.current();
+    }, 2000);
 
     return () => {
       clearTimeout(shineStartTimeout);
@@ -35,7 +38,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       clearTimeout(fadeTimeout);
       clearTimeout(finishTimeout);
     };
-  }, [onFinish]);
+  }, []);
 
   return (
     <div
@@ -75,14 +78,17 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
           )}
         </div>
 
-        {/* TULISAN: Ambalan La Surullah Petta Lopo & Gugus depan 10.035-10.036 */}
+        {/* Identitas Ambalan dan pangkalan */}
         <div className="mt-6 text-center">
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide leading-tight">
             Ambalan La Surullah Petta Lopo
           </h1>
 
-          <p className="mt-1.5 text-sm sm:text-base font-bold text-white tracking-wide">
-            Gugus depan 10.035-10.036
+          <p className="mt-1.5 text-sm sm:text-base font-bold text-white tracking-wide whitespace-nowrap">
+            Gugus Depan 10.035 – 10.036
+          </p>
+          <p className="mt-1 text-xs sm:text-sm font-semibold text-white/95 tracking-wide">
+            Pangkalan UPT SMA Negeri 9 Maros
           </p>
         </div>
 

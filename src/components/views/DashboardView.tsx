@@ -92,7 +92,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   }, [programKerjaList, activeTab, searchQuery]);
 
-  const currentMonthData = monthsData[selectedMonthIndex] || monthsData[0];
 
   return (
     <div className="space-y-4 pb-28 font-sans">

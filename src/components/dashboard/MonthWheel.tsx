@@ -73,19 +73,10 @@ export const MonthWheel: React.FC<MonthWheelProps> = ({
         })}
         <circle cx="50" cy="50" r="26.5" fill="#ffffff" />
       </svg>
-      <div className="absolute inset-[27%] flex flex-col items-center justify-center text-center px-2">
-        <span className="text-[9px] sm:text-[10px] tracking-[0.16em] font-bold text-slate-400 uppercase">
-          Bulan {String(selectedMonthIndex + 1).padStart(2, '0')}/12
+      <div className="absolute inset-[27%] flex items-center justify-center overflow-hidden pointer-events-none">
+        <span className="px-1 text-center text-[10px] leading-tight font-semibold text-gray-800">
+          PROGRAM<br />KEGIATAN &amp;<br />LATIHAN
         </span>
-        <strong className="text-lg sm:text-xl leading-tight text-[#9D174D]">{month.name}</strong>
-        <span className="text-[10px] sm:text-xs font-semibold text-slate-700 leading-tight line-clamp-2 mt-1">
-          {activitySummary || 'Belum ada kegiatan'}
-        </span>
-        <span className="text-[9px] text-slate-400 mt-0.5">{selectedYear}</span>
-        <button type="button" onClick={onDetails}
-          className="mt-1.5 text-[11px] font-bold text-[#C41E2A] inline-flex items-center gap-1">
-          Rincian <span aria-hidden="true">›</span>
-        </button>
       </div>
     </div>
   );

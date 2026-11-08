@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ProfilAmbalanFirestoreSection } from './ProfilAmbalanFirestoreSection';
 import { Shield, Sparkles, BookOpen, Users, Compass, ChevronRight, Award, Flame } from 'lucide-react';
 import { LOGO_IMAGE_PATH, FILOSOFI_LOGO, SEJARAH_TOKOH } from '../../data/scoutData';
 import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
@@ -9,10 +10,16 @@ interface ProfilAmbalanViewProps {
   profile?: UserProfile;
   allMembers?: UserAccount[];
   onBack?: () => void;
+  isAdmin?: boolean;
 }
 
-export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack }) => {
+export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack, isAdmin = false }) => {
   const [activeElement, setActiveElement] = useState(FILOSOFI_LOGO[0]);
+  const [ambalanIdentity, setAmbalanIdentity] = useState({
+    namaAmbalan: 'Ambalan La Surullah Petta Lopo',
+    gudepPutra: '10-035',
+    gudepPutri: '10-036'
+  });
 
   // Dewan Ambalan berasal dari anggota yang ditunjuk oleh Admin
   const dewanMembers = allMembers.filter(
@@ -44,12 +51,11 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers
         </div>
 
         <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-[#e51c24] text-white font-mono shadow-xs">
-          GUGUS DEPAN 10-035 & 10-036
+          GUGUS DEPAN {ambalanIdentity.gudepPutra} & {ambalanIdentity.gudepPutri}
         </span>
 
-        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-2">
-          Ambalan La Surullah <br />
-          <span className="text-[#e51c24]">Petta Lopo</span>
+        <h2 className="text-xl sm:text-2xl font-black text-[#e51c24] tracking-tight mt-2">
+          {ambalanIdentity.namaAmbalan}
         </h2>
 
         <p className="text-xs text-slate-600 max-w-md mx-auto mt-2 leading-relaxed">
@@ -59,14 +65,16 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers
         {/* Lis Strip */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-xs font-bold text-slate-700">
           <span className="flex items-center gap-1.5 text-[#e51c24]">
-            <span className="w-2 h-2 rounded-full bg-[#e51c24]" /> Satuan Putra: 10-035
+            <span className="w-2 h-2 rounded-full bg-[#e51c24]" /> Satuan Putra: {ambalanIdentity.gudepPutra}
           </span>
           <span className="text-slate-300">|</span>
           <span className="flex items-center gap-1.5 text-amber-600">
-            <span className="w-2 h-2 rounded-full bg-amber-400" /> Satuan Putri: 10-036
+            <span className="w-2 h-2 rounded-full bg-amber-400" /> Satuan Putri: {ambalanIdentity.gudepPutri}
           </span>
         </div>
       </div>
+
+      <ProfilAmbalanFirestoreSection isAdmin={isAdmin} onIdentityChange={setAmbalanIdentity} />
 
       {/* Interactive Emblem Explorer (Klik Elemen Lambang) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-slate-100 shadow-xs space-y-3">

@@ -6,6 +6,7 @@ import { NotificationsModal } from './components/NotificationsModal';
 
 // Views
 import { HomeView } from './components/views/HomeView';
+import { ProfilAmbalanView } from './components/views/ProfilAmbalanView';
 import { DashboardView } from './components/views/DashboardView';
 import { ProgramKerjaView } from './components/views/ProgramKerjaView';
 import { DewanAmbalanView } from './components/views/DewanAmbalanView';
@@ -85,6 +86,7 @@ export default function App() {
   // Pertahankan login: jangan buka modal login jika user sudah login / memiliki sesi
   // Wajib validasi sesi Firebase; data akun lokal hanya cache, bukan bukti login.
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
+  const [profilePhotoFailed, setProfilePhotoFailed] = useState(false);
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -99,6 +101,19 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
+  const profilePhoto = auth.currentUser?.photoURL || '';
+  const isGoogleSignedIn = !isGooglePortalOpen && !!auth.currentUser && !auth.currentUser.isAnonymous;
+  const profileName = user.nama && !['Anggota Ambalan', 'Tamu Ambalan'].includes(user.nama)
+    ? user.nama
+    : auth.currentUser?.displayName || user.nama || 'Anggota Ambalan';
+  const profileRole = isAdmin ? 'Pembina / Admin' : user.role === 'dewan'
+    ? user.dewanJabatan || 'Dewan Ambalan'
+    : user.jabatan && user.jabatan !== 'Pembina Gugus Depan' ? user.jabatan : 'Anggota Ambalan';
+
+  useEffect(() => {
+    setProfilePhotoFailed(false);
+  }, [profilePhoto]);
+
   const isDewanAccount = isAdmin || user.role === 'dewan' || user.isDewan === true || isUserInDewan(user, dewanPositions);
 
   useEffect(() => {
@@ -258,16 +273,22 @@ export default function App() {
       )}
       
       {/* Main Native App Container */}
-      <div className="w-full max-w-lg mx-auto min-h-screen bg-white flex flex-col relative">
+      <div className="w-full max-w-[480px] mx-auto min-h-screen bg-white flex flex-col relative">
         
         <ApkUpdater />
 
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (
         <header className="pettalopo-topbar pettalopo-topbar-home">
-          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka Akun Saya">
+          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label={isGoogleSignedIn ? "Buka Akun Saya" : "Masuk ke akun"}>
             <span className="pettalopo-member-avatar">
-              <img src="/assets/pettalopo-logo.png" alt="Logo Ambalan" />
+              {isGoogleSignedIn && profilePhoto && !profilePhotoFailed
+                ? <img src={profilePhoto} alt="" referrerPolicy="no-referrer" onError={() => setProfilePhotoFailed(true)} />
+                : <span aria-hidden="true">{isGoogleSignedIn ? profileName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() : 'M'}</span>}
+            </span>
+            <span className="pettalopo-member-meta">
+              <strong>{isGoogleSignedIn ? profileName : 'Masuk'}</strong>
+              {isGoogleSignedIn && <small>{profileRole}</small>}
             </span>
           </button>
           <div className="pettalopo-overflow-wrap">
@@ -328,7 +349,7 @@ export default function App() {
           )}
 
           {activeMenu === 'profil_ambalan' && (
-            <ComingSoonView title="Profil Ambalan" subtitle="Profil dan identitas Ambalan La Surullah Petta Lopo sedang disiapkan." icon="🏕️" onBackToDashboard={() => setActiveMenu('home')} />
+            <ProfilAmbalanView isAdmin={isAdmin} allMembers={allMembers} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}

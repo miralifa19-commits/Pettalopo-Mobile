@@ -52,6 +52,7 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
+  const [selectedDashboardMonthIndex, setSelectedDashboardMonthIndex] = useState<number | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   // Hilangkan flash screen saat membuka aplikasi sesuai instruksi
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(false);
@@ -264,15 +265,9 @@ export default function App() {
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (
         <header className="pettalopo-topbar pettalopo-topbar-home">
-          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka profil anggota">
+          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label="Buka Akun Saya">
             <span className="pettalopo-member-avatar">
-              {(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl
-                ? <img src={(user as any).fotoProfil || (user as any).fotoUrl || (user as any).foto || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl} alt="" />
-                : <span>{(user.nama || 'A').trim().charAt(0).toUpperCase()}</span>}
-            </span>
-            <span className="pettalopo-member-meta">
-              <strong>{user.nama || 'Profil Anggota'}</strong>
-              <small>{getScoutMemberStatus(user)}</small>
+              <img src="/assets/pettalopo-logo.png" alt="Logo Ambalan" />
             </span>
           </button>
           <div className="pettalopo-overflow-wrap">
@@ -309,6 +304,11 @@ export default function App() {
             <HomeView
               user={user}
               onNavigateMenu={(m) => setActiveMenu(m)}
+              onOpenMonthDetails={(monthIndex) => {
+                setSelectedDashboardMonthIndex(monthIndex);
+                setSelectedAgendaId(null);
+                setActiveMenu('dashboard');
+              }}
               onOpenAgenda={(id) => {
                 setSelectedAgendaId(id);
                 setActiveMenu('dashboard');
@@ -322,6 +322,7 @@ export default function App() {
               programKerjaList={programKerjaList}
               onNavigateToProgramKerja={() => setActiveMenu('program_kerja')}
               initialSelectedAgendaId={selectedAgendaId}
+              initialSelectedMonthIndex={selectedDashboardMonthIndex}
               onAgendaDetailOpened={() => setSelectedAgendaId(null)}
             />
           )}

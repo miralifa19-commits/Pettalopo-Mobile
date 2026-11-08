@@ -75,7 +75,7 @@ export const MonthWheel: React.FC<MonthWheelProps> = ({
       </svg>
       <div className="absolute inset-[27%] flex items-center justify-center overflow-hidden pointer-events-none">
         <img
-          src="/assets/kop_tunas_kelapa.png"
+          src={`${import.meta.env.BASE_URL}assets/kop_tunas_kelapa.png`}
           alt="Lambang dua tunas kelapa Pramuka"
           className="w-[58%] h-[58%] object-contain"
         />

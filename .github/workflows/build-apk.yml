@@ -159,6 +159,21 @@ jobs:
             cp /tmp/pettalopo-google-services.json android/app/google-services.json
           fi
 
+      - name: Increase Gradle Wrapper download timeout
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/gradle/wrapper/gradle-wrapper.properties")
+          if not path.exists():
+              raise SystemExit("Generated Gradle Wrapper properties file not found.")
+          lines = path.read_text().splitlines()
+          lines = [line for line in lines if not line.startswith("networkTimeout=")]
+          lines.append("networkTimeout=120000")
+          path.write_text("\n".join(lines) + "\n")
+          print("Gradle Wrapper download timeout set to 120 seconds.")
+          PY
+
       - name: Configure Firebase Authentication Google dependencies
         run: |
           python3 - <<'PY'

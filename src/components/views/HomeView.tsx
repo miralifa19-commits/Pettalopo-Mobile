@@ -44,9 +44,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
   return (
     <div className="home-landing">
       <section className="home-hero home-hero-compact">
-        <div className="home-hero-brandline">
+        <button
+          type="button"
+          className="home-hero-brandline"
+          onClick={() => onNavigateMenu?.('profil_ambalan')}
+          aria-label="Buka Profil Ambalan La Surullah Petta Lopo"
+        >
           <span>AMBALAN LA SURULLAH PETTA LOPO</span>
-        </div>
+          <ChevronRight size={17} aria-hidden="true" />
+        </button>
         <div className="home-hero-main">
           <div className="home-hero-copy">
             <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
@@ -92,18 +98,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
               const entries = monthAgendas.filter(({ item }) => category.match(item));
               return (
                 <div key={category.title} className="py-3">
-                  <h4 className="text-sm font-bold text-slate-800">• {category.title}</h4>
+                  <span className={`inline-flex min-h-6 items-center rounded-full px-2.5 py-1 text-[10px] font-extrabold ${category.title === 'Latihan Rutin' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-[#B91C2B]'}`}>
+                    {category.title}
+                  </span>
                   {entries.length ? (
-                    <ol className="mt-1 list-decimal pl-5 space-y-1 text-[13px] text-slate-700">
+                    <div className="mt-2 space-y-2">
                       {entries.map(({ item }) => (
-                        <li key={item.id}>
-                          <button type="button" onClick={() => onOpenAgenda?.(item.id)} className="text-left">
-                            {item.nama}
-                          </button>
-                        </li>
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => onOpenAgenda?.(item.id)}
+                          className="block w-full rounded-lg px-1 py-1 text-left text-[13px] leading-relaxed text-slate-700 whitespace-pre-wrap break-words active:bg-slate-50"
+                        >
+                          {item.nama}
+                        </button>
                       ))}
-                    </ol>
-                  ) : <p className="pl-3 text-[13px] text-slate-400">-</p>}
+                    </div>
+                  ) : <p className="mt-2 text-[13px] text-slate-400">-</p>}
                 </div>
               );
             })}

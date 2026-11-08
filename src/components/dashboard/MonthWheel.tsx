@@ -73,21 +73,12 @@ export const MonthWheel: React.FC<MonthWheelProps> = ({
         })}
         <circle cx="50" cy="50" r="26.5" fill="#ffffff" />
       </svg>
-      <div className="absolute inset-[27%] flex flex-col items-center justify-center text-center px-2 overflow-hidden">
-        <span className="w-full text-[9px] sm:text-[10px] tracking-[0.12em] font-extrabold text-slate-700 uppercase leading-tight">
-          BULAN {String(selectedMonthIndex + 1).padStart(2, '0')}/12
-        </span>
-        <strong className="w-full text-[clamp(12px,3.8vw,18px)] font-extrabold leading-tight text-[#9D174D]">
-          {month.name}
-        </strong>
-        <span className="w-full max-w-full text-[clamp(8px,2.5vw,11px)] font-semibold text-slate-700 leading-tight line-clamp-2 mt-1 break-words">
-          {activitySummary || 'Belum ada kegiatan'}
-        </span>
-        <span className="text-[9px] font-bold text-slate-700 mt-0.5">{selectedYear}</span>
-        <button type="button" onClick={onDetails}
-          className="mt-1 min-h-6 text-[10px] sm:text-[11px] font-extrabold text-[#C41E2A] inline-flex items-center gap-1 shrink-0">
-          Rincian <span aria-hidden="true">›</span>
-        </button>
+      <div className="absolute inset-[27%] flex items-center justify-center overflow-hidden pointer-events-none">
+        <img
+          src="/assets/kop_tunas_kelapa.png"
+          alt="Lambang dua tunas kelapa Pramuka"
+          className="w-[58%] h-[58%] object-contain"
+        />
       </div>
     </div>
   );

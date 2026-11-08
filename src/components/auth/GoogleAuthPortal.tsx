@@ -108,8 +108,12 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
   // Listener status login Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      if (user) {
+      const hasGoogleProvider = !!user
+        && !user.isAnonymous
+        && user.providerData?.some((provider) => provider.providerId === 'google.com');
+
+      setFirebaseUser(hasGoogleProvider ? user : null);
+      if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
         if (openRef.current) {
           void finishLogin(user);

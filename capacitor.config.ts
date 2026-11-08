@@ -17,16 +17,13 @@ const config: CapacitorConfig = {
     ]
   },
   plugins: {
-    CapacitorHttp: {
-      enabled: true
-    },
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#FFFFFF',
       overlaysWebView: false
     },
     FirebaseAuthentication: {
-      skipNativeAuth: false,
+      skipNativeAuth: true,
       providers: ['google.com']
     }
   }

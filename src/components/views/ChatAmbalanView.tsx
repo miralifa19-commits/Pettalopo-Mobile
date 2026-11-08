@@ -27,6 +27,8 @@ import {
   subscribeTo8DewanPositions,
   Dewan8Position 
 } from '../../data/dewanStructure';
+import { db, auth } from '../../firebase/config';
+import { collection, addDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
 interface ChatAmbalanViewProps {
   currentUser: UserAccount;
@@ -138,8 +140,20 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     }
   ];
 
-  // Inisialisasi percakapan di 3 grup
+  const CHAT_STORAGE_KEY = 'pettalopo_chat_messages_v4';
+
+  // Inisialisasi percakapan di 3 grup: muat dari penyimpanan lokal jika tersedia
   const [messagesByGroup, setMessagesByGroup] = useState<Record<GroupId, MessageItem[]>>(() => {
+    try {
+      const cached = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object' && parsed.ambalan_aktif) {
+          return parsed;
+        }
+      }
+    } catch {}
+
     const proker = upcomingOneWeekProker;
     const proactiveReminderText = proker
       ? `Salam Pramuka! ⚜️ Mengingatkan kakak-kakak Dewan Ambalan, satu pekan ke depan kita ada agenda ambalan:\n\n📌 *${proker.nama}*\n🗓️ *Waktu:* ${proker.waktuPelaksanaan}\n📍 *Tempat:* ${proker.tempat || 'Sanggar Gugus Depan'}\n👥 *Sasaran:* ${proker.sasaran || 'Seluruh Anggota'}\n\nApakah persiapan dewan sudah siap? Apakah butuh bantuan Kak Cikal?\n- Buatkan rundown acara terstruktur?\n- Buat konsep kekinian yang seru & bermakna?\n- Cek kesiapan logistik?\n- Draf undangan resmi WhatsApp?\n\nSilakan mention *@cikal* atau klik tombol di bawah, Kak Cikal siap melayani!`
@@ -213,6 +227,75 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       ]
     };
   });
+
+  // Simpan riwayat chat ke penyimpanan lokal setiap kali ada perubahan
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesByGroup));
+    } catch (err) {
+      console.warn('Gagal menyimpan chat ke penyimpanan lokal:', err);
+    }
+  }, [messagesByGroup]);
+
+  // Sinkronisasi realtime Firestore agar chat tetap ada dan tersinkronisasi antar anggota
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    try {
+      const q = query(
+        collection(db, 'ambalan_chats'),
+        orderBy('createdAt', 'asc'),
+        limit(120)
+      );
+      const unsub = onSnapshot(q, (snapshot) => {
+        const incoming: Record<GroupId, MessageItem[]> = {
+          dewan_ambalan: [],
+          ambalan_aktif: [],
+          purna_ambalan: []
+        };
+
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const grp = data.groupId as GroupId;
+          if (grp && incoming[grp]) {
+            incoming[grp].push({
+              id: docSnap.id,
+              senderId: data.senderId || '',
+              senderName: data.senderName || 'Anggota',
+              senderRole: data.senderRole,
+              senderSangga: data.senderSangga,
+              text: data.text || '',
+              time: data.time || '',
+              isMe: data.senderId === (currentUser.uid || auth.currentUser?.uid),
+              isAi: data.isAi === true
+            });
+          }
+        });
+
+        setMessagesByGroup((prev) => {
+          const next = { ...prev };
+          let changed = false;
+          (['dewan_ambalan', 'ambalan_aktif', 'purna_ambalan'] as GroupId[]).forEach((grp) => {
+            if (incoming[grp].length > 0) {
+              const defaultSys = prev[grp].filter((m) => m.isSystemNotice || m.isProactiveReminder);
+              const map = new Map<string, MessageItem>();
+              defaultSys.forEach((m) => map.set(m.id, m));
+              prev[grp].forEach((m) => map.set(m.id, m));
+              incoming[grp].forEach((m) => map.set(m.id, m));
+              next[grp] = Array.from(map.values());
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
+      }, (error) => {
+        console.warn('Firestore ambalan_chats listener info:', error?.message);
+      });
+
+      return () => unsub();
+    } catch (e) {
+      console.warn('Gagal inisialisasi listener chat Firestore:', e);
+    }
+  }, [currentUser.uid]);
 
   const [inputText, setInputText] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -295,6 +378,22 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
 
     if (!customText) setInputText('');
 
+    // Kirim pesan ke Firestore agar tersimpan secara permanen dan tersinkronisasi
+    if (auth.currentUser) {
+      addDoc(collection(db, 'ambalan_chats'), {
+        groupId: activeGroupId,
+        senderId: auth.currentUser.uid,
+        senderName: currentUser.nama || 'Anggota',
+        senderRole: resolvedRole,
+        senderSangga: currentUser.sangga || '',
+        text: textToSend,
+        time: newMsg.time,
+        createdAt: Date.now()
+      }).catch((err) => {
+        console.warn('Gagal sinkron pesan chat ke Firestore:', err);
+      });
+    }
+
     // Aturan Kak Cikal: HANYA ada di grup Dewan Ambalan dan HANYA merespon bila di-@ atau disebut
     const isMentioningCikal = 
       textToSend.toLowerCase().includes('@cikal') || 
@@ -328,6 +427,21 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
           ...prev,
           dewan_ambalan: [...(prev.dewan_ambalan || []), aiResponseMsg]
         }));
+
+        if (auth.currentUser) {
+          addDoc(collection(db, 'ambalan_chats'), {
+            groupId: 'dewan_ambalan',
+            senderId: 'ai',
+            senderName: 'Kak Cikal (AI Ambalan)',
+            senderRole: 'Asisten AI Resmi Dewan',
+            text: aiResponseMsg.text,
+            time: aiResponseMsg.time,
+            isAi: true,
+            createdAt: Date.now()
+          }).catch((err) => {
+            console.warn('Gagal simpan respon AI ke Firestore:', err);
+          });
+        }
       } catch (err) {
         console.error('Kak Cikal error:', err);
       } finally {

@@ -256,26 +256,20 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   return (
     <div className="space-y-4 pb-24 font-sans">
 
-      {/* Header Card Dewan Ambalan dengan Tombol Kembali Melingkar */}
-      {activeMenu !== 'proker' && activeMenu !== 'persuratan' && (
+      {/* Header untuk Submenu (Anggota Sangga, Keuangan, Laporan) dengan Panah Kembali */}
+      {activeMenu !== 'menu' && activeMenu !== 'proker' && activeMenu !== 'persuratan' && (
         <MenuHeaderCard
           title="Ruang Kerja Dewan Ambalan"
           subtitle={
-            activeMenu === 'menu'
-              ? 'Pengelolaan & administrasi masa bakti'
-              : activeMenu === 'anggota_sangga'
+            activeMenu === 'anggota_sangga'
               ? 'Kelola Anggota & Sangga Penegak'
               : activeMenu === 'keuangan'
               ? 'Kelola Kas & Iuran Ambalan'
               : 'Kelola Rekap Laporan Dewan'
           }
           onBack={() => {
-            if (activeMenu !== 'menu') {
-              setActiveMenu('menu');
-              setSelectedProkerType(null);
-            } else if (onBack) {
-              onBack();
-            }
+            setActiveMenu('menu');
+            setSelectedProkerType(null);
           }}
         />
       )}
@@ -285,59 +279,44 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
           ======================================================== */}
       {activeMenu === 'menu' && (
         <div className="space-y-4">
+          {/* Header Menu Utama: Judul di Tengah Tanpa Panah Kembali dan Tanpa Banner */}
+          <div className="py-2.5 text-center bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
+            <h1 className="text-base font-black text-slate-900 tracking-tight">
+              Ruang Kerja Dewan Ambalan
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Pengelolaan & administrasi masa bakti
+            </p>
+          </div>
           
-          {/* 5 Menu Dewan Ambalan */}
+          {/* 5 Menu Dewan Ambalan dengan Ukuran Seragam */}
           <div className="space-y-2.5">
-            {/* 1. Kelola Program Kerja */}
-            <button
-              type="button"
-              onClick={() => { setSelectedProkerType(null); setActiveMenu('proker'); }}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs dewan-menu-banner"
-            >
-              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">1.</span>
-              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Program Kerja</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rencana, pelaksanaan, dan evaluasi program</span>
-            </button>
-            {/* 2. Kelola Anggota dan Sangga */}
-            <button
-              type="button"
-              onClick={() => setActiveMenu('anggota_sangga')}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">2.</span>
-              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Anggota dan Sangga</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Data anggota, tingkatan, SKU, dan sangga</span>
-            </button>
-            {/* 3. Kelola Persuratan */}
-            <button
-              type="button"
-              onClick={() => setActiveMenu('persuratan')}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">3.</span>
-              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Persuratan</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Surat resmi dan arsip ambalan</span>
-            </button>
-            {/* 4. Kelola Keuangan */}
-            <button
-              type="button"
-              onClick={() => setActiveMenu('keuangan')}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">4.</span>
-              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Keuangan</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Kas dan iuran anggota</span>
-            </button>
-            {/* 5. Kelola Laporan */}
-            <button
-              type="button"
-              onClick={() => setActiveMenu('laporan')}
-              className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className="shrink-0 text-sm font-extrabold text-[#e51c24]">5.</span>
-              <span className="shrink-0 text-sm font-bold text-slate-900">Kelola Laporan</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">Rekap kegiatan dan laporan masa bakti</span>
-            </button>
+            {[
+              { id: 'proker', num: 1, title: 'Kelola Program Kerja', desc: 'Rencana, pelaksanaan, dan evaluasi program' },
+              { id: 'anggota_sangga', num: 2, title: 'Kelola Anggota dan Sangga', desc: 'Data anggota, tingkatan, SKU, dan sangga' },
+              { id: 'persuratan', num: 3, title: 'Kelola Persuratan', desc: 'Surat resmi dan arsip ambalan' },
+              { id: 'keuangan', num: 4, title: 'Kelola Keuangan', desc: 'Kas dan iuran anggota' },
+              { id: 'laporan', num: 5, title: 'Kelola Laporan', desc: 'Rekap kegiatan dan laporan masa bakti' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (item.id === 'proker') setSelectedProkerType(null);
+                  setActiveMenu(item.id as any);
+                }}
+                className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-left hover:border-red-300 active:bg-slate-50 transition-all cursor-pointer shadow-xs"
+              >
+                <span className="w-8 h-8 rounded-xl bg-red-50 text-[#e51c24] flex items-center justify-center text-xs font-black shrink-0 border border-red-100">
+                  {item.num}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold text-slate-900">{item.title}</span>
+                  <span className="block text-[11px] text-slate-500 truncate mt-0.5">{item.desc}</span>
+                </div>
+                <ChevronRight size={16} className="text-slate-400 shrink-0" />
+              </button>
+            ))}
           </div>
 
         </div>

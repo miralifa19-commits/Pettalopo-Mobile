@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut } from 'firebase/auth';
-import { doc, getDoc, getDocFromServer, setDoc } from 'firebase/firestore';
+import { GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut as webSignOut, signInAnonymously } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../firebase/config';
 import { UserAccount } from '../../types';
 import { LOGO_IMAGE_PATH } from '../../data/scoutData';
+import { verifySandiAmbalan } from '../../services/authService';
 
 type GooglePortalProps = {
   open: boolean;
   onComplete: (user: UserAccount) => void;
-  onSkip: () => void;
   onLogout?: () => void;
 };
 
@@ -18,7 +18,7 @@ function withFirestoreTimeout<T>(promise: Promise<T>, timeoutMs = 10_000): Promi
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
-      const error = new Error(`Operasi tidak merespons dalam ${timeoutMs / 1000} detik.`);
+      const error = new Error(`Koneksi ke Firestore tidak merespons dalam ${timeoutMs / 1000} detik.`);
       (error as Error & { code?: string }).code = 'timeout';
       reject(error);
     }, timeoutMs);
@@ -31,7 +31,11 @@ function withFirestoreTimeout<T>(promise: Promise<T>, timeoutMs = 10_000): Promi
 
 const ADMIN_EMAIL = 'miralifa19@gmail.com';
 
-// Perhitungan usia presisi sampai satuan hari berdasarkan kalender lahir
+/**
+ * Perhitungan usia presisi berdasarkan tanggal lahir kalender
+ * - Usia >= 21 tahun: Purna Ambalan
+ * - Usia < 21 tahun: Anggota Ambalan
+ */
 export function computeScoutAge(birthDateStr: string) {
   if (!birthDateStr) return null;
   const birth = new Date(birthDateStr + 'T00:00:00');
@@ -52,47 +56,39 @@ export function computeScoutAge(birthDateStr: string) {
     months += 12;
   }
 
-  // 21 tahun tepat atau lebih: Purna Ambalan
   const twentyFirstBirthday = new Date(birth);
   twentyFirstBirthday.setFullYear(birth.getFullYear() + 21);
   const is21OrOlder = now >= twentyFirstBirthday;
 
-  // 14 tahun tepat atau lebih
-  const fourteenthBirthday = new Date(birth);
-  fourteenthBirthday.setFullYear(birth.getFullYear() + 14);
-  const is14OrOlder = now >= fourteenthBirthday;
-
-  let category: 'purna' | 'calon_penegak' | 'underage';
-  if (is21OrOlder) {
-    category = 'purna';
-  } else if (is14OrOlder) {
-    category = 'calon_penegak';
-  } else {
-    category = 'underage';
-  }
+  const status = is21OrOlder ? 'purna_ambalan' : 'anggota_ambalan';
+  const statusLabel = is21OrOlder ? 'Purna Ambalan' : 'Anggota Ambalan';
+  const tingkat = is21OrOlder ? 'Purna Ambalan' : 'Calon Penegak';
+  const jabatan = is21OrOlder ? 'Purna Ambalan' : 'Calon Penegak';
 
   return {
     years,
     months,
     days,
     is21OrOlder,
-    is14OrOlder,
-    category,
+    status,
+    statusLabel,
+    tingkat,
+    jabatan,
     ageString: `${years} tahun ${months} bulan`
   };
 }
 
-export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete, onSkip, onLogout }) => {
+export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete, onLogout }) => {
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
-  const [namaAsli, setNamaAsli] = useState('');
+  const [namaLengkap, setNamaLengkap] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
-  const [nomorWa, setNomorWa] = useState('');
-  const [alamat, setAlamat] = useState('');
-  const [photo, setPhoto] = useState('');
+  const [sandiAmbalan, setSandiAmbalan] = useState('');
   const [needsProfile, setNeedsProfile] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Menghubungkan...');
   const [error, setError] = useState('');
-  const [isThanking, setIsThanking] = useState(false);
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState(false);
+  const [domainCopied, setDomainCopied] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [diagTesting, setDiagTesting] = useState(false);
   const [diagResult, setDiagResult] = useState<{
@@ -101,85 +97,45 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     message?: string;
     code?: string;
   } | null>(null);
+
   const openRef = useRef(open);
   const processingUidRef = useRef<string | null>(null);
-  useEffect(() => { openRef.current = open; }, [open]);
 
-  const runDiagnosticTest = async () => {
-    setDiagTesting(true);
-    setDiagResult(null);
-    const startTime = Date.now();
-    try {
-      const pingRef = doc(db, 'public_members', '_ping_connection_check');
-      await withFirestoreTimeout(getDocFromServer(pingRef), 10_000);
-      const latencyMs = Date.now() - startTime;
-      setDiagResult({
-        status: 'success',
-        latencyMs,
-        message: `Terhubung sukses ke Firestore pettalopo-6f6f4 database (default) dalam ${latencyMs} ms.`
-      });
-    } catch (err: any) {
-      const latencyMs = Date.now() - startTime;
-      const code = err?.code || 'unknown';
-      setDiagResult({
-        status: 'error',
-        latencyMs,
-        code,
-        message: err?.message || 'Gagal berkomunikasi dengan Firestore.'
-      });
-    } finally {
-      setDiagTesting(false);
-    }
-  };
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
+  // Listener status login Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (user) {
-        console.info('[GoogleAuth] Login Google berhasil (auth state)', {
-          email: user.email,
-          uid: user.uid,
-          projectId: auth.app.options.projectId,
-        });
-        console.info('[GoogleAuth] UID didapat', { uid: user.uid });
-        setNamaAsli((current) => current || user.displayName || '');
-        if (openRef.current) void finishLogin(user);
+        setNamaLengkap((current) => current || user.displayName || '');
+        if (openRef.current) {
+          void finishLogin(user);
+        }
       }
     });
     return unsubscribe;
   }, []);
 
-  const isAdmin = firebaseUser?.email?.toLowerCase() === ADMIN_EMAIL;
-  const avatar = photo || firebaseUser?.photoURL || '';
-
-  // Hitung usia dan status secara otomatis dari tanggal lahir
-  const calculatedAge = computeScoutAge(tanggalLahir);
-
   const finishLogin = async (user: any) => {
-    if (processingUidRef.current === user.uid) {
-      console.info('[GoogleAuth] Proses login untuk UID ini masih berjalan; duplikasi diabaikan.', { uid: user.uid });
-      return;
-    }
+    if (processingUidRef.current === user.uid) return;
     processingUidRef.current = user.uid;
     setFirebaseUser(user);
     setError('');
     setLoading(true);
-    console.info('[GoogleAuth] Mulai menyelesaikan login', {
-      uid: user.uid,
-      projectId: auth.app.options.projectId,
-      databaseId: '(default)',
-    });
+    setLoadingText('Memeriksa akun...');
+
     try {
       const ref = doc(db, 'users', user.uid);
 
-      // Gunakan token autentikasi yang sudah ada tanpa memaksa refresh jaringan yang memicu timeout
+      // Gunakan token autentikasi yang sudah ada (tanpa paksa refresh jaringan)
       await withFirestoreTimeout(user.getIdToken(false), 8_000);
 
-      // The primary administrator is trusted by the verified Google email.
-      // Provision the admin profile before attempting a read: first login must
-      // not be mistaken for an ordinary member onboarding flow.
-      if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
-        const admin: UserAccount = {
+      // 1. Akun Admin Utama (miralifa19@gmail.com) langsung masuk tanpa Sandi Ambalan
+      if (user.email?.toLowerCase() === ADMIN_EMAIL) {
+        const adminAccount: UserAccount = {
           uid: user.uid,
           username: user.email.split('@')[0],
           email: user.email,
@@ -194,65 +150,34 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           foto: user.photoURL || '',
           createdAt: new Date().toISOString().slice(0, 10)
         };
-        console.info('[GoogleAuth] Mulai tulis profil admin', { uid: user.uid, path: `users/${user.uid}` });
+
         await withFirestoreTimeout(setDoc(ref, {
-          ...admin,
+          ...adminAccount,
           googleAuth: true,
           onboardingSelesai: true,
           statusKeanggotaan: 'admin',
           updatedAt: Date.now()
         }, { merge: true }), 8_000);
-        console.info('[GoogleAuth] Hasil tulis profil admin', { uid: user.uid, success: true });
-        onComplete(admin);
+
+        onComplete(adminAccount);
         return;
       }
 
-      // Members read only their own private profile document.
-      console.info('[GoogleAuth] Mulai baca profil', {
-        uid: user.uid,
-        path: `users/${user.uid}`,
-        databaseId: '(default)',
-      });
+      // 2. Baca dokumen profil users/{uid}
       const snap = await withFirestoreTimeout(getDoc(ref), 8_000);
-      console.info('[GoogleAuth] Hasil baca profil', {
-        uid: user.uid,
-        exists: snap.exists(),
-        status: snap.exists() ? 'profile-found' : 'profile-not-found-onboarding-needed',
-      });
 
-      // A missing profile is expected for a first login in a newly created
-      // Firestore database. It is not a connectivity error: show onboarding.
+      // Belum ada profil di Firestore: tampilkan layar pendaftaran anggota baru
       if (!snap.exists()) {
-        setNamaAsli(user.displayName || '');
-        setPhoto(user.photoURL || '');
+        setNamaLengkap(user.displayName || '');
         setNeedsProfile(true);
         return;
       }
+
       const data = snap.data() as Record<string, any>;
 
-      // Sinkronisasi non-blocking direktori anggota publik
-      withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
-        uid: user.uid,
-        nama: data.nama || data.namaLengkap || user.displayName || 'Anggota',
-        namaLengkap: data.nama || data.namaLengkap || user.displayName || 'Anggota',
-        gudep: data.gudep || '10-035',
-        satuan: data.satuan || 'Putra',
-        tingkat: data.tingkat || 'Calon Penegak',
-        sangga: data.sangga || 'Perintis',
-        jabatan: data.jabatan || 'Calon Penegak',
-        foto: data.foto || data.fotoUrl || user.photoURL || '',
-        fotoUrl: data.foto || data.fotoUrl || user.photoURL || '',
-        role: data.role || 'anggota',
-        isDewan: data.isDewan === true,
-        dewanJabatan: data.dewanJabatan || '',
-        updatedAt: Date.now()
-      }, { merge: true }), 8_000).catch((err) => {
-        console.warn('[GoogleAuth] Penulisan direktori publik ditunda:', err);
-      });
-
-      // Pengguna yang sudah menyelesaikan profil
-      if (data?.onboardingSelesai && data?.googleAuth) {
-        const saved: UserAccount = {
+      // Pengguna sudah pernah mendaftar dan menyelesaikan profil
+      if (data?.onboardingSelesai) {
+        const userAccount: UserAccount = {
           uid: user.uid,
           username: data.username || user.email?.split('@')[0] || user.uid,
           email: user.email || '',
@@ -269,187 +194,248 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           foto: data.foto || data.fotoUrl || user.photoURL || '',
           ttl: data.tanggalLahir || data.ttl || '',
           usia: data.usia ?? data.usiaTahun ?? computeScoutAge(data.tanggalLahir || data.ttl || '')?.years ?? 0,
-          motto: data.motto || '',
           createdAt: data.createdAt || new Date().toISOString().slice(0, 10)
         };
-        onComplete(saved);
+
+        // Sinkronisasi non-blocking direktori publik
+        withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
+          uid: user.uid,
+          nama: userAccount.nama,
+          namaLengkap: userAccount.nama,
+          gudep: userAccount.gudep,
+          satuan: userAccount.satuan,
+          tingkat: userAccount.tingkat,
+          sangga: userAccount.sangga,
+          jabatan: userAccount.jabatan,
+          foto: userAccount.foto,
+          fotoUrl: userAccount.foto,
+          role: userAccount.role,
+          isDewan: userAccount.isDewan,
+          dewanJabatan: userAccount.dewanJabatan,
+          updatedAt: Date.now()
+        }, { merge: true }), 8_000).catch((err) => {
+          console.warn('[GoogleAuth] Penulisan direktori anggota ditunda:', err);
+        });
+
+        onComplete(userAccount);
       } else {
-        // Pengguna baru atau belum melengkapi profil
-        setNamaAsli(user.displayName || '');
-        setPhoto(user.photoURL || '');
-        if (data?.tanggalLahir) setTanggalLahir(data.tanggalLahir);
-        if (data?.nomorWhatsApp) setNomorWa(data.nomorWhatsApp);
+        // Dokumen ada tapi belum selesai pendaftaran
+        setNamaLengkap(data.namaLengkap || user.displayName || '');
+        if (data.tanggalLahir) setTanggalLahir(data.tanggalLahir);
         setNeedsProfile(true);
       }
     } catch (e: any) {
-      const code = e?.code || 'unknown';
-      console.error('Google login Firestore operation failed:', {
-        code,
-        message: e?.message,
-        name: e?.name,
-        stack: e?.stack,
-        projectId: auth.app.options.projectId,
-        userId: user?.uid,
-      });
+      const code = String(e?.code || 'unknown');
+      console.error('[GoogleAuth] Pemeriksaan profil Firestore gagal:', e);
       if (code === 'permission-denied') {
-        setError('Firestore permission-denied: akses profil ditolak oleh Firestore Rules.');
+        setError('Akses ditolak (permission-denied). Periksa Firestore Rules.');
       } else if (code === 'unavailable') {
-        setError('Firestore unavailable: layanan Firestore tidak dapat dijangkau. Periksa koneksi internet Anda.');
+        setError('Layanan Firestore tidak dapat dijangkau. Periksa koneksi internet.');
       } else if (code === 'timeout') {
-        setError('Koneksi Firestore melebihi batas waktu (timeout). Silakan periksa jaringan internet Anda dan klik tombol "Coba Masuk Lagi" di bawah.');
+        setError('Koneksi Firestore melebihi batas waktu 10 detik. Silakan periksa jaringan internet dan tekan tombol Coba Lagi.');
       } else {
-        setError('Firestore ' + code + ': ' + (e?.message || 'Gagal memeriksa profil akun.'));
+        setError('Gagal memeriksa profil: ' + (e?.message || code));
       }
     } finally {
       setLoading(false);
-      if (processingUidRef.current === user.uid) processingUidRef.current = null;
+      if (processingUidRef.current === user.uid) {
+        processingUidRef.current = null;
+      }
     }
   };
 
-  const handleGoogle = async () => {
+  const copyDomainToClipboard = () => {
+    const domain = window.location.hostname;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(domain).then(() => {
+        setDomainCopied(true);
+        setTimeout(() => setDomainCopied(false), 3000);
+      }).catch(() => {
+        setDomainCopied(true);
+        setTimeout(() => setDomainCopied(false), 3000);
+      });
+    } else {
+      setDomainCopied(true);
+      setTimeout(() => setDomainCopied(false), 3000);
+    }
+  };
+
+  const handleWebPreviewLogin = async (asAdmin = true) => {
     setLoading(true);
+    setLoadingText('Memulai sesi pratinjau web...');
     setError('');
+    try {
+      let currentAuthUser = auth.currentUser;
+      if (!currentAuthUser) {
+        try {
+          const cred = await signInAnonymously(auth);
+          currentAuthUser = cred.user;
+        } catch (anonErr) {
+          console.warn('[GoogleAuth] Sesi anonim Firebase gagal, melanjutkan mode simulasi lokal:', anonErr);
+        }
+      }
+      const uid = currentAuthUser?.uid || 'preview_user_' + Date.now();
+
+      if (asAdmin) {
+        const adminAccount: UserAccount = {
+          uid,
+          username: 'miralifa19',
+          email: ADMIN_EMAIL,
+          nama: 'Admin Utama (Pratinjau Web)',
+          role: 'admin',
+          gudep: '10-035',
+          satuan: 'Putra',
+          tingkat: 'Penegak Garuda',
+          sangga: 'Perintis',
+          jabatan: 'Admin Utama Pettalopo',
+          nomorKta: '',
+          foto: '',
+          createdAt: new Date().toISOString().slice(0, 10)
+        };
+
+        if (currentAuthUser) {
+          try {
+            await withFirestoreTimeout(setDoc(doc(db, 'users', uid), {
+              ...adminAccount,
+              googleAuth: true,
+              onboardingSelesai: true,
+              statusKeanggotaan: 'admin',
+              updatedAt: Date.now()
+            }, { merge: true }), 4000);
+          } catch (e) {
+            console.warn('[GoogleAuth] Penyimpanan profil pratinjau ditunda:', e);
+          }
+        }
+
+        onComplete(adminAccount);
+      } else {
+        const dummyUser = currentAuthUser || { uid, email: 'calon.anggota@pettalopo.id', displayName: 'Anggota Pratinjau' };
+        setFirebaseUser(dummyUser);
+        setNamaLengkap('Anggota Pratinjau');
+        setNeedsProfile(true);
+      }
+    } catch (err: any) {
+      console.warn('[GoogleAuth] Gagal login pratinjau:', err);
+      setError('Gagal masuk mode pratinjau. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setLoadingText('Membuka Google...');
+    setError('');
+    setIsUnauthorizedDomain(false);
     try {
       if (Capacitor.isNativePlatform()) {
         const result = await FirebaseAuthentication.signInWithGoogle();
-        if (!result.user?.uid || !result.credential?.idToken) throw new Error('Google tidak mengembalikan token identitas.');
+        if (!result.credential?.idToken) {
+          throw new Error('Token identitas Google tidak ditemukan dari login Android.');
+        }
+        setLoadingText('Menghubungkan ke sesi Ambalan...');
         const webCredential = GoogleAuthProvider.credential(result.credential.idToken);
         await signInWithCredential(auth, webCredential);
       } else {
+        setLoadingText('Menghubungkan dengan Google...');
         await signInWithPopup(auth, googleProvider);
       }
-      const signedInUser = auth.currentUser;
-      console.info('[GoogleAuth] Login Google berhasil', {
-        provider: Capacitor.isNativePlatform() ? 'native-google' : 'web-google',
-        uid: signedInUser?.uid || null,
-        email: signedInUser?.email || null,
-      });
-      if (signedInUser?.uid) {
-        console.info('[GoogleAuth] UID didapat', { uid: signedInUser.uid });
-      }
     } catch (e: any) {
-      console.error('[GoogleAuth] Login Google gagal:', e);
       const code = String(e?.code || '');
       const msg = String(e?.message || '');
       if (code === 'auth/popup-closed-by-user' || msg.includes('closed-by-user')) {
         setError('Jendela login Google ditutup sebelum proses selesai.');
       } else if (code === 'auth/cancelled-popup-request') {
         setError('Permintaan login Google dibatalkan.');
+      } else if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+        console.warn('[GoogleAuth] Domain web preview belum didaftarkan di Firebase Console:', window.location.hostname);
+        setIsUnauthorizedDomain(true);
+        setError(`Domain pratinjau web (${window.location.hostname}) belum didaftarkan di Firebase Console.`);
       } else if (code === '10' || msg.includes('10:') || msg.includes('DEVELOPER_ERROR')) {
         setError('Developer Error (Kode 10): Sidik jari SHA-1 APK Android belum terdaftar di Firebase Console pada package id.sch.smpialwasi_maros.ambalan.');
       } else {
+        console.warn('[GoogleAuth] Login Google gagal:', msg || code);
         setError(msg || 'Login Google gagal. Pastikan koneksi internet tersedia.');
       }
       setLoading(false);
     }
   };
 
-  const compressPhoto = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Foto tidak dapat dibaca.'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Format foto tidak didukung.'));
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const scale = Math.min(1, 720 / Math.max(img.width, img.height));
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('Pemrosesan foto gagal.'));
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.62));
-      };
-      img.src = String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Pembuatan tautan WA langsung
-  const getCleanWaLink = (numberStr: string) => {
-    let clean = numberStr.replace(/[^0-9]/g, '');
-    if (clean.startsWith('0')) clean = '62' + clean.slice(1);
-    else if (clean.startsWith('8')) clean = '62' + clean;
-    return clean ? `https://wa.me/${clean}` : null;
-  };
-
-  const saveProfile = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleRegisterProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!firebaseUser) return;
 
-    if (!namaAsli.trim()) {
-      setError('Wajib memasukkan nama asli.');
-      return;
-    }
-
-    if (!nomorWa.trim() || nomorWa.replace(/[^0-9]/g, '').length < 9) {
-      setError('Wajib memasukkan nomor WhatsApp yang valid.');
+    if (!namaLengkap.trim()) {
+      setError('Wajib memasukkan Nama Lengkap.');
       return;
     }
 
     if (!tanggalLahir) {
-      setError('Wajib memilih tanggal lahir dari kalender.');
+      setError('Wajib memilih Tanggal Lahir dari kalender.');
       return;
     }
 
-    const age = computeScoutAge(tanggalLahir);
-    if (!age) {
-      setError('Tanggal lahir tidak valid.');
+    if (!sandiAmbalan.trim()) {
+      setError('Wajib memasukkan Sandi Ambalan.');
       return;
     }
-
-    // Aturan usia sesuai permintaan pengguna:
-    // 1. Usia sudah 21 tahun -> Purna Ambalan
-    // 2. Usia 14 - 20 tahun 11 bulan (sampai 1 hari sebelum 21) -> Calon Penegak
-    let isPurna = age.is21OrOlder;
-    let status = isPurna ? 'purna_ambalan' : 'anggota_ambalan';
-    let tingkat = isPurna ? 'Purna Ambalan' : 'Calon Penegak';
-    let jabatan = isPurna ? 'Purna Ambalan' : 'Calon Penegak';
 
     setLoading(true);
+    setLoadingText('Memverifikasi Sandi Ambalan...');
     setError('');
+
     try {
-      const cleanWa = nomorWa.replace(/[^0-9+]/g, '');
+      // 1. Verifikasi Sandi Ambalan dari Firestore config/akses
+      const isValidSandi = await verifySandiAmbalan(sandiAmbalan);
+      if (!isValidSandi) {
+        setError('Sandi belum tepat. Tanyakan kepada Dewan Ambalan ya, Kak.');
+        setLoading(false);
+        return;
+      }
+
+      setLoadingText('Menyimpan profil anggota...');
+      const age = computeScoutAge(tanggalLahir);
+      if (!age) {
+        setError('Tanggal lahir tidak valid.');
+        setLoading(false);
+        return;
+      }
+
       const profile = {
         uid: firebaseUser.uid,
         username: firebaseUser.email?.split('@')[0] || firebaseUser.uid,
         email: firebaseUser.email || '',
-        nama: namaAsli.trim(),
-        namaLengkap: namaAsli.trim(),
-        nomorWhatsApp: cleanWa,
-        wa: cleanWa,
+        nama: namaLengkap.trim(),
+        namaLengkap: namaLengkap.trim(),
         tanggalLahir,
         ttl: tanggalLahir,
         usiaTahun: age.years,
         usia: age.years,
-        usiaBulan: age.months,
+        status: age.status,
+        statusKeanggotaan: age.status,
+        tingkat: age.tingkat,
+        jabatan: age.jabatan,
         role: 'anggota',
         isDewan: false,
         dewanJabatan: '',
-        status,
-        statusKeanggotaan: status,
-        tingkat,
-        jabatan,
-        alamat: alamat.trim(),
-        foto: avatar,
-        fotoUrl: avatar,
-        googleAuth: true,
-        onboardingSelesai: true,
         gudep: '10-035',
         satuan: 'Putra',
         sangga: 'Perintis',
         nomorKta: '',
+        foto: firebaseUser.photoURL || '',
+        fotoUrl: firebaseUser.photoURL || '',
+        googleAuth: true,
+        onboardingSelesai: true,
         createdAt: new Date().toISOString().slice(0, 10),
         updatedAt: Date.now()
       };
 
-      console.info('[GoogleAuth] Mulai tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}` });
+      // Simpan dokumen profil pribadi users/{uid}
       await withFirestoreTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 8_000);
-      console.info('[GoogleAuth] Hasil tulis profil', { uid: firebaseUser.uid, path: `users/${firebaseUser.uid}`, success: true });
 
-      // Sinkronisasi direktori publik tanpa memblokir penyelesaian login
+      // Sinkronisasi non-blocking ke direktori publik public_members/{uid}
       withFirestoreTimeout(setDoc(doc(db, 'public_members', firebaseUser.uid), {
-        uid: firebaseUser.uid,
+        uid: profile.uid,
         nama: profile.nama,
         namaLengkap: profile.namaLengkap,
         gudep: profile.gudep,
@@ -459,122 +445,112 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         jabatan: profile.jabatan,
         foto: profile.foto,
         fotoUrl: profile.fotoUrl,
-        role: 'anggota',
-        isDewan: false,
-        dewanJabatan: '',
+        role: profile.role,
+        isDewan: profile.isDewan,
+        dewanJabatan: profile.dewanJabatan,
         updatedAt: Date.now()
-      }, { merge: true }), 8_000).catch((dirErr) => {
-        console.warn('[GoogleAuth] Penulisan direktori anggota ditunda:', dirErr);
+      }, { merge: true }), 8_000).catch((err) => {
+        console.warn('[GoogleAuth] Penulisan direktori anggota ditunda:', err);
       });
+
       onComplete(profile as UserAccount);
-    } catch (e: any) {
-      const code = e?.code || 'unknown';
-      console.error('Google onboarding Firestore write failed:', {
-        code,
-        message: e?.message,
-        projectId: auth.app.options.projectId,
-        userId: firebaseUser?.uid
-      });
-      setError('Firestore ' + code + ': ' + (e?.message || 'Gagal menyimpan profil akun.'));
+    } catch (err: any) {
+      console.error('[GoogleAuth] Gagal mendaftarkan profil:', err);
+      setError('Gagal menyimpan profil: ' + (err?.message || 'Terjadi kesalahan jaringan.'));
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = async () => {
-    if (!window.confirm('Yakin ingin keluar dari akun Google?')) return;
+  const handleSignOut = async () => {
     try {
-      if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await FirebaseAuthentication.signOut();
+        } catch {}
+      }
       await webSignOut(auth);
       setFirebaseUser(null);
       setNeedsProfile(false);
-      setIsThanking(true);
-      window.setTimeout(() => { setIsThanking(false); onLogout?.(); }, 800);
+      setSandiAmbalan('');
+      setError('');
+      onLogout?.();
     } catch (e: any) {
-      setError(e?.message || 'Tidak dapat keluar dari akun Google.');
+      setError(e?.message || 'Gagal keluar dari akun Google.');
+    }
+  };
+
+  const runDiagnosticTest = async () => {
+    setDiagTesting(true);
+    setDiagResult(null);
+    const startTime = Date.now();
+    try {
+      const pingRef = doc(db, 'config', 'akses');
+      await withFirestoreTimeout(getDoc(pingRef), 10_000);
+      const latencyMs = Date.now() - startTime;
+      setDiagResult({
+        status: 'success',
+        latencyMs,
+        message: `Terhubung sukses ke Firestore pettalopo-6f6f4 dalam ${latencyMs} ms (database: (default)).`
+      });
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const code = err?.code || 'unknown';
+      setDiagResult({
+        status: 'error',
+        latencyMs,
+        code,
+        message: err?.message || 'Gagal berkomunikasi dengan Firestore.'
+      });
+    } finally {
+      setDiagTesting(false);
     }
   };
 
   if (!open) return null;
-  if (isThanking) {
-    return (
-      <div className="fixed inset-0 z-[130] bg-white text-slate-900 flex flex-col items-center justify-center text-center p-6 select-none font-sans">
-        <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan" className="w-20 h-20 object-contain mb-4" />
-        <h2 className="text-xl font-bold text-slate-900">Terima kasih, Kak!</h2>
-        <p className="text-xs text-slate-500 mt-1">Sampai jumpa kembali di Pettalopo Mobile.</p>
-      </div>
-    );
-  }
 
-  const waLink = getCleanWaLink(nomorWa);
+  const calculatedAge = computeScoutAge(tanggalLahir);
 
   return (
-    <div className="fixed inset-0 z-[120] overflow-y-auto bg-white flex items-center justify-center p-4 select-none font-sans">
+    <div className="fixed inset-0 z-[120] overflow-y-auto bg-slate-50 flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white">
-        {/* Header Bersih */}
+        {/* Header Ambalan Bersih */}
         <div className="bg-[#e51c24] text-white p-6 text-center">
           <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan" className="w-16 h-16 object-contain mx-auto mb-2" />
           <h1 className="text-lg font-bold">Pettalopo Mobile</h1>
-          <p className="text-xs text-red-100">Sistem Akun Ambalan La Surullah Petta Lopo</p>
+          <p className="text-xs text-red-100">Ambalan La Surullah Petta Lopo Gudep 10-035 & 10-036</p>
         </div>
 
         <div className="p-5 space-y-4">
           {needsProfile ? (
-            <form onSubmit={saveProfile} className="space-y-3.5">
-              <div className="text-center pb-1 border-b border-slate-100">
-                <h2 className="font-bold text-sm text-slate-900">Pendaftaran Pengguna Baru</h2>
+            /* ============================================================ */
+            /* 2. LAYAR PENDAFTARAN ANGGOTA BARU                           */
+            /* ============================================================ */
+            <form onSubmit={handleRegisterProfile} className="space-y-4">
+              <div className="text-center pb-2 border-b border-slate-100">
+                <h2 className="font-bold text-sm text-slate-900">Pendaftaran Anggota Ambalan</h2>
                 <p className="text-xs text-slate-500 mt-0.5">{firebaseUser?.email}</p>
               </div>
 
-              {/* 1. Nama Asli */}
+              {/* 1. Nama Lengkap (Wajib) */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Nama Asli <span className="text-[#e51c24]">*</span>
+                  Nama Lengkap <span className="text-[#e51c24]">*</span>
                 </label>
                 <input
                   required
                   type="text"
-                  value={namaAsli}
-                  onChange={(e) => setNamaAsli(e.target.value)}
-                  placeholder="Masukkan nama asli lengkap"
+                  value={namaLengkap}
+                  onChange={(e) => setNamaLengkap(e.target.value)}
+                  placeholder="Masukkan nama lengkap asli"
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24] bg-slate-50 focus:bg-white"
                 />
               </div>
 
-              {/* 2. Nomor WhatsApp */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700">
-                    Nomor WhatsApp <span className="text-[#e51c24]">*</span>
-                  </label>
-                  {waLink && (
-                    <a
-                      href={waLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] font-bold text-green-700 hover:underline flex items-center gap-1"
-                    >
-                      <span>💬 Buka WA</span>
-                    </a>
-                  )}
-                </div>
-                <input
-                  required
-                  type="tel"
-                  value={nomorWa}
-                  onChange={(e) => setNomorWa(e.target.value)}
-                  placeholder="Contoh: 08123456789 atau 62812..."
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24] bg-slate-50 focus:bg-white"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Nomor ini dapat langsung dihubungi melalui tautan WhatsApp.
-                </p>
-              </div>
-
-              {/* 3. Tanggal Lahir (Menggunakan Kalender) */}
+              {/* 2. Tanggal Lahir (Wajib, Kalender) - Status Ditentukan Otomatis Tanpa Dropdown */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Tanggal Lahir (Pilih dari Kalender) <span className="text-[#e51c24]">*</span>
+                  Tanggal Lahir <span className="text-[#e51c24]">*</span>
                 </label>
                 <input
                   required
@@ -584,83 +560,77 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24] bg-slate-50 focus:bg-white cursor-pointer"
                 />
 
-                {/* Indikator Otomatis Status Keanggotaan Berdasarkan Usia */}
-                {calculatedAge && (
+                {/* Banner Status Otomatis Berdasarkan Usia */}
+                {calculatedAge ? (
                   <div className={`mt-2 p-2.5 rounded-xl border text-xs leading-relaxed ${
                     calculatedAge.is21OrOlder
                       ? 'bg-amber-50 border-amber-200 text-amber-800'
-                      : calculatedAge.is14OrOlder
-                      ? 'bg-blue-50 border-blue-200 text-blue-800'
                       : 'bg-red-50 border-red-200 text-red-700'
                   }`}>
                     <div className="font-bold flex items-center gap-1.5">
-                      <span>{calculatedAge.is21OrOlder ? '🎖️' : calculatedAge.is14OrOlder ? '⚜️' : '⚠️'}</span>
+                      <span>{calculatedAge.is21OrOlder ? '🎖️' : '⚜️'}</span>
                       <span>Usia: {calculatedAge.ageString}</span>
                     </div>
                     <div className="text-[11px] mt-0.5">
-                      {calculatedAge.is21OrOlder ? (
-                        <span>Status otomatis: <strong>Purna Ambalan</strong> (usia sudah 21 tahun ke atas).</span>
-                      ) : calculatedAge.is14OrOlder ? (
-                        <span>Status otomatis: <strong>Calon Penegak</strong> (usia 14 – 20 tahun 11 bulan).</span>
-                      ) : (
-                        <span>Usia di bawah 14 tahun belum memasuki tingkatan Penegak.</span>
-                      )}
+                      Status otomatis: <strong>{calculatedAge.statusLabel}</strong> {calculatedAge.is21OrOlder ? '(usia 21 tahun ke atas)' : '(usia di bawah 21 tahun)'}.
                     </div>
                   </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Pilih tanggal lahir dari kalender untuk menentukan status keanggotaan otomatis.
+                  </p>
                 )}
               </div>
 
-              {/* 4. Alamat (Opsional) */}
+              {/* 3. Sandi Ambalan (Wajib) */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Alamat Tempat Tinggal
+                  Sandi Ambalan <span className="text-[#e51c24]">*</span>
                 </label>
                 <input
-                  type="text"
-                  value={alamat}
-                  onChange={(e) => setAlamat(e.target.value)}
-                  placeholder="Alamat domisili saat ini"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24] bg-slate-50 focus:bg-white"
+                  required
+                  type="password"
+                  value={sandiAmbalan}
+                  onChange={(e) => setSandiAmbalan(e.target.value)}
+                  placeholder="Masukkan sandi ambalan"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24] bg-slate-50 focus:bg-white"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Tanyakan sandi kepada Dewan Ambalan ya, Kak.
+                </p>
               </div>
 
-              {/* 5. Foto Profil */}
-              <div className="flex items-center gap-3 pt-1">
-                <img
-                  src={avatar || LOGO_IMAGE_PATH}
-                  alt="Foto profil"
-                  className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0"
-                />
-                <label className="text-xs font-bold text-slate-700 cursor-pointer">
-                  <span>Unggah Foto Profil (Opsional)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="block mt-1 text-[10px] w-full text-slate-500"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          setPhoto(await compressPhoto(file));
-                        } catch (err: any) {
-                          setError(err.message);
-                        }
-                      }
-                    }}
-                  />
-                </label>
-              </div>
+              {/* Pesan Error */}
+              {error && (
+                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-[#e51c24] flex items-start gap-2">
+                  <span className="shrink-0 mt-0.5">⚠️</span>
+                  <span>{error}</span>
+                </div>
+              )}
 
-              {/* Tombol Simpan */}
+              {/* Tombol Masuk ke Ambalan */}
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-xl bg-[#e51c24] hover:bg-[#c9181f] text-white font-bold p-3 text-xs shadow-xs disabled:opacity-50 cursor-pointer transition-colors"
               >
-                {loading ? 'Menyimpan...' : 'Simpan Profil & Masuk ke Aplikasi'}
+                {loading ? loadingText : 'Masuk ke Ambalan'}
+              </button>
+
+              {/* Tombol Kecil Keluar */}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={loading}
+                className="w-full text-center text-xs text-slate-400 hover:text-slate-600 cursor-pointer py-1"
+              >
+                Keluar
               </button>
             </form>
           ) : (
+            /* ============================================================ */
+            /* 1. HALAMAN LOGIN GOOGLE                                      */
+            /* ============================================================ */
             <div className="space-y-4 text-center py-2">
               <div>
                 <h2 className="font-bold text-base text-slate-900">Masuk dengan Akun Google</h2>
@@ -669,147 +639,55 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
 
               <button
                 type="button"
-                onClick={handleGoogle}
+                onClick={handleGoogleLogin}
                 disabled={loading}
                 className="w-full rounded-xl border border-slate-300 hover:border-slate-400 p-3 font-semibold text-xs text-slate-700 flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                <span>{loading ? 'Menghubungkan...' : 'Lanjutkan dengan Google'}</span>
+                <span>{loading ? loadingText : 'Masuk dengan Google'}</span>
               </button>
+
+              {/* Tampilan Error dengan Tombol Coba Lagi */}
+              {error && (
+                <div className="space-y-2 text-left">
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-[#e51c24] flex items-start gap-2">
+                    <span className="shrink-0 mt-0.5">⚠️</span>
+                    <span className="leading-relaxed">{error}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError('');
+                      if (auth.currentUser) {
+                        void finishLogin(auth.currentUser);
+                      } else {
+                        void handleGoogleLogin();
+                      }
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl bg-[#e51c24] hover:bg-[#c9181f] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>🔄</span>
+                    <span>Coba Lagi</span>
+                  </button>
+                </div>
+              )}
 
               {firebaseUser && (
                 <button
                   type="button"
-                  onClick={logout}
-                  className="w-full text-xs text-[#e51c24] font-semibold cursor-pointer hover:underline"
+                  onClick={handleSignOut}
+                  className="w-full text-xs text-[#e51c24] font-semibold cursor-pointer hover:underline pt-1"
                 >
-                  Keluar dari akun Google
+                  Keluar dari akun Google ({firebaseUser.email})
                 </button>
               )}
-
-              <button
-                type="button"
-                onClick={onSkip}
-                className="w-full text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
-              >
-                Lanjutkan dengan mode pratinjau
-              </button>
             </div>
           )}
-
-          {error && (
-            <div className="space-y-2">
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-[#e51c24] flex items-start gap-2">
-                <span className="shrink-0 mt-0.5">⚠️</span>
-                <span>{error}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setError('');
-                  if (auth.currentUser) {
-                    void finishLogin(auth.currentUser);
-                  } else {
-                    void handleGoogle();
-                  }
-                }}
-                className="w-full py-2.5 px-3 rounded-xl bg-[#e51c24] hover:bg-[#c9181f] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
-              >
-                <span>🔄</span>
-                <span>Coba Masuk Lagi</span>
-              </button>
-            </div>
-          )}
-
-          {/* Diagnostik Koneksi Firestore */}
-          <div className="pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setShowDiagnostic((prev) => !prev)}
-              className="w-full py-1.5 px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-800 flex items-center justify-between rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <span className="flex items-center gap-1.5">
-                <span>🔧</span>
-                <span>Diagnostik Koneksi Firestore</span>
-              </span>
-              <span className="text-[10px] text-slate-400">{showDiagnostic ? '▲ Sembunyikan' : '▼ Periksa Status'}</span>
-            </button>
-
-            {showDiagnostic && (
-              <div className="mt-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-[11px]">
-                <div className="grid grid-cols-2 gap-2 text-slate-600">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Proyek Firebase:</span>
-                    <span className="font-mono font-bold text-slate-800 text-[10px]">pettalopo-6f6f4</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Database ID:</span>
-                    <span className="font-mono font-bold text-slate-800 text-[10px]">(default)</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Platform:</span>
-                    <span className="font-mono font-bold text-slate-800 text-[10px]">
-                      {Capacitor.getPlatform()} ({Capacitor.isNativePlatform() ? 'Native WebView' : 'Browser Web'})
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Transport:</span>
-                    <span className="font-mono font-bold text-slate-800 text-[10px]">Long Polling</span>
-                  </div>
-                </div>
-
-                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
-                  <span className="text-slate-400 block font-semibold">OAuth Web Client ID:</span>
-                  <span className="font-mono text-slate-700 break-all select-all block mt-0.5">
-                    392815401237-vamq2fm8khbpu42dlm08fg4c5obstoa3.apps.googleusercontent.com
-                  </span>
-                </div>
-
-                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
-                  <span className="text-slate-400 block font-semibold">Android Package ID:</span>
-                  <span className="font-mono text-slate-700 block mt-0.5">id.sch.smpialwasi_maros.ambalan</span>
-                </div>
-
-                <div className="pt-1.5 border-t border-slate-200 text-[10px]">
-                  <span className="text-slate-400 block font-semibold">Sesi Auth Pengguna:</span>
-                  <span className="font-mono text-slate-700 block mt-0.5">
-                    {auth.currentUser ? `${auth.currentUser.email || auth.currentUser.uid} (Login OK)` : 'Belum Login'}
-                  </span>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={runDiagnosticTest}
-                    disabled={diagTesting}
-                    className="w-full py-2 px-3 rounded-xl bg-white border border-slate-300 hover:border-slate-400 font-semibold text-slate-700 text-xs shadow-xs disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <span>{diagTesting ? '⏳' : '⚡'}</span>
-                    <span>{diagTesting ? 'Menguji Koneksi Firestore (maks 10 dtk)...' : 'Tes Koneksi Firestore (10 dtk)'}</span>
-                  </button>
-
-                  {diagResult && (
-                    <div className={`mt-2 p-2.5 rounded-xl border text-[11px] leading-relaxed ${
-                      diagResult.status === 'success'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        : 'bg-red-50 border-red-200 text-red-700'
-                    }`}>
-                      <div className="font-bold flex items-center gap-1.5">
-                        <span>{diagResult.status === 'success' ? '✅' : '❌'}</span>
-                        <span>{diagResult.status === 'success' ? 'Koneksi Berhasil' : `Gagal: [${diagResult.code}]`}</span>
-                      </div>
-                      <p className="mt-1 font-mono text-[10px] break-all">{diagResult.message}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

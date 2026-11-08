@@ -5,6 +5,7 @@ import { MenuHeaderCard } from '../common/MenuHeaderCard';
 import { FirestoreDiagnosticsPanel } from '../FirestoreDiagnosticsPanel';
 import { UserAccount } from '../../types';
 import { DEFAULT_8_DEWAN, Dewan8Position, subscribeTo8DewanPositions } from '../../data/dewanStructure';
+import { updateSandiAmbalan } from '../../services/authService';
 
 interface KelolaAplikasiViewProps {
   currentUser: UserAccount;
@@ -17,16 +18,18 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
   onBack,
   onTriggerReLogin
 }) => {
-  const [activeTab, setActiveTab] = useState<'pengguna' | 'dewan' | 'versi'>('pengguna');
+  const [activeTab, setActiveTab] = useState<'pengguna' | 'dewan' | 'sandi' | 'versi'>('pengguna');
   const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
   const [pendingDewanPositions, setPendingDewanPositions] = useState<Dewan8Position[]>(DEFAULT_8_DEWAN);
   const [savingDewan, setSavingDewan] = useState(false);
-  // Akses Admin dibuka sementara untuk semua instalasi sesuai mode rilis ini.
-  const isMainAdmin = currentUser.role === 'admin';
+  const isMainAdmin = currentUser.role === 'admin' || currentUser.email?.toLowerCase() === 'miralifa19@gmail.com';
   const [userList, setUserList] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [newSandiInput, setNewSandiInput] = useState('');
+  const [savingSandi, setSavingSandi] = useState(false);
+  const [sandiStatusNotice, setSandiStatusNotice] = useState<string | null>(null);
 
   // Subscribe ke koleksi users di Firestore (hanya saat admin utama terotentikasi)
   useEffect(() => {
@@ -198,6 +201,22 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
     };
   };
 
+  const handleSaveSandiAmbalan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSandiInput.trim()) return;
+    setSavingSandi(true);
+    setSandiStatusNotice(null);
+    try {
+      await updateSandiAmbalan(newSandiInput, currentUser.email || currentUser.uid || 'admin');
+      setSandiStatusNotice('Sandi Ambalan berhasil diperbarui di Firestore (config/akses)!');
+      setNewSandiInput('');
+    } catch (err: any) {
+      alert('Gagal menyimpan sandi: ' + (err?.message || 'Terjadi kesalahan'));
+    } finally {
+      setSavingSandi(false);
+    }
+  };
+
   const filteredUsers = userList.filter((u) => {
     const q = searchQuery.toLowerCase();
     const nameMatch = (u.nama || u.namaLengkap || '').toLowerCase().includes(q);
@@ -216,44 +235,53 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
       />
 
       {/* Tab Switcher */}
-      <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+      <div className="grid grid-cols-4 gap-1.5 bg-slate-100 p-1.5 rounded-2xl text-[11px]">
         <button
           type="button"
           onClick={() => setActiveTab('pengguna')}
-          className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+          className={`py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
             activeTab === 'pengguna'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>👥</span>
-          <span>Pengguna ({userList.length})</span>
+          <span className="truncate">Pengguna ({userList.length})</span>
         </button>
 
-        {isMainAdmin && (
-          <button
-            type="button"
-            onClick={() => setActiveTab('dewan')}
-            className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-              activeTab === 'dewan' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <span>⚜️</span>
-            <span>Kelola Dewan</span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setActiveTab('dewan')}
+          className={`py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+            activeTab === 'dewan' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <span>⚜️</span>
+          <span className="truncate">Dewan</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('sandi')}
+          className={`py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+            activeTab === 'sandi' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <span>🔑</span>
+          <span className="truncate">Sandi</span>
+        </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('versi')}
-          className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+          className={`py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
             activeTab === 'versi'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>📱</span>
-          <span>Versi APK</span>
+          <span className="truncate">Versi</span>
         </button>
       </div>
 
@@ -462,7 +490,69 @@ export const KelolaAplikasiView: React.FC<KelolaAplikasiViewProps> = ({
         </div>
       )}
 
-      {/* TAB 2: VERSI APK */}
+      {/* TAB 3: SANDI APLIKASI */}
+      {activeTab === 'sandi' && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-xl">
+              🔑
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                Sandi Ambalan
+              </h2>
+              <p className="text-xs text-slate-500">
+                Kunci pendaftaran anggota baru ke aplikasi
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 leading-relaxed space-y-1.5">
+            <p>
+              🔒 <strong>Kunci Verifikasi Pendaftaran:</strong> Setiap anggota baru wajib memasukkan Sandi Ambalan ini saat pertama kali masuk dengan akun Google.
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Nilai bawaan: <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-slate-800">la surullah petta lopo</code>. Sandi tersimpan di Firestore (<code className="font-mono">config/akses</code>) sehingga perubahan dari Admin langsung berlaku realtime.
+            </p>
+          </div>
+
+          {sandiStatusNotice && (
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-xs rounded-xl flex items-center gap-2">
+              <span>✅</span>
+              <span>{sandiStatusNotice}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveSandiAmbalan} className="space-y-3 pt-1">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Sandi Ambalan Baru
+              </label>
+              <input
+                type="text"
+                value={newSandiInput}
+                onChange={(e) => setNewSandiInput(e.target.value)}
+                placeholder="Masukkan sandi ambalan baru..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#e51c24]"
+                required
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Catatan: Spasi antarkata diperbolehkan dan akan dibaca. Huruf besar/kecil tidak sensitif.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingSandi || !newSandiInput.trim()}
+              className="w-full rounded-xl bg-[#e51c24] px-4 py-3 text-xs font-black text-white hover:bg-[#c9181f] disabled:opacity-50 transition-all cursor-pointer shadow-xs"
+            >
+              {savingSandi ? 'Menyimpan ke Firestore...' : 'Simpan Sandi Ambalan'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 4: VERSI APK */}
       {activeTab === 'versi' && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-5">
           <div className="flex items-center gap-3">

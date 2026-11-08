@@ -10,7 +10,7 @@ import { DashboardView } from './components/views/DashboardView';
 import { ProgramKerjaView } from './components/views/ProgramKerjaView';
 import { DewanAmbalanView } from './components/views/DewanAmbalanView';
 import { LatihanRutinView } from './components/views/LatihanRutinView';
-import { AkunView } from './components/views/AkunView';
+import { AkunView, getScoutMemberStatus } from './components/views/AkunView';
 import { DatabaseAnggotaView } from './components/views/DatabaseAnggotaView';
 import { AnggotaAmbalanView } from './components/views/AnggotaAmbalanView';
 import { DewanAmbalanRosterView } from './components/views/DewanAmbalanRosterView';
@@ -23,11 +23,14 @@ import { ComingSoonView } from './components/views/ComingSoonView';
 import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { KelolaAplikasiView } from './components/views/KelolaAplikasiView';
 import { ApkUpdater } from './components/ApkUpdater';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, signOut as webSignOut } from 'firebase/auth';
 import { auth } from './firebase/config';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
 
 import { ActiveMenu, ProgramKerjaItem, UserAccount } from './types';
-import { get8DewanPositions, subscribeTo8DewanPositions, Dewan8Position } from './data/dewanStructure';
+import { get8DewanPositions, subscribeTo8DewanPositions, Dewan8Position, isUserInDewan } from './data/dewanStructure';
 import { 
   subscribeToProgramKerja, 
   syncUserProfile, 
@@ -37,21 +40,60 @@ import {
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState<ActiveMenu>('home');
+  // Pertahankan tampilan akhir aplikasi saat dibuka kembali
+  const [activeMenu, setActiveMenu] = useState<ActiveMenu>(() => {
+    try {
+      const saved = localStorage.getItem('pettalopo_last_active_menu');
+      if (saved) return saved as ActiveMenu;
+    } catch {}
+    return 'home';
+  });
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
+  // Hilangkan flash screen saat membuka aplikasi sesuai instruksi
+  const [showPettalopoSplash, setShowPettalopoSplash] = useState(false);
+
+  // Simpan tampilan aktif terakhir setiap berpindah menu
+  useEffect(() => {
+    if (activeMenu) {
+      try {
+        localStorage.setItem('pettalopo_last_active_menu', activeMenu);
+      } catch {}
+    }
+  }, [activeMenu]);
 
   // Live All Members in Ambalan
   const [allMembers, setAllMembers] = useState<UserAccount[]>([]);
   const [dewanPositions, setDewanPositions] = useState<Dewan8Position[]>(() => get8DewanPositions());
 
-  // User Account State with Role (Admin vs Anggota)
-  // Mode akses terbuka sementara: setiap instalasi memakai Firebase Anonymous Auth
-  // agar Firestore tetap menerima request yang mensyaratkan request.auth != null.
-  const [user, setUser] = useState<UserAccount>(() => ({ ...DEFAULT_ADMIN_ACCOUNT, email: '' }));
+  // User Account State: Pertahankan login yang berhasil dari localStorage
+  const [user, setUser] = useState<UserAccount>(() => {
+    try {
+      const saved = localStorage.getItem('ambalan_user_account_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.uid) return parsed;
+      }
+    } catch {}
+    return { ...DEFAULT_ADMIN_ACCOUNT, uid: '', email: '', nama: 'Anggota Ambalan', role: 'anggota' };
+  });
+
+  // Pertahankan login: jangan buka modal login jika user sudah login / memiliki sesi
+  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ambalan_user_account_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.uid && (parsed?.email || parsed?.googleAuth)) {
+          return false;
+        }
+      }
+    } catch {}
+    return false;
+  });
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -65,42 +107,43 @@ export default function App() {
     return DEFAULT_PROGRAM_KERJA_ITEMS;
   });
 
-  const isAdmin = user.role === 'admin';
-  // Semua instalasi sementara mendapat akses Admin dan Ruang Kerja Dewan.
-  const isDewanAccount = true;
+  const isAdmin = user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
+  const isDewanAccount = isAdmin || user.role === 'dewan' || user.isDewan === true || isUserInDewan(user, dewanPositions);
 
   useEffect(() => {
     if (activeMenu === 'ruang_kerja_dewan' && !isDewanAccount) setActiveMenu('home');
   }, [activeMenu, isDewanAccount]);
 
-  // Tidak ada layar login/logout pada mode akses terbuka; tombol keluar kembali ke Home.
+  // Logout: keluar dari sesi Firebase dan kembali langsung ke halaman login
   const handleLogout = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await FirebaseAuthentication.signOut();
+        } catch {}
+      }
+      await webSignOut(auth);
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
+    localStorage.removeItem('ambalan_user_account_v3');
+    setUser({ ...DEFAULT_ADMIN_ACCOUNT, uid: '', email: '', nama: 'Tamu Ambalan', role: 'anggota' });
+    setIsGooglePortalOpen(true);
     setActiveMenu('home');
     setIsQuickMenuOpen(false);
   };
 
-  // Buat atau pulihkan sesi Firebase anonim otomatis tanpa layar Login Google.
-  // Provider Anonymous harus diaktifkan di Firebase Authentication.
+  // Pantau sesi autentikasi Firebase; pertahankan login yang telah berhasil
   useEffect(() => {
-    let signingIn = false;
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
-          ...DEFAULT_ADMIN_ACCOUNT,
-          uid: firebaseUser.uid,
-          email: '',
-          username: 'akses_bersama',
-          nama: 'Admin Pettalopo',
-          role: 'admin'
-        });
-        return;
+        setIsGooglePortalOpen(false);
+      } else {
+        const saved = localStorage.getItem('ambalan_user_account_v3');
+        if (!saved) {
+          setIsGooglePortalOpen(true);
+        }
       }
-      if (signingIn) return;
-      signingIn = true;
-      signInAnonymously(auth).catch((error) => {
-        signingIn = false;
-        console.error('Firebase Anonymous Auth gagal. Aplikasi tetap terbuka dalam mode lokal; aktifkan provider Anonymous untuk sinkronisasi Firestore:', error);
-      });
     });
     return unsubscribe;
   }, []);
@@ -236,7 +279,7 @@ export default function App() {
             </span>
             <span className="pettalopo-member-meta">
               <strong>{user.nama || 'Profil Anggota'}</strong>
-              <small>{user.role === 'admin' ? 'Pembina / Admin' : /laksana/i.test(user.tingkat || '') ? 'Penegak Laksana' : /bantara/i.test(user.tingkat || '') ? 'Penegak Bantara' : 'Calon Anggota'}</small>
+              <small>{getScoutMemberStatus(user)}</small>
             </span>
           </button>
           <div className="pettalopo-overflow-wrap">
@@ -248,16 +291,18 @@ export default function App() {
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('pengaturan'); }}>
                   <Settings size={17} /><span>Pengaturan</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickMenuOpen(false);
-                    setActiveMenu('kelola_aplikasi');
-                  }}
-                  className="font-bold text-[#e51c24]"
-                >
-                  <span>🛠️</span><span>Kelola Aplikasi</span>
-                </button>
+                {(user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      setActiveMenu('kelola_aplikasi');
+                    }}
+                    className="font-bold text-[#e51c24]"
+                  >
+                    <span>🛠️</span><span>Kelola Aplikasi</span>
+                  </button>
+                )}
                 <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
                   <UserRound size={17} /><span>Akun</span>
                 </button>
@@ -446,6 +491,16 @@ export default function App() {
           onLoginSuccess={(loggedInUser) => {
             setUser(loggedInUser);
           }}
+        />
+
+        {/* Portal Login Google & Pendaftaran Profil Anggota Baru */}
+        <GoogleAuthPortal
+          open={isGooglePortalOpen && !showPettalopoSplash}
+          onComplete={(loggedInUser) => {
+            setUser(loggedInUser);
+            setIsGooglePortalOpen(false);
+          }}
+          onLogout={handleLogout}
         />
 
       </div>

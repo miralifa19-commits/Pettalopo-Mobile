@@ -636,7 +636,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": "Pembaruan tampilan Home, roda bulan, halaman Kegiatan dan Latihan, serta Profil Ambalan."
+              "catatan": "Perbaikan login dan pemeriksaan biodata, tampilan header Android, serta splash screen."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
@@ -650,13 +650,13 @@ jobs:
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
           generate_release_notes: false
           body: |
-            Pembaruan Pettalopo Mobile yang mencakup penyempurnaan tampilan Home, roda bulan, halaman Kegiatan dan Latihan, serta Profil Ambalan.
+            Pembaruan Pettalopo Mobile 1.13.
 
-            - Menambahkan judul Kegiatan dan Latihan pada halaman Lihat Kegiatan.
-            - Menampilkan agenda bulanan Januari–Desember dengan bagian Kegiatan dan Latihan Rutin.
-            - Menyempurnakan tampilan Home dan Profil Ambalan.
-            - Mempertahankan alur login, Firebase, package name, dan signing aplikasi.
-            - Versi 1.12 (versionCode 22).
+            - Memperbaiki alur pemeriksaan biodata setelah login Google, termasuk dukungan profil anggota lama.
+            - Menyesuaikan safe area header dan status bar Android dengan warna merah Pettalopo.
+            - Mengaktifkan kembali splash screen React dengan durasi singkat.
+            - Mempertahankan Firebase, applicationId, kunci signing, dan data pengguna.
+            - Versi 1.13 (versionCode 23).
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json

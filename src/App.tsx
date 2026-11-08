@@ -101,7 +101,7 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
-  const profilePhoto = user.foto || (user as any).fotoUrl || (user as any).photoURL || auth.currentUser?.photoURL || '';
+  const profilePhoto = auth.currentUser?.photoURL || '';
   const isGoogleSignedIn = !isGooglePortalOpen && !!auth.currentUser && !auth.currentUser.isAnonymous;
   const profileName = user.nama && !['Anggota Ambalan', 'Tamu Ambalan'].includes(user.nama)
     ? user.nama

@@ -55,6 +55,7 @@ export default function App() {
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [selectedDashboardMonthIndex, setSelectedDashboardMonthIndex] = useState<number | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAccountEditable, setIsAccountEditable] = useState(false);
   // Splash React singkat; portal login tetap dibuka setelah splash selesai.
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
@@ -282,7 +283,7 @@ export default function App() {
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (
         <header className="pettalopo-topbar pettalopo-topbar-home">
-          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label={isGoogleSignedIn ? "Buka Akun Saya" : "Masuk ke akun"}>
+          <button type="button" className="pettalopo-member-shortcut" onClick={() => { setIsAccountEditable(false); setActiveMenu('akun'); }} aria-label={isGoogleSignedIn ? "Buka Profil Saya" : "Masuk ke akun"}>
             <span className="pettalopo-member-avatar">
               {isGoogleSignedIn && profilePhoto && !profilePhotoFailed
                 ? <img src={profilePhoto} alt="" referrerPolicy="no-referrer" onError={() => setProfilePhotoFailed(true)} />
@@ -314,7 +315,7 @@ export default function App() {
                     <span>🛠️</span><span>Kelola Aplikasi</span>
                   </button>
                 )}
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsAccountEditable(true); setActiveMenu('akun'); }}>
                   <UserRound size={17} /><span>Akun</span>
                 </button>
               </div>
@@ -410,7 +411,7 @@ export default function App() {
           {activeMenu === 'pengaturan' && (
             <PengaturanView
               currentUser={user}
-              onNavigateToAkun={() => setActiveMenu('akun')}
+              onNavigateToAkun={() => { setIsAccountEditable(false); setActiveMenu('akun'); }}
             />
           )}
 
@@ -434,9 +435,10 @@ export default function App() {
           {activeMenu === 'akun' && (
             <AkunView
               user={user}
+              editable={isAccountEditable}
               onUpdateUser={(updated) => setUser(updated)}
               onLogout={handleLogout}
-              onBack={() => setActiveMenu('home')}
+              onBack={() => { setIsAccountEditable(false); setActiveMenu('home'); }}
             />
           )}
 

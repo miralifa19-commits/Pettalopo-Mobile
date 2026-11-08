@@ -117,6 +117,12 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         portalOpen: openRef.current
       });
       setFirebaseUser(hasGoogleProvider ? user : null);
+      if (!hasGoogleProvider) {
+        setNeedsProfile(false);
+        setNamaLengkap('');
+        setTanggalLahir('');
+        setSandiAmbalan('');
+      }
       if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
         if (openRef.current) {
@@ -539,7 +545,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         <div className="bg-[#e51c24] text-white p-6 text-center">
           <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan" className="w-16 h-16 object-contain mx-auto mb-2" />
           <h1 className="text-lg font-bold">Pettalopo Mobile</h1>
-          <p className="text-xs text-red-100">Ambalan La Surullah Petta Lopo Gudep 10-035 & 10-036</p>
+          <p className="text-[10px] text-red-100 whitespace-nowrap">Ambalan La Surullah Petta Lopo · Gugus Depan 10.035–10.036</p>
         </div>
 
         <div className="p-5 space-y-4">

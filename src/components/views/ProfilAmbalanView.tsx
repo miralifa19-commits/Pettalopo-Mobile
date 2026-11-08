@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ProfilAmbalanFirestoreSection } from './ProfilAmbalanFirestoreSection';
 import { Shield, Sparkles, BookOpen, Users, Compass, ChevronRight, Award, Flame } from 'lucide-react';
 import { LOGO_IMAGE_PATH, FILOSOFI_LOGO, SEJARAH_TOKOH } from '../../data/scoutData';
 import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
@@ -9,9 +10,10 @@ interface ProfilAmbalanViewProps {
   profile?: UserProfile;
   allMembers?: UserAccount[];
   onBack?: () => void;
+  isAdmin?: boolean;
 }
 
-export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack }) => {
+export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack, isAdmin = false }) => {
   const [activeElement, setActiveElement] = useState(FILOSOFI_LOGO[0]);
 
   // Dewan Ambalan berasal dari anggota yang ditunjuk oleh Admin
@@ -67,6 +69,8 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers
           </span>
         </div>
       </div>
+
+      <ProfilAmbalanFirestoreSection isAdmin={isAdmin} />
 
       {/* Interactive Emblem Explorer (Klik Elemen Lambang) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-slate-100 shadow-xs space-y-3">

@@ -106,7 +106,9 @@ export default function App() {
   const profileName = user.nama && !['Anggota Ambalan', 'Tamu Ambalan'].includes(user.nama)
     ? user.nama
     : auth.currentUser?.displayName || user.nama || 'Anggota Ambalan';
-  const profileRole = isAdmin ? 'Pembina / Admin' : (user.dewanJabatan || user.jabatan || (user.role === 'dewan' ? 'Dewan Ambalan' : 'Anggota Ambalan'));
+  const profileRole = isAdmin ? 'Pembina / Admin' : user.role === 'dewan'
+    ? user.dewanJabatan || 'Dewan Ambalan'
+    : user.jabatan && user.jabatan !== 'Pembina Gugus Depan' ? user.jabatan : 'Anggota Ambalan';
 
   useEffect(() => {
     setProfilePhotoFailed(false);

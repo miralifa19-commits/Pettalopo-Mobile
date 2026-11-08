@@ -112,6 +112,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         && !user.isAnonymous
         && user.providerData?.some((provider) => provider.providerId === 'google.com');
 
+      console.info('[AUTH_FLOW] Portal: perubahan sesi diterima.', {
+        googleSession: hasGoogleProvider,
+        portalOpen: openRef.current
+      });
       setFirebaseUser(hasGoogleProvider ? user : null);
       if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
@@ -130,6 +134,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     setError('');
     setLoading(true);
     setLoadingText('Memeriksa akun...');
+    console.info('[AUTH_FLOW] Portal: pemeriksaan profil dimulai.');
 
     try {
       const ref = doc(db, 'users', user.uid);
@@ -169,6 +174,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
 
       // 2. Baca dokumen profil users/{uid}
       const snap = await withFirestoreTimeout(getDoc(ref), 8_000);
+      console.info('[AUTH_FLOW] Portal: pembacaan profil selesai.', { profileExists: snap.exists() });
 
       // Belum ada profil di Firestore: tampilkan layar pendaftaran anggota baru
       if (!snap.exists()) {
@@ -179,8 +185,19 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
 
       const data = snap.data() as Record<string, any>;
 
+      // Profil lama yang sudah memiliki nama dan tanggal lahir tetap dianggap selesai
+      // meskipun belum memiliki penanda onboardingSelesai.
+      const hasLegacyCompletedProfile = !!(data.nama || data.namaLengkap)
+        && !!(data.tanggalLahir || data.ttl);
+      const isProfileComplete = data?.onboardingSelesai === true || hasLegacyCompletedProfile;
+      console.info('[AUTH_FLOW] Portal: status kelengkapan profil diperiksa.', {
+        onboardingFlag: data?.onboardingSelesai === true,
+        legacyProfileComplete: hasLegacyCompletedProfile,
+        profileComplete: isProfileComplete
+      });
+
       // Pengguna sudah pernah mendaftar dan menyelesaikan profil
-      if (data?.onboardingSelesai) {
+      if (isProfileComplete) {
         const userAccount: UserAccount = {
           uid: user.uid,
           username: data.username || user.email?.split('@')[0] || user.uid,

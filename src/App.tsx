@@ -55,7 +55,7 @@ export default function App() {
   const [selectedDashboardMonthIndex, setSelectedDashboardMonthIndex] = useState<number | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   // Hilangkan flash screen saat membuka aplikasi sesuai instruksi
-  const [showPettalopoSplash, setShowPettalopoSplash] = useState(false);
+  const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
 
   // Simpan tampilan aktif terakhir setiap berpindah menu
   useEffect(() => {

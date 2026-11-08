@@ -123,7 +123,26 @@ export const AkunView: React.FC<AkunViewProps> = ({
           <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] py-1 text-center">Ganti Foto</span>
           <input type="file" accept="image/*" className="sr-only" onChange={(event) => handlePhoto(event.target.files?.[0])} />
         </label>
-        <h1 className="text-xl font-black text-slate-900 tracking-tight mb-5">{form.nama || 'Nama Lengkap'}</h1>
+        <h1 className="text-xl font-black text-slate-900 tracking-tight mb-2">{form.nama || 'Nama Lengkap'}</h1>
+        <div className="mb-5 w-full rounded-2xl bg-slate-50 p-3 text-left">
+          <div className="grid grid-cols-1 gap-2">
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Email</span>
+              <strong className="break-all text-xs text-slate-800">{user.email || auth.currentUser?.email || 'Belum tersedia'}</strong>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Peran</span>
+                <strong className="text-xs text-slate-800">{user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' ? 'Pembina / Admin' : user.dewanJabatan || user.jabatan || (user.role === 'dewan' ? 'Dewan Ambalan' : 'Anggota Ambalan')}</strong>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Jenjang</span>
+                <strong className="text-xs text-slate-800">{(user as any).tingkatan || user.tingkat || 'Belum diatur'}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h2 className="w-full text-left text-sm font-extrabold text-slate-900">Ubah Profil</h2>
         <div className="w-full grid grid-cols-1 gap-3 text-left">
           {[
             { key: 'nama', label: 'Nama Lengkap', type: 'text' },

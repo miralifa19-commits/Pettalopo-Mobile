@@ -87,6 +87,9 @@ export const ProfilAmbalanFirestoreSection: React.FC<{
   };
 
   const fields: { key: keyof AmbalanProfileData; label: string; multiline?: boolean }[] = [
+    { key: 'namaAmbalan', label: 'Nama Ambalan' },
+    { key: 'gudepPutra', label: 'Nomor Gudep Putra' },
+    { key: 'gudepPutri', label: 'Nomor Gudep Putri' },
     { key: 'sejarah', label: 'Sejarah', multiline: true },
     { key: 'visi', label: 'Visi', multiline: true },
     { key: 'misi', label: 'Misi', multiline: true },

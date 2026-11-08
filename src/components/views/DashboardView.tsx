@@ -87,6 +87,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-4 pb-28 font-sans">
+      <h2 className="px-1 text-lg font-bold text-slate-800">Kegiatan dan Latihan</h2>
       <p className="px-1 text-xs leading-relaxed text-slate-500">
         rangkaian kegiatan dan latihan pramuka ambalan yang disusun sepanjang tahun sebagai panduan dalam berkegiatan, berlatih, dan mengembangkan keterampilan kepramukaan.
       </p>

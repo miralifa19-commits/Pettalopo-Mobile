@@ -4,6 +4,9 @@ import { Save, Pencil, X } from 'lucide-react';
 import { db, auth } from '../../firebase/config';
 
 interface AmbalanProfileData {
+  namaAmbalan: string;
+  gudepPutra: string;
+  gudepPutri: string;
   sejarah: string;
   visi: string;
   misi: string;
@@ -17,6 +20,9 @@ interface AmbalanProfileData {
 }
 
 const EMPTY_PROFILE: AmbalanProfileData = {
+  namaAmbalan: 'Ambalan La Surullah Petta Lopo',
+  gudepPutra: '10-035',
+  gudepPutri: '10-036',
   sejarah: '', visi: '', misi: '', semboyan: '',
   pradana: '', pemangkuAdat: '', sekretaris: '', bendahara: '',
   pembina: '', kontak: ''
@@ -24,13 +30,17 @@ const EMPTY_PROFILE: AmbalanProfileData = {
 
 const profileRef = doc(db, 'ambalan_profile', 'utama');
 
-export const ProfilAmbalanFirestoreSection: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
+export const ProfilAmbalanFirestoreSection: React.FC<{
+  isAdmin: boolean;
+  onIdentityChange?: (identity: Pick<AmbalanProfileData, 'namaAmbalan' | 'gudepPutra' | 'gudepPutri'>) => void;
+}> = ({ isAdmin, onIdentityChange }) => {
   const [profile, setProfile] = useState<AmbalanProfileData>(EMPTY_PROFILE);
   const [draft, setDraft] = useState<AmbalanProfileData>(EMPTY_PROFILE);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const canEdit = isAdmin && auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
 
   useEffect(() => onSnapshot(profileRef, (snapshot) => {
     const data = snapshot.exists()
@@ -38,19 +48,24 @@ export const ProfilAmbalanFirestoreSection: React.FC<{ isAdmin: boolean }> = ({ 
       : EMPTY_PROFILE;
     setProfile(data);
     setDraft(data);
+    onIdentityChange?.({
+      namaAmbalan: data.namaAmbalan,
+      gudepPutra: data.gudepPutra,
+      gudepPutri: data.gudepPutri
+    });
     setLoading(false);
   }, (reason) => {
     console.error('Profil Ambalan Firestore read failed:', reason);
     setError('Data profil belum dapat dimuat. Periksa koneksi dan izin baca Firestore.');
     setLoading(false);
-  }), []);
+  }), [onIdentityChange]);
 
   const change = (key: keyof AmbalanProfileData, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
   const save = async () => {
-    if (!isAdmin || !auth.currentUser) {
+    if (!canEdit || !auth.currentUser) {
       setError('Sesi admin diperlukan untuk menyimpan perubahan.');
       return;
     }
@@ -105,7 +120,7 @@ export const ProfilAmbalanFirestoreSection: React.FC<{ isAdmin: boolean }> = ({ 
           <h3 className="text-base font-extrabold text-slate-900">Profil dan Kepengurusan</h3>
           <p className="text-[11px] text-slate-500">Informasi yang dikelola melalui Firestore</p>
         </div>
-        {isAdmin && !editing && (
+        {canEdit && !editing && (
           <button type="button" onClick={() => { setDraft(profile); setEditing(true); }}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#C41E2A] px-3 text-xs font-bold text-white">
             <Pencil size={14} /> Ubah Profil Ambalan

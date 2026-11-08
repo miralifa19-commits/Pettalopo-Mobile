@@ -21,7 +21,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
     // 2. Kilauan selesai menyapu 1 kali saja setelah 1.8 detik
     const shineStopTimeout = setTimeout(() => {
       setShowShine(false);
-    }, 3000);
+    }, 2000);
 
     // 3. Fading out transisi
     const fadeTimeout = setTimeout(() => {
@@ -30,7 +30,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
 
     const finishTimeout = setTimeout(() => {
       onFinishRef.current();
-    }, 2000);
+    }, 3000);
 
     return () => {
       clearTimeout(shineStartTimeout);

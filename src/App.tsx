@@ -82,18 +82,8 @@ export default function App() {
   });
 
   // Pertahankan login: jangan buka modal login jika user sudah login / memiliki sesi
-  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ambalan_user_account_v3');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.uid && (parsed?.email || parsed?.googleAuth)) {
-          return false;
-        }
-      }
-    } catch {}
-    return false;
-  });
+  // Wajib validasi sesi Firebase; data akun lokal hanya cache, bukan bukti login.
+  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -112,7 +102,8 @@ export default function App() {
 
   useEffect(() => {
     if (activeMenu === 'ruang_kerja_dewan' && !isDewanAccount) setActiveMenu('home');
-  }, [activeMenu, isDewanAccount]);
+    if (activeMenu === 'kelola_aplikasi' && !isAdmin) setActiveMenu('home');
+  }, [activeMenu, isDewanAccount, isAdmin]);
 
   // Logout: keluar dari sesi Firebase dan kembali langsung ke halaman login
   const handleLogout = async () => {
@@ -139,10 +130,8 @@ export default function App() {
       if (firebaseUser) {
         setIsGooglePortalOpen(false);
       } else {
-        const saved = localStorage.getItem('ambalan_user_account_v3');
-        if (!saved) {
-          setIsGooglePortalOpen(true);
-        }
+        // Tanpa sesi Firebase aktif, selalu tampilkan portal login Google.
+        setIsGooglePortalOpen(true);
       }
     });
     return unsubscribe;

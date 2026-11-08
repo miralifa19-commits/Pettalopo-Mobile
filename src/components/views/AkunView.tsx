@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UserAccount } from '../../types';
 import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
@@ -48,6 +48,7 @@ export function getScoutMemberStatus(user?: UserAccount | null): string {
 
 export const AkunView: React.FC<AkunViewProps> = ({ 
   user, 
+  onUpdateUser,
   onLogout,
   onBack
 }) => {
@@ -59,6 +60,49 @@ export const AkunView: React.FC<AkunViewProps> = ({
 
   const birthDateFormatted = formatBirthDate((user as any).tanggalLahir || user.ttl);
   const statusAnggota = getScoutMemberStatus(user);
+  const [form, setForm] = useState<any>({ ...user });
+  const [photoPreview, setPhotoPreview] = useState<string>(photoUrl || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => { setForm({ ...user }); setPhotoPreview(photoUrl || ''); }, [user]);
+
+  const updateField = (key: string, value: string) => setForm((current: any) => ({ ...current, [key]: value }));
+  const handlePhoto = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const scale = Math.min(1, 640 / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) return;
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+        setPhotoPreview(dataUrl);
+        setForm((current: any) => ({ ...current, foto: dataUrl }));
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+  };
+  const handleSave = async () => {
+    if (!onUpdateUser) return;
+    setIsSaving(true);
+    try {
+      const birth = form.tanggalLahir ? new Date(form.tanggalLahir + 'T00:00:00') : null;
+      let usia = form.usia;
+      if (birth && !Number.isNaN(birth.getTime())) {
+        const now = new Date();
+        usia = now.getFullYear() - birth.getFullYear();
+        if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) usia--;
+      }
+      onUpdateUser({ ...user, ...form, usia });
+    } finally { setIsSaving(false); }
+  };
 
   return (
     <div className="space-y-4 pb-24 font-sans select-none">
@@ -69,50 +113,49 @@ export const AkunView: React.FC<AkunViewProps> = ({
         onBack={onBack || (() => {})}
       />
 
-      {/* Kartu Profil Utama: Foto Besar, Nama, Tanggal Lahir, Status Anggota */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs text-center flex flex-col items-center">
-        {/* 1. Foto Besar */}
-        <div className="w-32 h-32 sm:w-36 sm:h-36 mb-5 rounded-full overflow-hidden border-4 border-slate-100 bg-slate-50 flex items-center justify-center shadow-sm">
-          {photoUrl ? (
-            <img 
-              src={photoUrl} 
-              alt={user.nama || 'Foto Profil'} 
-              className="w-full h-full object-cover" 
-            />
-          ) : (
-            <ShiningAmbalanLogo className="w-20 h-20" alt="Logo Ambalan" />
-          )}
-        </div>
-
-        {/* 2. Nama Pengguna */}
-        <h1 className="text-xl font-black text-slate-900 tracking-tight mb-4">
-          {user.nama || 'Anggota Ambalan'}
-        </h1>
-
-        {/* Informasi Ringkas: Tanggal Lahir & Status Anggota */}
-        <div className="w-full max-w-xs space-y-2.5 mb-8">
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-            <span className="text-slate-500 font-medium flex items-center gap-1.5">
-              <span>🗓️</span>
-              <span>Tanggal Lahir</span>
-            </span>
-            <span className="font-bold text-slate-900 font-mono">
-              {birthDateFormatted}
-            </span>
+      {/* Profil anggota yang dapat diperbarui */}
+      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200 shadow-xs flex flex-col items-center">
+        <label className="relative w-32 h-32 sm:w-36 sm:h-36 mb-4 rounded-full overflow-hidden border-4 border-slate-100 bg-slate-50 flex items-center justify-center shadow-sm cursor-pointer">
+          {photoPreview ? <img src={photoPreview} alt="Foto profil" className="w-full h-full object-cover" /> : <ShiningAmbalanLogo className="w-20 h-20" alt="Logo Ambalan" />}
+          <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] py-1 text-center">Ganti Foto</span>
+          <input type="file" accept="image/*" className="sr-only" onChange={(event) => handlePhoto(event.target.files?.[0])} />
+        </label>
+        <h1 className="text-xl font-black text-slate-900 tracking-tight mb-5">{form.nama || 'Nama Lengkap'}</h1>
+        <div className="w-full grid grid-cols-1 gap-3 text-left">
+          {[
+            { key: 'nama', label: 'Nama Lengkap', type: 'text' },
+            { key: 'namaPanggilan', label: 'Nama Panggilan', type: 'text' },
+            { key: 'tingkatan', label: 'Tingkatan', type: 'select' },
+            { key: 'tempatLahir', label: 'Tempat Lahir', type: 'text' },
+            { key: 'tanggalLahir', label: 'Tanggal Lahir', type: 'date' },
+            { key: 'nomorWA', label: 'Nomor WhatsApp', type: 'tel' },
+            { key: 'alamat', label: 'Alamat', type: 'text' },
+            { key: 'motto', label: 'Motto', type: 'text' },
+          ].map((field) => (
+            <label key={field.key} className="block">
+              <span className="block text-xs font-bold text-slate-600 mb-1">{field.label}</span>
+              {field.type === 'select' ? (
+                <select value={form.tingkatan || 'Calon Penegak'} onChange={(event) => updateField(field.key, event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
+                  {['Calon Penegak', 'Penegak Bantara', 'Penegak Laksana', 'Penegak Garuda'].map((level) => <option key={level}>{level}</option>)}
+                </select>
+              ) : (
+                <input type={field.type} value={form[field.key] || ''} onChange={(event) => updateField(field.key, event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800" />
+              )}
+            </label>
+          ))}
+          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
+            <span className="block text-xs font-bold text-slate-600">Usia</span>
+            <strong className="text-sm text-slate-900">{(() => { const d = form.tanggalLahir ? new Date(form.tanggalLahir + 'T00:00:00') : null; if (!d || Number.isNaN(d.getTime())) return form.usia ? form.usia + ' tahun' : '-'; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a + ' tahun'; })()}</strong>
           </div>
-
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-            <span className="text-slate-500 font-medium flex items-center gap-1.5">
-              <span>⚜️</span>
-              <span>Status Anggota</span>
-            </span>
-            <span className="font-black text-[#e51c24]">
-              {statusAnggota}
-            </span>
-          </div>
+          {form.nomorWA && <a href={`https://wa.me/${String(form.nomorWA).replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-emerald-700 underline">Buka WhatsApp</a>}
+          <button type="button" onClick={handleSave} disabled={isSaving || !onUpdateUser}
+            className="w-full rounded-xl bg-[#e51c24] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+            {isSaving ? 'Menyimpan...' : 'Simpan Identitas'}
+          </button>
         </div>
-
-        {/* 3. Aksi Logout */}
+      {/* 3. Aksi Logout */}
         {onLogout && (
           <button
             type="button"

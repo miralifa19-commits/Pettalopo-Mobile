@@ -27,6 +27,7 @@ interface DashboardViewProps {
   onSharePresensi?: (item: ProgramKerjaItem) => void;
   onOpenPresensiModal?: (kegiatanId?: string) => void;
   initialSelectedAgendaId?: string | null;
+  initialSelectedMonthIndex?: number;
   onAgendaDetailOpened?: () => void;
 }
 
@@ -54,10 +55,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSharePresensi,
   onOpenPresensiModal,
   initialSelectedAgendaId,
+  initialSelectedMonthIndex,
   onAgendaDetailOpened
 }) => {
   const today = useMemo(() => new Date(), []);
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(today.getMonth());
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(initialSelectedMonthIndex ?? today.getMonth());
+
+  useEffect(() => {
+    if (typeof initialSelectedMonthIndex === 'number') setSelectedMonthIndex(initialSelectedMonthIndex);
+  }, [initialSelectedMonthIndex]);
   const [viewMode, setViewMode] = useState<'per_bulan' | 'semua_12_bulan'>('per_bulan');
   const [activeTab, setActiveTab] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,11 +103,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-4 pb-28 font-sans">
-      <MenuHeaderCard
-        title="Lihat Kegiatan"
-        subtitle="Daftar lengkap program kerja 12 bulan masa bakti"
-        onBack={onBack || (() => {})}
-      />
+      <div className="w-full rounded-2xl bg-[#C41E2A] text-white px-4 py-4 text-center shadow-sm">
+        <h1 className="text-base sm:text-lg font-extrabold tracking-wide">Program Kegiatan dan Latihan Rutin</h1>
+      </div>
 
       {/* Mode View Switcher: Per Bulan vs 12 Bulan Penuh */}
       <div className="flex items-center justify-between gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs">

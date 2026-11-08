@@ -559,3 +559,10 @@ main button,main a{overflow-wrap:anywhere}
   width: 100%;
   min-width: 0;
 }
+
+/* Reference-style 12-segment month wheel in the Home hero. */
+.home-hero-main{grid-template-columns:minmax(0,1fr) minmax(132px,42%)!important;gap:8px!important}
+.home-hero-wheel{grid-column:2;grid-row:1;width:100%;max-width:190px;justify-self:end;align-self:center;min-width:0}
+.home-hero-wheel svg{display:block;overflow:visible}
+.home-hero-wheel button{cursor:pointer}
+@media(max-width:380px){.home-hero-main{grid-template-columns:minmax(0,1fr) minmax(118px,40%)!important}.home-hero-wheel{max-width:150px}}

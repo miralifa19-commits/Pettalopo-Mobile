@@ -298,6 +298,8 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   }, [currentUser.uid]);
 
   const [inputText, setInputText] = useState('');
+  // Mencegah satu aksi kirim diproses lebih dari sekali.
+  const sendingMessageRef = useRef(false);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
   const [purnaBlockedModal, setPurnaBlockedModal] = useState(false);
@@ -356,7 +358,8 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   const handleSendMessage = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
     const textToSend = (customText || inputText).trim();
-    if (!textToSend || isLoadingAi) return;
+    if (!textToSend || isLoadingAi || sendingMessageRef.current) return;
+    sendingMessageRef.current = true;
 
     const resolvedRole = userDewanJabatan || (currentUser.role === 'admin' ? 'Pembina' : currentUser.dewanJabatan || 'Anggota');
 
@@ -371,27 +374,39 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       isMe: true
     };
 
-    setMessagesByGroup((prev) => ({
-      ...prev,
-      [activeGroupId]: [...(prev[activeGroupId] || []), newMsg]
-    }));
-
     if (!customText) setInputText('');
 
-    // Kirim pesan ke Firestore agar tersimpan secara permanen dan tersinkronisasi
+    // Gunakan ID dokumen Firestore sebagai ID tampilan agar snapshot realtime
+    // memperbarui pesan yang sama, bukan menambahkan salinan kedua.
     if (auth.currentUser) {
-      addDoc(collection(db, 'ambalan_chats'), {
-        groupId: activeGroupId,
-        senderId: auth.currentUser.uid,
-        senderName: currentUser.nama || 'Anggota',
-        senderRole: resolvedRole,
-        senderSangga: currentUser.sangga || '',
-        text: textToSend,
-        time: newMsg.time,
-        createdAt: Date.now()
-      }).catch((err) => {
-        console.warn('Gagal sinkron pesan chat ke Firestore:', err);
-      });
+      try {
+        const savedMessage = await addDoc(collection(db, 'ambalan_chats'), {
+          groupId: activeGroupId,
+          senderId: auth.currentUser.uid,
+          senderName: currentUser.nama || 'Anggota',
+          senderRole: resolvedRole,
+          senderSangga: currentUser.sangga || '',
+          text: textToSend,
+          time: newMsg.time,
+          createdAt: Date.now()
+        });
+        setMessagesByGroup((prev) => {
+          const current = prev[activeGroupId] || [];
+          if (current.some((message) => message.id === savedMessage.id)) return prev;
+          return { ...prev, [activeGroupId]: [...current, { ...newMsg, id: savedMessage.id }] };
+        });
+      } catch (err) {
+        console.warn('Gagal menyimpan pesan chat ke Firestore:', err);
+        setMessagesByGroup((prev) => ({
+          ...prev,
+          [activeGroupId]: [...(prev[activeGroupId] || []), newMsg]
+        }));
+      }
+    } else {
+      setMessagesByGroup((prev) => ({
+        ...prev,
+        [activeGroupId]: [...(prev[activeGroupId] || []), newMsg]
+      }));
     }
 
     // Aturan Kak Cikal: HANYA ada di grup Dewan Ambalan dan HANYA merespon bila di-@ atau disebut
@@ -448,6 +463,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
         setIsLoadingAi(false);
       }
     }
+    sendingMessageRef.current = false;
   };
 
   // Respon cepat dari pengingat proker Kak Cikal

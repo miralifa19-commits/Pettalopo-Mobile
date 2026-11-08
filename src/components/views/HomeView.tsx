@@ -1,17 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ArrowRight, BookOpen, Users, ChevronRight,
   Crown, UserRound, Shield, Target, Gamepad2
 } from 'lucide-react';
 import { UserAccount, ActiveMenu, ProgramKerjaItem } from '../../types';
 import { parseAgendaDate } from '../../utils/agendaDate';
-import { LOGO_IMAGE_PATH } from '../../data/scoutData';
+import { MonthWheel } from '../dashboard/MonthWheel';
 
 interface HomeViewProps {
   onNavigateMenu?: (menu: ActiveMenu) => void;
   onOpenAgenda?: (agendaId: string) => void;
   user?: UserAccount;
   programKerjaList?: ProgramKerjaItem[];
+  onOpenMonthDetails?: (monthIndex: number, year: number) => void;
 }
 
 const exploreLinks: { title: string; description: string; icon: React.ReactNode; menu: ActiveMenu }[] = [
@@ -23,19 +24,20 @@ const exploreLinks: { title: string; description: string; icon: React.ReactNode;
   { title: 'Dewan Ambalan', description: 'Pengurus Dewan Ambalan saat ini', icon: <Crown size={20} />, menu: 'dewan_ambalan' },
 ];
 
-export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, programKerjaList = [] }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda, onOpenMonthDetails, programKerjaList = [] }) => {
   const today = useMemo(() => new Date(), []);
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(currentMonth);
 
-  const monthDate = useMemo(() => new Date(currentYear, currentMonth, 1), [currentYear, currentMonth]);
+  const monthDate = useMemo(() => new Date(currentYear, selectedMonthIndex, 1), [currentYear, selectedMonthIndex]);
   const rawMonthYear = monthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
   const monthYearLabel = rawMonthYear.charAt(0).toUpperCase() + rawMonthYear.slice(1);
 
   const monthAgendas = useMemo(() => programKerjaList
     .map((item) => ({ item, date: parseAgendaDate(item.waktuPelaksanaan) }))
-    .filter((entry) => entry.date && entry.date.getMonth() === currentMonth && entry.date.getFullYear() === currentYear)
-    .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, currentMonth, currentYear]);
+    .filter((entry) => entry.date && entry.date.getMonth() === selectedMonthIndex && entry.date.getFullYear() === currentYear)
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime()), [programKerjaList, selectedMonthIndex, currentYear]);
 
 
 
@@ -50,9 +52,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
             <h1>Bergerak.<br />Berkarya.<br /><span>Mengabdi.</span></h1>
             <p>Ruang kebersamaan untuk tumbuh, berlatih, dan memberi manfaat bagi sesama.</p>
           </div>
-          <button type="button" className="home-hero-logo" onClick={() => onNavigateMenu?.('profil_ambalan')} aria-label="Buka profil Ambalan La Surullah Petta Lopo">
-            <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan La Surullah Petta Lopo" />
-          </button>
+          <div className="home-hero-wheel">
+            <MonthWheel
+              selectedMonthIndex={selectedMonthIndex}
+              selectedYear={currentYear}
+              activitySummary={monthAgendas[0]?.item.nama || 'Belum ada kegiatan'}
+              onSelectMonth={setSelectedMonthIndex}
+              onDetails={() => onOpenMonthDetails?.(selectedMonthIndex, currentYear)}
+            />
+          </div>
         </div>
         <div className="home-hero-actions">
           <button type="button" className="landing-primary" onClick={() => onNavigateMenu?.('dashboard')}>
@@ -65,7 +73,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
       </section>
       <section className="landing-section">
         <div className="section-heading">
-          <div><span className="section-eyebrow">JADWAL AMBALAN</span><h2>Kegiatan dan Latihan Bulan Ini</h2></div>
+          <div><h2>Kegiatan dan Latihan Bulan Ini</h2></div>
         </div>
 
         <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -76,24 +84,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
           </div>
 
           <div className="divide-y divide-slate-100">
-            {monthAgendas.length > 0 ? (
-              monthAgendas.map(({ item }) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => onOpenAgenda?.(item.id)}
-                  className="flex w-full items-center justify-between py-2.5 text-left text-slate-700 transition active:bg-slate-50"
-                >
-                  <span className="truncate text-[13px] font-medium text-slate-800">
-                    {item.nama}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="py-3 text-center text-xs text-slate-400">
-                Belum ada agenda bulan ini
-              </p>
-            )}
+            {([
+              { title: 'Kegiatan', match: (item: ProgramKerjaItem) => (item.tipe || 'Kegiatan') === 'Kegiatan' },
+              { title: 'Latihan Rutin', match: (item: ProgramKerjaItem) => (item.tipe || '').toLowerCase().includes('latihan') },
+              { title: 'Kegiatan Partisipasi', match: (item: ProgramKerjaItem) => (item.tipe || '').toLowerCase().includes('partisipasi') || (item as any).kategori === 'partisipasi' }
+            ]).map((category) => {
+              const entries = monthAgendas.filter(({ item }) => category.match(item));
+              return (
+                <div key={category.title} className="py-3">
+                  <h4 className="text-sm font-bold text-slate-800">• {category.title}</h4>
+                  {entries.length ? (
+                    <ol className="mt-1 list-decimal pl-5 space-y-1 text-[13px] text-slate-700">
+                      {entries.map(({ item }) => (
+                        <li key={item.id}>
+                          <button type="button" onClick={() => onOpenAgenda?.(item.id)} className="text-left">
+                            {item.nama}
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p className="pl-3 text-[13px] text-slate-400">-</p>}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

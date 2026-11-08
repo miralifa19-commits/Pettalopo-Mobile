@@ -15,6 +15,11 @@ interface ProfilAmbalanViewProps {
 
 export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers = [], onBack, isAdmin = false }) => {
   const [activeElement, setActiveElement] = useState(FILOSOFI_LOGO[0]);
+  const [ambalanIdentity, setAmbalanIdentity] = useState({
+    namaAmbalan: 'Ambalan La Surullah Petta Lopo',
+    gudepPutra: '10-035',
+    gudepPutri: '10-036'
+  });
 
   // Dewan Ambalan berasal dari anggota yang ditunjuk oleh Admin
   const dewanMembers = allMembers.filter(
@@ -49,9 +54,8 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers
           GUGUS DEPAN 10-035 & 10-036
         </span>
 
-        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-2">
-          Ambalan La Surullah <br />
-          <span className="text-[#e51c24]">Petta Lopo</span>
+        <h2 className="text-xl sm:text-2xl font-black text-[#e51c24] tracking-tight mt-2">
+          {ambalanIdentity.namaAmbalan}
         </h2>
 
         <p className="text-xs text-slate-600 max-w-md mx-auto mt-2 leading-relaxed">
@@ -70,7 +74,7 @@ export const ProfilAmbalanView: React.FC<ProfilAmbalanViewProps> = ({ allMembers
         </div>
       </div>
 
-      <ProfilAmbalanFirestoreSection isAdmin={isAdmin} />
+      <ProfilAmbalanFirestoreSection isAdmin={isAdmin} onIdentityChange={setAmbalanIdentity} />
 
       {/* Interactive Emblem Explorer (Klik Elemen Lambang) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-slate-100 shadow-xs space-y-3">

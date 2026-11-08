@@ -457,8 +457,8 @@ jobs:
               ("windowSplashScreenIconBackgroundColor", "@android:color/transparent"),
               ("postSplashScreenTheme", "@style/AppTheme.NoActionBar"),
               ("android:windowBackground", "@color/pettalopo_splash_background"),
-              ("android:statusBarColor", "#FFFFFF"),
-              ("android:windowLightStatusBar", "true"),
+              ("android:statusBarColor", "#C81E28"),
+              ("android:windowLightStatusBar", "false"),
               ("android:navigationBarColor", "#FFFFFF"),
               ("android:windowLightNavigationBar", "true"),
               ("android:windowDrawsSystemBarBackgrounds", "true"),
@@ -475,8 +475,8 @@ jobs:
               raise SystemExit("AppTheme.NoActionBar was not found.")
           normal_open, normal_body, normal_close = normal.groups()
           system_entries = [
-              ("android:statusBarColor", "#FFFFFF"),
-              ("android:windowLightStatusBar", "true"),
+              ("android:statusBarColor", "#C81E28"),
+              ("android:windowLightStatusBar", "false"),
               ("android:navigationBarColor", "#FFFFFF"),
               ("android:windowLightNavigationBar", "true"),
               ("android:windowDrawsSystemBarBackgrounds", "true"),

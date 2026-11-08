@@ -91,9 +91,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateMenu, onOpenAgenda
 
           <div className="divide-y divide-slate-100">
             {([
-              { title: 'Kegiatan', match: (item: ProgramKerjaItem) => (item.tipe || 'Kegiatan') === 'Kegiatan' },
-              { title: 'Latihan Rutin', match: (item: ProgramKerjaItem) => (item.tipe || '').toLowerCase().includes('latihan') },
-              { title: 'Kegiatan Partisipasi', match: (item: ProgramKerjaItem) => (item.tipe || '').toLowerCase().includes('partisipasi') || (item as any).kategori === 'partisipasi' }
+              { title: 'Kegiatan', match: (item: ProgramKerjaItem) => (item.tipe || 'Kegiatan') === 'Kegiatan' || (item.tipe || '').toLowerCase().includes('partisipasi') || (item as any).kategori === 'partisipasi' },
+              { title: 'Latihan Rutin', match: (item: ProgramKerjaItem) => (item.tipe || '').toLowerCase().includes('latihan') }
             ]).map((category) => {
               const entries = monthAgendas.filter(({ item }) => category.match(item));
               return (

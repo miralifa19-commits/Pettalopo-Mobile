@@ -40,7 +40,7 @@ export const ProfilAmbalanFirestoreSection: React.FC<{
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const canEdit = isAdmin && auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
+  const canEdit = isAdmin && auth.currentUser?.emailVerified === true && auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
 
   useEffect(() => onSnapshot(profileRef, (snapshot) => {
     const data = snapshot.exists()

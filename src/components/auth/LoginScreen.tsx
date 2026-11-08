@@ -43,9 +43,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
           Pettalopo Mobile
         </h1>
         <p className="text-xs font-medium text-slate-500 mt-1">
-          Gugus Depan 10.035 – 10.036
+          Gudep 10.035 - 10.036 • SMAN 9 Maros
         </p>
-        <p className="text-xs font-semibold text-slate-600 mt-1 whitespace-nowrap">Pangkalan UPT SMA Negeri 9 Maros</p>
         <p className="text-[13px] text-slate-600 mt-4 leading-relaxed max-w-xs">
           Aplikasi resmi Ambalan La Surullah Petta Lopo. Silakan masuk untuk mengakses seluruh agenda, data, dan ruang ambalan.
         </p>

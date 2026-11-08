@@ -93,9 +93,6 @@ jobs:
           print("No legacy Firebase project ID remains in tracked configuration/source files.")
           PY
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -131,16 +128,16 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install Dependencies
-        run: bun install
+        run: npm install --no-package-lock --no-audit --no-fund
 
       - name: TypeScript check
-        run: bun run lint
+        run: npm run lint
 
       - name: Test PDF export with short and multi-page letters
-        run: bun run test:pdf
+        run: npm run test:pdf
 
       - name: Build Web Application
-        run: bun run build
+        run: npm run build
 
       - name: Create Android Project
         run: |

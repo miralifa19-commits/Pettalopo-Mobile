@@ -579,3 +579,15 @@ main button,main a{overflow-wrap:anywhere}
 .home-hero-brandline span{font-size:10px;font-weight:800;letter-spacing:.09em;line-height:1.35}
 .home-hero-brandline svg{flex:0 0 auto;color:#C41E2A}
 .home-hero-brandline:active{background:#fff0f1}
+
+
+/* Android: area header mengikuti warna status bar; isi aman dari punch-hole/notch. */
+.pettalopo-topbar.pettalopo-topbar-home {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+}
+.pettalopo-topbar.pettalopo-topbar-home .pettalopo-menu-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}

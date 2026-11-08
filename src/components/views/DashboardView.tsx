@@ -55,8 +55,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   initialSelectedAgendaId,
   onAgendaDetailOpened
 }) => {
-  const [activeTab, setActiveTab] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>('Semua');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ProgramKerjaItem | null>(null);
 
   useEffect(() => {
@@ -76,13 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         const matchMonthIndex = date ? date.getMonth() === pal.index : false;
         const matchesMonth = matchName || matchMonthIndex;
 
-        const itemType = (item.tipe || 'Kegiatan').toLowerCase();
-        const isKegiatan = itemType === 'kegiatan' || itemType.includes('partisipasi') || (item as any).kategori === 'partisipasi';
-        const isLatihan = itemType.includes('latihan');
-        const matchesTab = activeTab === 'Semua' || (activeTab === 'Kegiatan' ? isKegiatan : isLatihan);
-        const matchesSearch = !searchQuery.trim() || (item.nama || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-        return matchesMonth && matchesTab && matchesSearch;
+        return matchesMonth;
       });
 
       return {
@@ -90,55 +82,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         items
       };
     });
-  }, [programKerjaList, activeTab, searchQuery]);
+  }, [programKerjaList]);
 
 
   return (
     <div className="space-y-4 pb-28 font-sans">
-      <div className="w-full rounded-2xl bg-[#C41E2A] text-white px-4 py-4 text-center shadow-sm">
-        <h1 className="text-base sm:text-lg font-extrabold tracking-wide">Program Kegiatan dan Latihan Rutin</h1>
-      </div>
-
-      {/* FILTER TIPE KEGIATAN & PENCARIAN */}
-      <section className="agenda-controls">
-        <label className="agenda-search">
-          <span className="sr-only">Cari agenda</span>
-          <input 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            placeholder="Cari kegiatan atau latihan..." 
-          />
-        </label>
-        <div className="agenda-tabs" role="tablist" aria-label="Jenis agenda">
-          <button 
-            type="button" 
-            role="tab" 
-            aria-selected={activeTab === 'Semua'} 
-            className={activeTab === 'Semua' ? 'active' : ''} 
-            onClick={() => setActiveTab('Semua')}
-          >
-            Semua
-          </button>
-          <button 
-            type="button" 
-            role="tab" 
-            aria-selected={activeTab === 'Kegiatan'} 
-            className={activeTab === 'Kegiatan' ? 'active' : ''} 
-            onClick={() => setActiveTab('Kegiatan')}
-          >
-            Kegiatan
-          </button>
-          <button 
-            type="button" 
-            role="tab" 
-            aria-selected={activeTab === 'Latihan Rutin'} 
-            className={activeTab === 'Latihan Rutin' ? 'active' : ''} 
-            onClick={() => setActiveTab('Latihan Rutin')}
-          >
-            Latihan Rutin
-          </button>
-        </div>
-      </section>
+      <p className="px-1 text-xs leading-relaxed text-slate-500">
+        rangkaian kegiatan dan latihan pramuka ambalan yang disusun sepanjang tahun sebagai panduan dalam berkegiatan, berlatih, dan mengembangkan keterampilan kepramukaan.
+      </p>
 
       {/* KARTU KEGIATAN SEDANG DILAKSANAKAN (LIVE SESSION) */}
       {activeKegiatan && activeKegiatan.isRunning && (

@@ -88,10 +88,6 @@ export default function App() {
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [profilePhotoFailed, setProfilePhotoFailed] = useState(false);
 
-  useEffect(() => {
-    setProfilePhotoFailed(false);
-  }, [profilePhoto]);
-
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
     const saved = localStorage.getItem('ambalan_program_kerja');
@@ -109,6 +105,11 @@ export default function App() {
   const isGoogleSignedIn = !isGooglePortalOpen && !!auth.currentUser && !auth.currentUser.isAnonymous;
   const profileName = user.nama || auth.currentUser?.displayName || 'Anggota Ambalan';
   const profileRole = isAdmin ? 'Pembina / Admin' : (user.dewanJabatan || user.jabatan || (user.role === 'dewan' ? 'Dewan Ambalan' : 'Anggota Ambalan'));
+
+  useEffect(() => {
+    setProfilePhotoFailed(false);
+  }, [profilePhoto]);
+
   const isDewanAccount = isAdmin || user.role === 'dewan' || user.isDewan === true || isUserInDewan(user, dewanPositions);
 
   useEffect(() => {
@@ -344,7 +345,7 @@ export default function App() {
           )}
 
           {activeMenu === 'profil_ambalan' && (
-            <ProfilAmbalanView isAdmin={isAdmin} onBack={() => setActiveMenu('home')} />
+            <ProfilAmbalanView isAdmin={isAdmin} allMembers={allMembers} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'dewan_ambalan' && <DewanAmbalanRosterView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}

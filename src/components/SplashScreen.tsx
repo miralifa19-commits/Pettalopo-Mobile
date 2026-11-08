@@ -13,7 +13,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
 
   useEffect(() => {
-    // Logo tampil singkat; keseluruhan splash berlangsung 2 detik.
+    // Logo tampil singkat; keseluruhan splash berlangsung 3 detik.
     const shineStartTimeout = setTimeout(() => {
       setShowShine(true);
     }, 450);
@@ -21,12 +21,12 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
     // 2. Kilauan selesai menyapu 1 kali saja setelah 1.8 detik
     const shineStopTimeout = setTimeout(() => {
       setShowShine(false);
-    }, 1250);
+    }, 3000);
 
     // 3. Fading out transisi
     const fadeTimeout = setTimeout(() => {
       setIsFading(true);
-    }, 1650);
+    }, 2600);
 
     const finishTimeout = setTimeout(() => {
       onFinishRef.current();

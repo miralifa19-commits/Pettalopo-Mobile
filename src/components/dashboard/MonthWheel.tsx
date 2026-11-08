@@ -75,7 +75,7 @@ export const MonthWheel: React.FC<MonthWheelProps> = ({
       </svg>
       <div className="absolute inset-[27%] flex items-center justify-center overflow-hidden pointer-events-none">
         <span className="px-1 text-center text-[10px] leading-tight font-semibold text-gray-800">
-          Program<br />Kegiatan dan<br />Latihan
+          PROGRAM<br />KEGIATAN &amp;<br />LATIHAN
         </span>
       </div>
     </div>

@@ -619,7 +619,7 @@ jobs:
               "versionCode": int(package["androidVersionCode"]),
               "versionName": version,
               "apkUrl": f"https://github.com/miralifa19-commits/Pettalopo-Mobile/releases/download/v{version}/pettalopo.apk",
-              "catatan": "Mode akses terbuka sementara tanpa halaman Login Google; akses Admin dan Ruang Kerja Dewan tersedia untuk semua pengguna."
+              "catatan": "Pembaruan tampilan Home, roda bulan, halaman Kegiatan dan Latihan, serta Profil Ambalan."
           }
           Path("version.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
@@ -633,12 +633,13 @@ jobs:
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
           generate_release_notes: false
           body: |
-            Mode akses terbuka sementara pada APK Android release.
+            Pembaruan Pettalopo Mobile yang mencakup penyempurnaan tampilan Home, roda bulan, halaman Kegiatan dan Latihan, serta Profil Ambalan.
 
-            - Menghapus halaman Login Google dari alur pembukaan aplikasi.
-            - Membuat sesi Firebase Anonymous otomatis agar Firestore tetap dapat diakses.
-            - Membuka fitur Admin, Kelola Aplikasi, dan Ruang Kerja Dewan untuk semua pengguna.
-            - Menggunakan versi 1.10 (versionCode 20).
+            - Menambahkan judul Kegiatan dan Latihan pada halaman Lihat Kegiatan.
+            - Menampilkan agenda bulanan Januari–Desember dengan bagian Kegiatan dan Latihan Rutin.
+            - Menyempurnakan tampilan Home dan Profil Ambalan.
+            - Mempertahankan alur login, Firebase, package name, dan signing aplikasi.
+            - Versi 1.12 (versionCode 22).
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json

@@ -148,9 +148,11 @@ export default function App() {
         && firebaseUser.providerData?.some((provider) => provider.providerId === 'google.com');
 
       if (hasGoogleProvider) {
-        setIsGooglePortalOpen(false);
+        // GoogleAuthPortal harus menyelesaikan pemeriksaan profil Firestore sebelum ditutup.
+        console.info('[AUTH_FLOW] App: sesi Google terdeteksi; menunggu pemeriksaan profil.');
       } else {
         // Sesi anonim/cache lokal bukan login; wajib melalui Google Sign-In AI Studio.
+        console.info('[AUTH_FLOW] App: sesi Google tidak tersedia; portal login dibuka.');
         setIsGooglePortalOpen(true);
       }
     });

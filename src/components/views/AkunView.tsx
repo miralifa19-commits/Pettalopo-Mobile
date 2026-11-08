@@ -133,7 +133,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Peran</span>
-                <strong className="text-xs text-slate-800">{user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' ? 'Pembina / Admin' : user.dewanJabatan || user.jabatan || (user.role === 'dewan' ? 'Dewan Ambalan' : 'Anggota Ambalan')}</strong>
+                <strong className="text-xs text-slate-800">{user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' ? 'Pembina / Admin' : user.role === 'dewan' ? user.dewanJabatan || 'Dewan Ambalan' : user.jabatan && user.jabatan !== 'Pembina Gugus Depan' ? user.jabatan : 'Anggota Ambalan'}</strong>
               </div>
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Jenjang</span>

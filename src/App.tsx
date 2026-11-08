@@ -411,6 +411,7 @@ export default function App() {
           {activeMenu === 'akun' && (
             <AkunView
               user={user}
+              onUpdateUser={(updated) => setUser(updated)}
               onLogout={handleLogout}
               onBack={() => setActiveMenu('home')}
             />

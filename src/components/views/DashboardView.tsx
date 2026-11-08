@@ -27,6 +27,7 @@ interface DashboardViewProps {
   onSharePresensi?: (item: ProgramKerjaItem) => void;
   onOpenPresensiModal?: (kegiatanId?: string) => void;
   initialSelectedAgendaId?: string | null;
+  initialSelectedMonthIndex?: number;
   onAgendaDetailOpened?: () => void;
 }
 
@@ -54,10 +55,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSharePresensi,
   onOpenPresensiModal,
   initialSelectedAgendaId,
+  initialSelectedMonthIndex,
   onAgendaDetailOpened
 }) => {
   const today = useMemo(() => new Date(), []);
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(today.getMonth());
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(initialSelectedMonthIndex ?? today.getMonth());
+
+  useEffect(() => {
+    if (typeof initialSelectedMonthIndex === 'number') setSelectedMonthIndex(initialSelectedMonthIndex);
+  }, [initialSelectedMonthIndex]);
   const [viewMode, setViewMode] = useState<'per_bulan' | 'semua_12_bulan'>('per_bulan');
   const [activeTab, setActiveTab] = useState<'Semua' | 'Kegiatan' | 'Latihan Rutin'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');

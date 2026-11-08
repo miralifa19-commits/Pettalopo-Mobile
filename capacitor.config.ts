@@ -18,8 +18,8 @@ const config: CapacitorConfig = {
   },
   plugins: {
     StatusBar: {
-      style: 'DARK',
-      backgroundColor: '#FFFFFF',
+      style: 'LIGHT',
+      backgroundColor: '#C81E28',
       overlaysWebView: false
     },
     FirebaseAuthentication: {

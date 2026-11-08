@@ -566,3 +566,16 @@ main button,main a{overflow-wrap:anywhere}
 .home-hero-wheel svg{display:block;overflow:visible}
 .home-hero-wheel button{cursor:pointer}
 @media(max-width:380px){.home-hero-main{grid-template-columns:minmax(0,1fr) minmax(118px,40%)!important}.home-hero-wheel{max-width:150px}}
+
+
+/* Header identitas akun dan pintasan Profil Ambalan. */
+.pettalopo-member-shortcut{min-height:44px}
+.pettalopo-member-avatar{width:42px;height:42px;flex-basis:42px;border:1.5px solid rgba(255,255,255,.92)!important}
+.pettalopo-member-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.pettalopo-member-meta{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left}
+.pettalopo-member-meta strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-size:13px;line-height:1.2;font-weight:800}
+.pettalopo-member-meta small{color:rgba(255,255,255,.9);font-size:10px;line-height:1.2;font-weight:700}
+.home-hero-brandline{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;padding:4px 6px;margin:0 0 8px;border:0;border-radius:10px;background:transparent;color:#202124;text-align:left;cursor:pointer}
+.home-hero-brandline span{font-size:10px;font-weight:800;letter-spacing:.09em;line-height:1.35}
+.home-hero-brandline svg{flex:0 0 auto;color:#C41E2A}
+.home-hero-brandline:active{background:#fff0f1}

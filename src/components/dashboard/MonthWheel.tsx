@@ -28,9 +28,11 @@ function point(cx: number, cy: number, r: number, angle: number) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-function sectorPath(start: number, end: number) {
-  const outer = 47;
-  const inner = 27;
+function sectorPath(start: number, end: number, selected = false) {
+  // Enlarge only the selected segment radially; keep its angular edges fixed
+  // so it never covers or blocks the neighboring month segments.
+  const outer = selected ? 48.5 : 47;
+  const inner = selected ? 25.5 : 27;
   const a = point(50, 50, outer, start);
   const b = point(50, 50, outer, end);
   const c = point(50, 50, inner, end);
@@ -53,11 +55,16 @@ export const MonthWheel: React.FC<MonthWheelProps> = ({
           const selected = selectedMonthIndex === index;
           return (
             <g key={item.code} onClick={() => onSelectMonth(index)} role="button" tabIndex={0}
-              aria-label={`Pilih ${item.name}`}
-              onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onSelectMonth(index); }}
-              className="cursor-pointer">
-              <path d={sectorPath(start, end)} fill={item.color}
-                stroke="#ffffff" strokeWidth={selected ? 0.8 : 0.45}
+              aria-label={`Pilih ${item.name}`} aria-pressed={selected}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectMonth(index);
+                }
+              }}
+              className="cursor-pointer focus:outline-none">
+              <path d={sectorPath(start, end, selected)} fill={item.color}
+                stroke="#ffffff" strokeWidth="0.45"
                 className="transition-opacity hover:opacity-85" />
               <text x={label.x} y={label.y + 1.1} textAnchor="middle" dominantBaseline="middle"
                 fill="#ffffff" fontSize="3.25" fontWeight="700" pointerEvents="none">{item.code}</text>

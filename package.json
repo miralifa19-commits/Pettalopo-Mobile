@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.20",
+  "version": "1.21",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -21,6 +21,7 @@
     "@capacitor/core": "^8.6.0",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.4",
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/canvas-confetti": "^1.9.0",
@@ -56,5 +57,5 @@
     "typescript": "^7.0.2",
     "@types/express": "^4.17.21"
   },
-  "androidVersionCode": 30
+  "androidVersionCode": 31
 }

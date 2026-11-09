@@ -77,6 +77,9 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   const userAgeInfo = useMemo(() => {
     const birthValue = (currentUser as any).tanggalLahir || currentUser.ttl;
     let years = currentUser.usia ?? (currentUser as any).usiaTahun ?? 17;
+    // Nilai 0 dipakai sebagai penanda usia yang belum berhasil dimuat,
+    // bukan usia anggota yang valid.
+    if (!Number.isFinite(years) || years <= 0) years = 17;
     if (birthValue) {
       const birth = new Date(`${birthValue}T00:00:00`);
       if (!Number.isNaN(birth.getTime())) {
@@ -499,7 +502,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       {/* HALAMAN 1: HALAMAN LUAR - RUANG AMBALAN (DAFTAR 3 GRUP)   */}
       {/* ======================================================== */}
       {currentScreen === 'list' && (
-        <div className="flex flex-col h-full bg-slate-50">
+        <div className="flex flex-col h-full min-h-0 bg-slate-50">
           
           {/* Header Merah Ruang Ambalan */}
           <header className="bg-[#c81e28] text-white px-4 py-3.5 shadow-md shrink-0 flex items-center justify-between">
@@ -521,7 +524,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
           </header>
 
           {/* List Grup Ambalan Tanpa Banner (Dewan Ambalan, Ambalan La Surullah Petta Lopo, Purna Ambalan) */}
-          <div className="p-4 space-y-2.5 flex-1 overflow-y-auto">
+          <div className="p-4 space-y-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {visibleGroups.length === 0 && (
               <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs text-slate-600">
                 Akses grup Ambalan tersedia setelah memasuki usia Calon Penegak (14 tahun).
@@ -555,7 +558,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       {/* HALAMAN 2: HALAMAN DALAM GRUP (RUANG PERCAKAPAN MERAH)    */}
       {/* ======================================================== */}
       {currentScreen === 'room' && (
-        <div className="flex flex-col h-full bg-[#f8f9fa]">
+        <div className="flex flex-col h-full min-h-0 bg-[#f8f9fa]">
           
           {/* Header Merah Ruang Grup */}
           <header className="bg-[#c81e28] text-white px-3.5 py-3 shadow-md shrink-0 flex items-center justify-between">
@@ -614,7 +617,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
           )}
 
           {/* Chat Messages Container */}
-          <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 space-y-3">
             {activeMessages.map((msg) => (
               <div
                 key={msg.id}

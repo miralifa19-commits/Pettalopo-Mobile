@@ -125,9 +125,9 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
       if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
-        if (openRef.current) {
-          void finishLogin(user);
-        }
+        // Muat profil setiap kali sesi Google dipulihkan, meskipun splash
+        // masih tampil dan portal login belum dibuka.
+        void finishLogin(user);
       }
     });
     return unsubscribe;

@@ -122,6 +122,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
         tanggalLahir: form.tanggalLahir || '',
         ttl: form.tanggalLahir || form.ttl || '',
         foto: form.foto || photoUrl || '',
+        fotoUrl: form.foto || photoUrl || '',
         usia,
         uid: signedInUser.uid
       };
@@ -143,11 +144,20 @@ export const AkunView: React.FC<AkunViewProps> = ({
         updatedAt
       };
 
+      // Profil pribadi adalah sumber utama avatar dan data akun.
+      // Jangan batalkan penyimpanan lokal jika direktori publik memiliki dokumen lama
+      // yang tidak cocok dengan batasan field Firestore.
       await setDoc(doc(db, 'users', signedInUser.uid), { ...updatedUser, updatedAt }, { merge: true });
-      await setDoc(doc(db, 'public_members', signedInUser.uid), publicProfile, { merge: true });
       onUpdateUser(updatedUser);
       setForm(updatedUser);
       setPhotoPreview(updatedUser.foto);
+
+      try {
+        await setDoc(doc(db, 'public_members', signedInUser.uid), publicProfile, { merge: true });
+      } catch (directoryError) {
+        console.warn('[AkunView] Profil pribadi tersimpan; sinkronisasi direktori publik tertunda:', directoryError);
+      }
+
       setSaveSuccess('Perubahan profil berhasil disimpan.');
     } catch (error: any) {
       console.error('[AkunView] Gagal menyimpan profil:', error);

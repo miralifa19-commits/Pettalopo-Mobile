@@ -3,7 +3,7 @@ name: Deploy Pettalopo GitHub Pages Preview
 on:
   push:
     branches:
-      - feature/pull-to-refresh-scoped-1.14
+      - main
   workflow_dispatch:
 
 permissions:
@@ -28,10 +28,10 @@ jobs:
           ref: main
           path: main-src
 
-      - name: Checkout pull-to-refresh preview
+      - name: Checkout merged preview source
         uses: actions/checkout@v4
         with:
-          ref: feature/pull-to-refresh-scoped-1.14
+          ref: main
           path: preview-src
 
       - name: Setup Node.js
@@ -47,7 +47,7 @@ jobs:
           npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
           npm run build
 
-      - name: Build feature preview under /preview/
+      - name: Build preview under /preview/
         working-directory: preview-src
         env:
           VITE_BASE_PATH: /Pettalopo-Mobile/preview/

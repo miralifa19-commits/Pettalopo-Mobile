@@ -131,7 +131,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     <div className="pull-refresh-root">
       <div
         className={`pull-refresh-indicator ${isRefreshing ? 'is-refreshing' : ''} ${hasError ? 'has-error' : ''}`}
-        style={{ transform: `translate(-50%, ${Math.max(0, pullDistance - 46)}px)`, opacity: pullDistance > 0 || isRefreshing || hasError ? 1 : 0 }}
+        style={{ transform: `translate(-50%, ${hasError ? 8 : Math.max(0, pullDistance - 46)}px)`, opacity: pullDistance > 0 || isRefreshing || hasError ? 1 : 0 }}
         role="status"
         aria-live="polite"
       >
@@ -142,7 +142,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
       </div>
       <div
         className="pull-refresh-content"
-        style={{ transform: `translate3d(0, ${pullDistance}px, 0)` }}
+        style={{ transform: `translate3d(0, ${pullDistance}px, 0)`, transition: pullDistance === 0 ? 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none' }}
       >
         {children}
       </div>

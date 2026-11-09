@@ -1,8 +1,6 @@
 name: Deploy Pettalopo Mobile Preview to GitHub Pages
 
 on:
-  push:
-    branches: [main, perbaikan-pdf, 'preview/**']
   workflow_dispatch:
 
 permissions:

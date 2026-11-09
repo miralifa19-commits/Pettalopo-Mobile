@@ -142,13 +142,22 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       // Gunakan token autentikasi yang sudah ada (tanpa paksa refresh jaringan)
       await withFirestoreTimeout(user.getIdToken(false), 8_000);
 
-      // 1. Akun Admin Utama (miralifa19@gmail.com) langsung masuk tanpa Sandi Ambalan
+      // 1. Akun Admin Utama (miralifa19@gmail.com) otomatis menjadi admin dan langsung masuk
       if (user.email?.toLowerCase() === ADMIN_EMAIL) {
-        // Muat profil tersimpan terlebih dahulu agar data admin tidak tertimpa
-        // oleh objek bawaan setiap kali login ulang.
-        const adminSnap = await withFirestoreTimeout(getDoc(ref), 8_000);
-        const savedAdminData = adminSnap.exists() ? adminSnap.data() : {};
-        const adminAccount = {
+        console.info('[AUTH_FLOW] Admin utama terdeteksi (miralifa19@gmail.com). Membuka akses admin...');
+
+        let savedAdminData: Record<string, any> = {};
+        try {
+          // Ambil profil tersimpan jika tersedia dengan waktu tunggu toleran (2.5 detik)
+          const adminSnap = await withFirestoreTimeout(getDoc(ref), 2_500);
+          if (adminSnap.exists()) {
+            savedAdminData = adminSnap.data();
+          }
+        } catch (readErr) {
+          console.warn('[AUTH_FLOW] Pembacaan profil Firestore admin ditunda atau lambat, menggunakan data default:', readErr);
+        }
+
+        const adminAccount: UserAccount = {
           ...savedAdminData,
           uid: user.uid,
           username: savedAdminData.username || user.email.split('@')[0],
@@ -165,26 +174,36 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           tanggalLahir: savedAdminData.tanggalLahir || savedAdminData.ttl || '',
           ttl: savedAdminData.tanggalLahir || savedAdminData.ttl || '',
           createdAt: savedAdminData.createdAt || new Date().toISOString().slice(0, 10)
-        } as UserAccount;
+        };
 
-        await withFirestoreTimeout(setDoc(ref, {
+        // Sinkronisasi data admin ke Firestore dilakukan secara background (non-blocking)
+        // sehingga admin tidak pernah mengalami loading macet atau timeout.
+        setDoc(ref, {
           ...adminAccount,
           googleAuth: true,
           onboardingSelesai: true,
           statusKeanggotaan: 'admin',
           updatedAt: Date.now()
-        }, { merge: true }), 8_000);
+        }, { merge: true }).catch((err) => {
+          console.warn('[AUTH_FLOW] Penyimpanan data admin di latar belakang ditunda:', err);
+        });
 
+        // Langsung masuk seketika
         onComplete(adminAccount);
         return;
       }
 
-      // 2. Baca dokumen profil users/{uid}
-      const snap = await withFirestoreTimeout(getDoc(ref), 8_000);
-      console.info('[AUTH_FLOW] Portal: pembacaan profil selesai.', { profileExists: snap.exists() });
+      // 2. Baca dokumen profil users/{uid} untuk anggota
+      let snap: any = null;
+      try {
+        snap = await withFirestoreTimeout(getDoc(ref), 5_000);
+        console.info('[AUTH_FLOW] Portal: pembacaan profil selesai.', { profileExists: snap?.exists() });
+      } catch (e: any) {
+        console.warn('[AUTH_FLOW] Pembacaan profil online melebihi waktu tunggu, beralih ke form anggota baru:', e);
+      }
 
-      // Belum ada profil di Firestore: tampilkan layar pendaftaran anggota baru
-      if (!snap.exists()) {
+      // Belum ada profil di Firestore atau koneksi lambat untuk akun baru: tampilkan pendaftaran
+      if (!snap || !snap.exists()) {
         setNamaLengkap(user.displayName || '');
         setNeedsProfile(true);
         return;
@@ -206,8 +225,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       // Pengguna sudah pernah mendaftar dan menyelesaikan profil
       if (isProfileComplete) {
         const userAccount = {
-          // Pertahankan seluruh kolom profil yang tersimpan, termasuk kolom
-          // yang tidak termasuk dalam data dasar UserAccount.
+          // Pertahankan seluruh kolom profil yang tersimpan
           ...data,
           uid: user.uid,
           username: data.username || user.email?.split('@')[0] || user.uid,
@@ -231,7 +249,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         } as UserAccount;
 
         // Sinkronisasi non-blocking direktori publik
-        withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
+        setDoc(doc(db, 'public_members', user.uid), {
           uid: user.uid,
           nama: userAccount.nama,
           namaLengkap: userAccount.nama,
@@ -246,7 +264,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           isDewan: userAccount.isDewan,
           dewanJabatan: userAccount.dewanJabatan,
           updatedAt: Date.now()
-        }, { merge: true }), 8_000).catch((err) => {
+        }, { merge: true }).catch((err) => {
           console.warn('[GoogleAuth] Penulisan direktori anggota ditunda:', err);
         });
 
@@ -375,22 +393,62 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     setLoadingText('Membuka Google...');
     setError('');
     setIsUnauthorizedDomain(false);
+
     try {
       if (Capacitor.isNativePlatform()) {
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        if (!result.credential?.idToken) {
-          throw new Error('Token identitas Google tidak ditemukan dari login Android.');
+        let result: any = null;
+        let lastError: any = null;
+
+        // Strategi 1: Coba Credential Manager (standar Android modern)
+        try {
+          console.info('[GoogleAuth] Mencoba Google Sign-In via Credential Manager...');
+          result = await FirebaseAuthentication.signInWithGoogle({
+            useCredentialManager: true
+          });
+        } catch (credErr: any) {
+          lastError = credErr;
+          console.warn('[GoogleAuth] Credential Manager tidak berhasil atau tidak didukung di perangkat ini:', credErr);
+          
+          // Strategi 2: Fallback otomatis ke GoogleSignInClient klasik (kompatibel semua versi Android)
+          try {
+            setLoadingText('Membuka pemilih akun Google...');
+            console.info('[GoogleAuth] Mencoba fallback ke Google Play Services Sign-In klasik...');
+            result = await FirebaseAuthentication.signInWithGoogle({
+              useCredentialManager: false
+            });
+          } catch (legacyErr: any) {
+            console.error('[GoogleAuth] Fallback Google Play Services Sign-In juga gagal:', legacyErr);
+            throw legacyErr || credErr;
+          }
         }
+
+        const idToken = result?.credential?.idToken;
+        if (!idToken) {
+          throw new Error('Token identitas Google (idToken) tidak ditemukan dari login Android. Pastikan akun Google terhubung di perangkat.');
+        }
+
         setLoadingText('Menghubungkan ke sesi Ambalan...');
-        const webCredential = GoogleAuthProvider.credential(result.credential.idToken);
-        await signInWithCredential(auth, webCredential);
+        console.info('[GoogleAuth] Menukarkan idToken dengan sesi Firebase Web SDK...');
+        const webCredential = GoogleAuthProvider.credential(idToken);
+        const userCred = await signInWithCredential(auth, webCredential);
+
+        // Panggil langsung finishLogin agar tidak terjadi macet/loading tanpa henti jika listener lambat
+        if (userCred?.user) {
+          await finishLogin(userCred.user);
+        }
       } else {
         setLoadingText('Menghubungkan dengan Google...');
-        await signInWithPopup(auth, googleProvider);
+        const userCred = await signInWithPopup(auth, googleProvider);
+        if (userCred?.user) {
+          await finishLogin(userCred.user);
+        }
       }
     } catch (e: any) {
       const code = String(e?.code || '');
       const msg = String(e?.message || '');
+      const rawError = JSON.stringify(e || {});
+      console.error('[GoogleAuth] Login Google gagal:', { code, msg, rawError, e });
+
       if (code === 'auth/popup-closed-by-user' || msg.includes('closed-by-user')) {
         setError('Jendela login Google ditutup sebelum proses selesai.');
       } else if (code === 'auth/cancelled-popup-request') {
@@ -399,11 +457,16 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         console.warn('[GoogleAuth] Domain web preview belum didaftarkan di Firebase Console:', window.location.hostname);
         setIsUnauthorizedDomain(true);
         setError(`Domain pratinjau web (${window.location.hostname}) belum didaftarkan di Firebase Console.`);
-      } else if (code === '10' || msg.includes('10:') || msg.includes('DEVELOPER_ERROR')) {
-        setError('Developer Error (Kode 10): Sidik jari SHA-1 APK Android belum terdaftar di Firebase Console pada package id.sch.smpialwasi_maros.ambalan.');
+      } else if (code === '10' || msg.includes('10:') || msg.includes('DEVELOPER_ERROR') || rawError.includes(': 10:')) {
+        setError('Developer Error (Kode 10): Sidik jari SHA-1 dari keystore rilis APK belum didaftarkan di Firebase Console untuk package "id.sch.smpialwasi_maros.ambalan". Buka Firebase Console > Project Settings > Android Apps dan daftarkan SHA-1.');
+      } else if (code === '12501' || msg.includes('12501') || msg.includes('canceled') || msg.includes('cancelled') || code === '16' || msg.includes('16:')) {
+        setError('Pemilihan akun Google dibatalkan oleh pengguna.');
+      } else if (code === '12500' || msg.includes('12500')) {
+        setError('Internal Error (Kode 12500): Google Play Services pada perangkat bermasalah. Pastikan Google Play Services sudah diperbarui.');
+      } else if (msg.includes('NoCredentialException') || msg.includes('No credentials available')) {
+        setError('Tidak ada akun Google yang terdaftar atau siap digunakan di Credential Manager. Silakan pilih akun Google aktif di perangkat.');
       } else {
-        console.warn('[GoogleAuth] Login Google gagal:', msg || code);
-        setError(msg || 'Login Google gagal. Pastikan koneksi internet tersedia.');
+        setError(msg || (code ? `Gagal login (kode: ${code})` : 'Login Google gagal. Pastikan koneksi internet tersedia dan coba lagi.'));
       }
       setLoading(false);
     }
@@ -734,6 +797,55 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
                   Keluar dari akun Google ({firebaseUser.email})
                 </button>
               )}
+
+              {/* Tombol Diagnostik Koneksi Firestore */}
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowDiagnostic((prev) => !prev)}
+                  className="text-[11px] text-slate-500 hover:text-slate-700 font-medium cursor-pointer inline-flex items-center gap-1"
+                >
+                  <span>🔍</span>
+                  <span>{showDiagnostic ? 'Sembunyikan Diagnostik Koneksi' : 'Diagnostik Koneksi Firestore'}</span>
+                </button>
+
+                {showDiagnostic && (
+                  <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-700 text-[11px]">Status Server & Database</span>
+                      <button
+                        type="button"
+                        onClick={runDiagnosticTest}
+                        disabled={diagTesting}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-[10px] font-bold text-slate-700 cursor-pointer disabled:opacity-50"
+                      >
+                        {diagTesting ? 'Menguji...' : 'Uji Sekarang'}
+                      </button>
+                    </div>
+                    <div className="text-[11px] text-slate-600 space-y-0.5">
+                      <p>• Proyek: <strong className="text-slate-800">pettalopo-6f6f4</strong></p>
+                      <p>• Database: <strong className="text-slate-800">(default)</strong></p>
+                      <p>• Platform: <strong className="text-slate-800">{Capacitor.isNativePlatform() ? 'Android APK' : 'Web Browser'}</strong></p>
+                    </div>
+                    {diagResult && (
+                      <div className={`p-2 rounded-xl text-[11px] leading-relaxed ${
+                        diagResult.status === 'success'
+                          ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                          : 'bg-red-50 border border-red-200 text-red-800'
+                      }`}>
+                        <div className="font-bold flex items-center gap-1">
+                          <span>{diagResult.status === 'success' ? '✅' : '❌'}</span>
+                          <span>{diagResult.status === 'success' ? 'Koneksi Berhasil' : 'Koneksi Terkendala'}</span>
+                          {diagResult.latencyMs !== undefined && (
+                            <span className="text-[10px] font-normal text-slate-500">({diagResult.latencyMs} ms)</span>
+                          )}
+                        </div>
+                        <p className="mt-0.5">{diagResult.message}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -165,6 +165,8 @@ export interface UserAccount {
   usia?: number; // Usia anggota (tahun)
   namaPanggilan?: string;
   ttl?: string; // Tempat, Tanggal Lahir
+  tanggalLahir?: string;
+  statusKeanggotaan?: string;
   motto?: string;
   progresSku?: string; // e.g. '19/23 Butir Bantara Teruji'
   keaktifan?: 'Sangat Aktif' | 'Aktif' | 'Cukup Aktif' | 'Pasif'; // Status keaktifan latihan & kegiatan

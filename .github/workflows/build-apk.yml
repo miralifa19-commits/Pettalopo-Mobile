@@ -112,9 +112,37 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/pettalopo-release.jks
-          keytool -list -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "=================================================="
+          echo "VERIFIKASI FINGERPRINT RELEASE KEYSTORE PETTALOPO:"
+          echo "=================================================="
+          CERT_INFO=$(keytool -list -v -keystore /tmp/pettalopo-release.jks -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD")
+          echo "$CERT_INFO" | grep -E "Alias name|Creation date|Owner|Issuer|SHA1:|SHA256:" || true
+
+          RELEASE_SHA1=$(echo "$CERT_INFO" | grep "SHA1:" | head -n1 | awk '{print $2}' | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          echo "Release Keystore SHA-1 (Clean Hex): $RELEASE_SHA1"
+
+          python3 - <<PY
+          import json
+          from pathlib import Path
+
+          release_sha1 = "$RELEASE_SHA1"
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          registered_hashes = []
+          for client in config.get("client", []):
+              for oauth in client.get("oauth_client", []):
+                  hash_val = oauth.get("android_info", {}).get("certificate_hash")
+                  if hash_val:
+                      registered_hashes.append(hash_val.lower())
+
+          print("Fingerprint SHA-1 di google-services.json:", registered_hashes)
+          if release_sha1 and release_sha1 in registered_hashes:
+              print("✅ Keystore SHA-1 COCOK dengan Firebase Console / google-services.json!")
+          else:
+              print("::warning::Keystore SHA-1 (" + release_sha1 + ") TIDAK COCOK dengan google-services.json (" + str(registered_hashes) + ")")
+              print("::warning::Jika login Google menghasilkan Kode 10 di Android, tambahkan SHA-1 ini ke Firebase Console > Project Settings > Android App!")
+          PY
           rm -f /tmp/pettalopo-release.jks
-          echo "Existing Pettalopo release signing key verified."
+          echo "Release signing key checked successfully."
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -318,6 +346,20 @@ jobs:
           if "com.google.gms.google-services" not in app_text:
               app_text += "\n\napply plugin: 'com.google.gms.google-services'\n"
               app.write_text(app_text)
+
+          # Pastikan default_web_client_id terdefinisi di strings.xml untuk Capacitor Firebase Auth
+          values_dir = Path("android/app/src/main/res/values")
+          values_dir.mkdir(parents=True, exist_ok=True)
+          strings_path = values_dir / "strings.xml"
+          web_client_id = "392815401237-vamq2fm8khbpu42dlm08fg4c5obstoa3.apps.googleusercontent.com"
+          if strings_path.exists():
+              strings_content = strings_path.read_text(encoding="utf-8")
+              if "default_web_client_id" not in strings_content:
+                  strings_content = strings_content.replace("</resources>", f'    <string name="default_web_client_id">{web_client_id}</string>\n</resources>')
+                  strings_path.write_text(strings_content, encoding="utf-8")
+          else:
+              strings_path.write_text(f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">Pettalopo Mobile</string>\n    <string name="title_activity_main">Pettalopo Mobile</string>\n    <string name="package_name">id.sch.smpialwasi_maros.ambalan</string>\n    <string name="custom_url_scheme">id.sch.smpialwasi_maros.ambalan</string>\n    <string name="default_web_client_id">{web_client_id}</string>\n</resources>\n', encoding="utf-8")
+          print(f"Verified default_web_client_id in strings.xml: {web_client_id}")
           print("Firebase Android client and Google Services Gradle plugin verified.")
           PY
           test -s android/app/google-services.json

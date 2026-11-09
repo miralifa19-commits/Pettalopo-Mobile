@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw, ArrowLeft } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -39,6 +39,34 @@ import {
   DEFAULT_ADMIN_ACCOUNT 
 } from './services/firebaseService';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
+
+const PAGE_TITLES: Record<ActiveMenu, string> = {
+  home: 'Beranda',
+  dashboard: 'Kegiatan dan Latihan',
+  kegiatan_latihan: 'Kegiatan dan Latihan',
+  profil_ambalan: 'Profil Ambalan',
+  dewan_ambalan: 'Dewan Ambalan',
+  mabigus: 'Mabigus',
+  anggota_ambalan: 'Anggota Ambalan',
+  ruang_kerja_dewan: 'Ruang Kerja Dewan Ambalan',
+  sangga: 'Sangga',
+  sku_skk: 'SKU/SKK',
+  ruang_belajar: 'Ruang Belajar',
+  quiz: 'Game Pramuka',
+  chat: 'Ruang Ambalan',
+  presensi: 'Presensi',
+  misi_pramuka: 'Misi Pramuka',
+  games: 'Games',
+  pengumuman: 'Pengumuman',
+  pengaturan: 'Pengaturan',
+  program_kerja: 'Program Kerja',
+  latihan_rutin: 'Latihan Rutin',
+  akun: 'Akun',
+  kelola_aplikasi: 'Kelola Aplikasi',
+  database: 'Database Anggota',
+  laporan: 'Laporan',
+  organisasi: 'Organisasi Ambalan'
+};
 
 export default function App() {
   // Pertahankan tampilan akhir aplikasi saat dibuka kembali
@@ -372,6 +400,23 @@ export default function App() {
             )}
           </div>
         </header>
+        )}
+        {activeMenu !== 'home' && (
+          <header className="pettalopo-topbar pettalopo-topbar-page">
+            <button
+              type="button"
+              className="pettalopo-page-back"
+              onClick={() => {
+                setActiveMenu('home');
+                setSelectedAgendaId(null);
+                setIsQuickMenuOpen(false);
+              }}
+              aria-label="Kembali ke Beranda"
+            >
+              <ArrowLeft size={20} strokeWidth={2.5} />
+            </button>
+            <h1 className="pettalopo-page-title">{PAGE_TITLES[activeMenu] || 'Pettalopo Mobile'}</h1>
+          </header>
         )}
         <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd} style={{ minHeight: 0, height: 0, flex: '1 1 0%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain', touchAction: 'pan-y' }} className={`min-h-0 p-3.5 sm:p-4 pt-3 bg-white pb-28 ${activeMenu === 'home' ? 'pettalopo-main-home' : ''}`}>
           {isPullReady && !isRefreshing && (

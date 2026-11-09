@@ -133,7 +133,6 @@ export const AkunView: React.FC<AkunViewProps> = ({
         gudep: updatedUser.gudep || '',
         satuan: updatedUser.satuan || '',
         tingkat: updatedUser.tingkat || updatedUser.tingkatan || '',
-        tingkatan: updatedUser.tingkatan || updatedUser.tingkat || '',
         sangga: updatedUser.sangga || '',
         jabatan: updatedUser.jabatan || '',
         foto: updatedUser.foto || '',

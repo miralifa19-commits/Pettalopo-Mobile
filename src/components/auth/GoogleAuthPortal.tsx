@@ -117,6 +117,12 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         portalOpen: openRef.current
       });
       setFirebaseUser(hasGoogleProvider ? user : null);
+      if (!hasGoogleProvider) {
+        setNeedsProfile(false);
+        setNamaLengkap('');
+        setTanggalLahir('');
+        setSandiAmbalan('');
+      }
       if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
         if (openRef.current) {
@@ -144,21 +150,28 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
 
       // 1. Akun Admin Utama (miralifa19@gmail.com) langsung masuk tanpa Sandi Ambalan
       if (user.email?.toLowerCase() === ADMIN_EMAIL) {
-        const adminAccount: UserAccount = {
+        // Muat profil tersimpan terlebih dahulu agar data admin tidak tertimpa
+        // oleh objek bawaan setiap kali login ulang.
+        const adminSnap = await withFirestoreTimeout(getDoc(ref), 8_000);
+        const savedAdminData = adminSnap.exists() ? adminSnap.data() : {};
+        const adminAccount = {
+          ...savedAdminData,
           uid: user.uid,
-          username: user.email.split('@')[0],
+          username: savedAdminData.username || user.email.split('@')[0],
           email: user.email,
-          nama: user.displayName || 'Admin Utama',
+          nama: savedAdminData.nama || savedAdminData.namaLengkap || user.displayName || 'Admin Utama',
           role: 'admin',
-          gudep: '10-035',
-          satuan: 'Putra',
-          tingkat: 'Penegak Garuda',
-          sangga: 'Perintis',
-          jabatan: 'Admin Utama Pettalopo',
-          nomorKta: '',
-          foto: user.photoURL || '',
-          createdAt: new Date().toISOString().slice(0, 10)
-        };
+          gudep: savedAdminData.gudep || '10-035',
+          satuan: savedAdminData.satuan || 'Putra',
+          tingkat: savedAdminData.tingkat || savedAdminData.tingkatan || 'Penegak Garuda',
+          sangga: savedAdminData.sangga || 'Perintis',
+          jabatan: savedAdminData.jabatan || 'Admin Utama Pettalopo',
+          nomorKta: savedAdminData.nomorKta || '',
+          foto: savedAdminData.foto || savedAdminData.fotoUrl || user.photoURL || '',
+          tanggalLahir: savedAdminData.tanggalLahir || savedAdminData.ttl || '',
+          ttl: savedAdminData.tanggalLahir || savedAdminData.ttl || '',
+          createdAt: savedAdminData.createdAt || new Date().toISOString().slice(0, 10)
+        } as UserAccount;
 
         await withFirestoreTimeout(setDoc(ref, {
           ...adminAccount,
@@ -198,7 +211,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
 
       // Pengguna sudah pernah mendaftar dan menyelesaikan profil
       if (isProfileComplete) {
-        const userAccount: UserAccount = {
+        const userAccount = {
+          // Pertahankan seluruh kolom profil yang tersimpan, termasuk kolom
+          // yang tidak termasuk dalam data dasar UserAccount.
+          ...data,
           uid: user.uid,
           username: data.username || user.email?.split('@')[0] || user.uid,
           email: user.email || '',
@@ -208,15 +224,17 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
           dewanJabatan: data.dewanJabatan || '',
           gudep: data.gudep || '10-035',
           satuan: data.satuan || 'Putra',
-          tingkat: data.tingkat || (data.status === 'purna_ambalan' ? 'Purna Ambalan' : 'Calon Penegak'),
+          tingkat: data.tingkat || data.tingkatan || (data.status === 'purna_ambalan' ? 'Purna Ambalan' : 'Calon Penegak'),
+          tingkatan: data.tingkatan || data.tingkat || '',
           sangga: data.sangga || 'Perintis',
           jabatan: data.jabatan || (data.status === 'purna_ambalan' ? 'Purna Ambalan' : 'Calon Penegak'),
           nomorKta: data.nomorKta || '',
           foto: data.foto || data.fotoUrl || user.photoURL || '',
+          tanggalLahir: data.tanggalLahir || data.ttl || '',
           ttl: data.tanggalLahir || data.ttl || '',
           usia: data.usia ?? data.usiaTahun ?? computeScoutAge(data.tanggalLahir || data.ttl || '')?.years ?? 0,
           createdAt: data.createdAt || new Date().toISOString().slice(0, 10)
-        };
+        } as UserAccount;
 
         // Sinkronisasi non-blocking direktori publik
         withFirestoreTimeout(setDoc(doc(db, 'public_members', user.uid), {
@@ -539,7 +557,7 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
         <div className="bg-[#e51c24] text-white p-6 text-center">
           <img src={LOGO_IMAGE_PATH} alt="Logo Ambalan" className="w-16 h-16 object-contain mx-auto mb-2" />
           <h1 className="text-lg font-bold">Pettalopo Mobile</h1>
-          <p className="text-xs text-red-100">Ambalan La Surullah Petta Lopo Gudep 10-035 & 10-036</p>
+          <p className="text-[10px] text-red-100 whitespace-nowrap">Ambalan La Surullah Petta Lopo · Gugus Depan 10.035–10.036</p>
         </div>
 
         <div className="p-5 space-y-4">

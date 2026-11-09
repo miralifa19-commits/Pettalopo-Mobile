@@ -6,7 +6,7 @@ import App from './App.tsx';
 import './index.css';
 
 // Register the PWA service worker only in browsers; native Capacitor APK stays unchanged.
-if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
+if (!Capacitor.isNativePlatform() && import.meta.env.BASE_URL.startsWith('/Pettalopo-Mobile/') && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
       scope: import.meta.env.BASE_URL

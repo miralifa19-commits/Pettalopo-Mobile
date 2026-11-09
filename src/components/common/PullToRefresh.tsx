@@ -20,7 +20,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const startPoint = useRef<{ x: number; y: number } | null>(null);
+  const startPoint = useRef<{ x: number; y: number; scrollTarget: HTMLElement } | null>(null);
   const currentPull = useRef(0);
   const refreshingRef = useRef(false);
   const animationFrame = useRef<number | null>(null);
@@ -46,14 +46,27 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     const handleTouchStart = (event: TouchEvent) => {
       if (refreshingRef.current || scrollElement.scrollTop > 0 || event.touches.length !== 1) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest('button, a, input, textarea, select, [contenteditable="true"], [role="button"]')) return;
+      if (target?.closest('button, a, input, textarea, select, [contenteditable="true"], [role="button"], .fixed')) return;
+
+      let scrollTarget = scrollElement;
+      let ancestor = target?.parentElement || null;
+      while (ancestor && ancestor !== scrollElement) {
+        const overflowY = window.getComputedStyle(ancestor).overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && ancestor.scrollHeight > ancestor.clientHeight) {
+          scrollTarget = ancestor;
+          break;
+        }
+        ancestor = ancestor.parentElement;
+      }
+      if (scrollTarget.scrollTop > 0) return;
+
       const touch = event.touches[0];
-      startPoint.current = { x: touch.clientX, y: touch.clientY };
+      startPoint.current = { x: touch.clientX, y: touch.clientY, scrollTarget };
     };
 
     const handleTouchMove = (event: TouchEvent) => {
       if (!startPoint.current || refreshingRef.current || event.touches.length !== 1) return;
-      if (scrollElement.scrollTop > 0) {
+      if (scrollElement.scrollTop > 0 || startPoint.current.scrollTarget.scrollTop > 0) {
         startPoint.current = null;
         updatePull(0);
         return;

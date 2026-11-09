@@ -277,6 +277,20 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
     }
   };
 
+  // Pulihkan sesi Google yang mungkin sudah selesai dipulihkan Firebase
+  // sebelum portal login dibuka setelah splash screen.
+  useEffect(() => {
+    if (!open) return;
+
+    const currentUser = auth.currentUser;
+    const hasGoogleProvider = !!currentUser
+      && !currentUser.isAnonymous
+      && currentUser.providerData?.some((provider) => provider.providerId === 'google.com');
+
+    if (hasGoogleProvider) {
+      void finishLogin(currentUser);
+    }
+  }, [open]);
 
   const copyDomainToClipboard = () => {
     const domain = window.location.hostname;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
@@ -88,6 +88,10 @@ export default function App() {
   // Wajib validasi sesi Firebase; data akun lokal hanya cache, bukan bukti login.
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [profilePhotoFailed, setProfilePhotoFailed] = useState(false);
+  const [refreshSequence, setRefreshSequence] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+  const pullStartY = useRef<number | null>(null);
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -102,7 +106,7 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
-  const profilePhoto = auth.currentUser?.photoURL || '';
+  const profilePhoto = user.foto || (user as any).fotoUrl || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl || auth.currentUser?.photoURL || '';
   const isGoogleSignedIn = !isGooglePortalOpen && !!auth.currentUser && !auth.currentUser.isAnonymous;
   const profileName = user.nama && !['Anggota Ambalan', 'Tamu Ambalan'].includes(user.nama)
     ? user.nama
@@ -221,7 +225,7 @@ export default function App() {
   useEffect(() => {
     if (!auth.currentUser) return;
     return subscribeTo8DewanPositions(setDewanPositions);
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
 
   // Read the public member directory after Firebase Anonymous Auth is ready.
   useEffect(() => {
@@ -249,7 +253,7 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
 
   // Shared program data is read after Firebase Anonymous Auth is ready.
   useEffect(() => {
@@ -267,7 +271,24 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
+
+  const handlePullStart = (event: React.TouchEvent<HTMLElement>) => {
+    if (mainScrollRef.current?.scrollTop !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select, button, a')) return;
+    pullStartY.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handlePullEnd = (event: React.TouchEvent<HTMLElement>) => {
+    const startY = pullStartY.current;
+    pullStartY.current = null;
+    const endY = event.changedTouches[0]?.clientY;
+    if (startY === null || endY === undefined || endY - startY < 72 || mainScrollRef.current?.scrollTop !== 0) return;
+    setIsRefreshing(true);
+    setRefreshSequence((current) => current + 1);
+    window.setTimeout(() => setIsRefreshing(false), 650);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
@@ -323,7 +344,13 @@ export default function App() {
           </div>
         </header>
         )}
-        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd} style={{ overscrollBehaviorY: 'contain' }} className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+          {isRefreshing && (
+            <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-[#e51c24]" />
+              Memperbarui data...
+            </div>
+          )}
           {activeMenu === 'home' && (
             <HomeView
               user={user}

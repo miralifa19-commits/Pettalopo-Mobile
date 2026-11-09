@@ -692,13 +692,12 @@ jobs:
           name: Pettalopo Mobile v${{ steps.version.outputs.version }}
           generate_release_notes: false
           body: |
-            Pembaruan Pettalopo Mobile 1.13.
+            Pembaruan Pettalopo Mobile v${{ steps.version.outputs.version }}.
 
-            - Memperbaiki alur pemeriksaan biodata setelah login Google, termasuk dukungan profil anggota lama.
-            - Menyesuaikan safe area header dan status bar Android dengan warna merah Pettalopo.
-            - Mengaktifkan kembali splash screen React dengan durasi singkat.
-            - Mempertahankan Firebase, applicationId, kunci signing, dan data pengguna.
-            - Versi 1.13 (versionCode 23).
+            - Menyesuaikan posisi dan jarak header beranda untuk status bar dan notch Android.
+            - Memulihkan konfigurasi Firebase Android proyek Pettalopo agar Google Sign-In tetap terhubung.
+            - Mempertahankan Application ID, OAuth Google, Firestore, dan kunci signing rilis.
+            - Version Code: ${{ steps.version.outputs.version_code }}.
           files: |
             android/app/build/outputs/apk/release/pettalopo.apk
             version.json

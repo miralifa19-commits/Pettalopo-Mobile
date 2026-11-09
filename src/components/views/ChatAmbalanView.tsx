@@ -153,7 +153,13 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       const cached = localStorage.getItem(CHAT_STORAGE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object' && parsed.ambalan_aktif) {
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          ['dewan_ambalan', 'ambalan_aktif', 'purna_ambalan'].some(
+            (group) => Array.isArray(parsed[group]) && parsed[group].length > 0
+          )
+        ) {
           return parsed;
         }
       }

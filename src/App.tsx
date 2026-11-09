@@ -373,7 +373,7 @@ export default function App() {
           </div>
         </header>
         )}
-        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd} style={{ minHeight: 0, height: 0, flex: '1 1 0%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain', touchAction: 'pan-y' }} className="min-h-0 p-3.5 sm:p-4 pt-3 bg-white pb-28">
+        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd} style={{ minHeight: 0, height: 0, flex: '1 1 0%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain', touchAction: 'pan-y' }} className={`min-h-0 p-3.5 sm:p-4 pt-3 bg-white pb-28 ${activeMenu === 'home' ? 'pettalopo-main-home' : ''}`}>
           {isPullReady && !isRefreshing && (
             <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
               <RefreshCw size={15} className="text-[#e51c24]" />

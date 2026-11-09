@@ -1,7 +1,28 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import {createRoot} from 'react-dom/client';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import App from './App.tsx';
 import './index.css';
+
+// Gunakan tinggi native hanya jika WebView tidak menyediakan safe-area atas.
+if (Capacitor.isNativePlatform()) {
+  const readInset = (name: string) =>
+    Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
+
+  if (readInset('--safe-top') === 0) {
+    void StatusBar.getInfo().then(({ height }) => {
+      if (height > 0 && readInset('--safe-top') === 0) {
+        document.documentElement.style.setProperty('--safe-top', `${height}px`);
+        if (readInset('--safe-bottom') === 0) {
+          document.documentElement.style.setProperty('--safe-bottom', `${height}px`);
+        }
+      }
+    }).catch((error) => {
+      console.warn('Tidak dapat membaca tinggi status bar Android:', error);
+    });
+  }
+}
 
 class PreviewErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };

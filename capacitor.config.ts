@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'LIGHT',
       backgroundColor: '#C81E28',
-      overlaysWebView: false
+      overlaysWebView: true
     },
     FirebaseAuthentication: {
       skipNativeAuth: true,

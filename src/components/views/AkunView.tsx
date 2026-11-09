@@ -65,7 +65,6 @@ export const AkunView: React.FC<AkunViewProps> = ({
     '';
 
   const birthDateFormatted = formatBirthDate((user as any).tanggalLahir || user.ttl);
-  const statusAnggota = getScoutMemberStatus(user);
   const [form, setForm] = useState<any>({ ...user });
   const [photoPreview, setPhotoPreview] = useState<string>(photoUrl || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -196,7 +195,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
                 {field.type === 'select' ? (
                   <select value={form.tingkatan || 'Calon Penegak'} onChange={(event) => updateField(field.key, event.target.value)}
                     className="w-full select-text rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
-                    {['Calon Penegak', 'Penegak Bantara', 'Penegak Laksana', 'Penegak Garuda'].map((level) => <option key={level}>{level}</option>)}
+                    {['Calon Penegak', 'Penegak Bantara', 'Penegak Laksana', 'Penegak Garuda', 'Purna'].map((level) => <option key={level}>{level}</option>)}
                   </select>
                 ) : field.type === 'textarea' ? (
                   <textarea rows={2} value={form[field.key] || ''} onChange={(event) => updateField(field.key, event.target.value)}
@@ -211,10 +210,6 @@ export const AkunView: React.FC<AkunViewProps> = ({
               <span className="block text-xs font-bold text-slate-600">Usia</span>
               <strong className="text-sm text-slate-900">{(() => { const d = form.tanggalLahir ? new Date(form.tanggalLahir + 'T00:00:00') : null; if (!d || Number.isNaN(d.getTime())) return form.usia ? form.usia + ' tahun' : '-'; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a + ' tahun'; })()}</strong>
             </div>
-            <div className="grid grid-cols-2 gap-3 border-b border-slate-100 pb-3 text-xs">
-              <div><span className="block font-bold text-slate-500">Peran</span><strong className="text-slate-800">{statusAnggota}</strong></div>
-              <div><span className="block font-bold text-slate-500">Jenjang saat ini</span><strong className="text-slate-800">{(user as any).tingkatan || user.tingkat || 'Belum diatur'}</strong></div>
-            </div>
             {form.nomorWA && <a href={`https://wa.me/${String(form.nomorWA).replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="inline-block text-sm font-semibold text-emerald-700 underline">Buka WhatsApp</a>}
           </div>
         ) : (
@@ -222,7 +217,6 @@ export const AkunView: React.FC<AkunViewProps> = ({
             {[
               { label: 'Nama Lengkap', value: user.nama },
               { label: 'Nama Panggilan', value: (user as any).namaPanggilan },
-              { label: 'Peran', value: statusAnggota },
               { label: 'Tingkatan', value: (user as any).tingkatan || user.tingkat },
               { label: 'Tempat Lahir', value: (user as any).tempatLahir },
               { label: 'Tanggal Lahir', value: birthDateFormatted },

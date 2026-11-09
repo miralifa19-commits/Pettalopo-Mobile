@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -92,6 +92,10 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const mainScrollRef = useRef<HTMLElement | null>(null);
   const pullStartY = useRef<number | null>(null);
+  const pullStartedAt = useRef<number>(0);
+  const pullDistance = useRef<number>(0);
+  const pullHoldTimer = useRef<number | null>(null);
+  const [isPullReady, setIsPullReady] = useState(false);
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -278,13 +282,38 @@ export default function App() {
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select, button, a')) return;
     pullStartY.current = event.touches[0]?.clientY ?? null;
+    pullStartedAt.current = Date.now();
+    pullDistance.current = 0;
+    setIsPullReady(false);
+    if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+    pullHoldTimer.current = window.setTimeout(() => {
+      if (pullDistance.current >= 72 && mainScrollRef.current?.scrollTop === 0) {
+        setIsPullReady(true);
+      }
+    }, 3000);
+  };
+
+  const handlePullMove = (event: React.TouchEvent<HTMLElement>) => {
+    if (pullStartY.current === null) return;
+    const currentY = event.touches[0]?.clientY;
+    if (currentY === undefined) return;
+    pullDistance.current = Math.max(0, currentY - pullStartY.current);
+    if (pullDistance.current >= 72 && Date.now() - pullStartedAt.current >= 3000) {
+      setIsPullReady(true);
+    }
   };
 
   const handlePullEnd = (event: React.TouchEvent<HTMLElement>) => {
     const startY = pullStartY.current;
-    pullStartY.current = null;
     const endY = event.changedTouches[0]?.clientY;
-    if (startY === null || endY === undefined || endY - startY < 72 || mainScrollRef.current?.scrollTop !== 0) return;
+    const shouldRefresh = isPullReady && startY !== null && endY !== undefined
+      && endY - startY >= 72 && mainScrollRef.current?.scrollTop === 0;
+    pullStartY.current = null;
+    pullDistance.current = 0;
+    if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+    pullHoldTimer.current = null;
+    setIsPullReady(false);
+    if (!shouldRefresh) return;
     setIsRefreshing(true);
     setRefreshSequence((current) => current + 1);
     window.setTimeout(() => setIsRefreshing(false), 650);
@@ -344,10 +373,16 @@ export default function App() {
           </div>
         </header>
         )}
-        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd} style={{ minHeight: 0, overscrollBehaviorY: 'none', touchAction: 'pan-y' }} className="min-h-0 flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd} style={{ minHeight: 0, overscrollBehaviorY: 'none', touchAction: 'pan-y' }} className="min-h-0 flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+          {isPullReady && !isRefreshing && (
+            <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
+              <RefreshCw size={15} className="text-[#e51c24]" />
+              Lepaskan untuk memperbarui
+            </div>
+          )}
           {isRefreshing && (
             <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-[#e51c24]" />
+              <RefreshCw size={15} className="animate-spin text-[#e51c24]" />
               Memperbarui data...
             </div>
           )}

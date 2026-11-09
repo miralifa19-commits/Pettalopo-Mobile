@@ -22,45 +22,32 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout current published app
+      - name: Checkout main source once
         uses: actions/checkout@v4
-        with:
-          ref: main
-          path: main-src
-
-      - name: Checkout merged preview source
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: preview-src
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Build current main site as the root page
-        working-directory: main-src
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
+
+      - name: Build the existing app for the root page
         env:
           GITHUB_PAGES: 'true'
         run: |
-          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
           npm run build
+          mkdir -p site
+          cp -R dist/. site/
 
-      - name: Build preview under /preview/
-        working-directory: preview-src
+      - name: Build the preview under /preview/
         env:
           VITE_BASE_PATH: /Pettalopo-Mobile/preview/
         run: |
-          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
           npm run build
-
-      - name: Assemble site without replacing the existing app
-        run: |
-          mkdir -p site
-          cp -R main-src/dist/. site/
           mkdir -p site/preview
-          cp -R preview-src/dist/. site/preview/
+          cp -R dist/. site/preview/
           touch site/.nojekyll
 
       - name: Upload GitHub Pages artifact

@@ -72,7 +72,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
 
-  useEffect(() => { setForm({ ...user }); setPhotoPreview(photoUrl || ''); }, [user]);
+  useEffect(() => { setForm({ ...user }); setPhotoPreview(photoUrl || ''); }, [user.uid]);
 
   const updateField = (key: string, value: string) => setForm((current: any) => ({ ...current, [key]: value }));
   const handlePhoto = (file?: File) => {
@@ -160,117 +160,106 @@ export const AkunView: React.FC<AkunViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-24 font-sans select-none">
-      {/* Header Halaman */}
+    <div className="space-y-4 pb-24 font-sans">
       <MenuHeaderCard
         title={editable ? "Akun Saya" : "Profil Saya"}
         subtitle={editable ? "Kelola informasi akun Pettalopo" : "Informasi profil pengguna Pettalopo"}
         onBack={onBack || (() => {})}
       />
 
-      {/* Profil anggota yang dapat diperbarui */}
-      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200 shadow-xs flex flex-col items-center">
-        <div className={`relative w-32 h-32 sm:w-36 sm:h-36 mb-4 rounded-full overflow-hidden border-4 border-slate-100 bg-slate-50 flex items-center justify-center shadow-sm ${editable ? 'cursor-pointer' : ''}`}>
-          {photoPreview ? <img src={photoPreview} alt="Foto profil" className="w-full h-full object-cover" /> : <ShiningAmbalanLogo className="w-20 h-20" alt="Logo Ambalan" />}
-          {editable && (
-            <>
-              <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] py-1 text-center">Ganti Foto</span>
-              <input type="file" accept="image/*" className="sr-only" onChange={(event) => handlePhoto(event.target.files?.[0])} />
-            </>
-          )}
+      <section className="w-full rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-7">
+        <div className="flex flex-col items-center">
+          <label className={`relative mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-slate-100 bg-slate-50 shadow-sm sm:h-36 sm:w-36 ${editable ? 'cursor-pointer' : ''}`}>
+            {photoPreview ? <img src={photoPreview} alt="Foto profil" className="h-full w-full object-cover" /> : <ShiningAmbalanLogo className="h-20 w-20" alt="Logo Ambalan" />}
+            {editable && <span className="absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[10px] text-white">Ganti Foto</span>}
+            {editable && <input type="file" accept="image/*" className="sr-only" onChange={(event) => handlePhoto(event.target.files?.[0])} aria-label="Ganti foto profil" />}
+          </label>
+          <h1 className="mb-1 text-center text-xl font-black tracking-tight text-slate-900">{form.nama || 'Nama Lengkap'}</h1>
+          <p className="mb-5 break-all text-center text-xs text-slate-500">{user.email || auth.currentUser?.email || 'Email belum tersedia'}</p>
         </div>
-        <h1 className="text-xl font-black text-slate-900 tracking-tight mb-2">{form.nama || 'Nama Lengkap'}</h1>
-        <div className="mb-5 w-full rounded-2xl bg-slate-50 p-3 text-left">
-          <div className="grid grid-cols-1 gap-2">
-            <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Email</span>
-              <strong className="break-all text-xs text-slate-800">{user.email || auth.currentUser?.email || 'Belum tersedia'}</strong>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Peran</span>
-                <strong className="text-xs text-slate-800">{user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' ? 'Pembina / Admin' : user.role === 'dewan' ? user.dewanJabatan || 'Dewan Ambalan' : user.jabatan && user.jabatan !== 'Pembina Gugus Depan' ? user.jabatan : 'Anggota Ambalan'}</strong>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Jenjang</span>
-                <strong className="text-xs text-slate-800">{(user as any).tingkatan || user.tingkat || 'Belum diatur'}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
+
         {editable ? (
-          <>
-        <h2 className="w-full text-left text-sm font-extrabold text-slate-900">Ubah Profil</h2>
-        <div className="w-full grid grid-cols-1 gap-3 text-left">
-          {[
-            { key: 'nama', label: 'Nama Lengkap', type: 'text' },
-            { key: 'namaPanggilan', label: 'Nama Panggilan', type: 'text' },
-            { key: 'tingkatan', label: 'Tingkatan', type: 'select' },
-            { key: 'tempatLahir', label: 'Tempat Lahir', type: 'text' },
-            { key: 'tanggalLahir', label: 'Tanggal Lahir', type: 'date' },
-            { key: 'nomorWA', label: 'Nomor WhatsApp', type: 'tel' },
-            { key: 'alamat', label: 'Alamat', type: 'text' },
-            { key: 'motto', label: 'Motto', type: 'text' },
-          ].map((field) => (
-            <label key={field.key} className="block">
-              <span className="block text-xs font-bold text-slate-600 mb-1">{field.label}</span>
-              {field.type === 'select' ? (
-                <select value={form.tingkatan || 'Calon Penegak'} onChange={(event) => updateField(field.key, event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
-                  {['Calon Penegak', 'Penegak Bantara', 'Penegak Laksana', 'Penegak Garuda'].map((level) => <option key={level}>{level}</option>)}
-                </select>
-              ) : (
-                <input type={field.type} value={form[field.key] || ''} onChange={(event) => updateField(field.key, event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800" />
-              )}
-            </label>
-          ))}
-          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
-            <span className="block text-xs font-bold text-slate-600">Usia</span>
-            <strong className="text-sm text-slate-900">{(() => { const d = form.tanggalLahir ? new Date(form.tanggalLahir + 'T00:00:00') : null; if (!d || Number.isNaN(d.getTime())) return form.usia ? form.usia + ' tahun' : '-'; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a + ' tahun'; })()}</strong>
+          <div className="w-full space-y-3 text-left">
+            <h2 className="text-sm font-extrabold text-slate-900">Informasi Profil</h2>
+            {[
+              { key: 'nama', label: 'Nama Lengkap', type: 'text' },
+              { key: 'namaPanggilan', label: 'Nama Panggilan', type: 'text' },
+              { key: 'tingkatan', label: 'Tingkatan', type: 'select' },
+              { key: 'tempatLahir', label: 'Tempat Lahir', type: 'text' },
+              { key: 'tanggalLahir', label: 'Tanggal Lahir', type: 'date' },
+              { key: 'nomorWA', label: 'Nomor WhatsApp', type: 'tel' },
+              { key: 'alamat', label: 'Alamat', type: 'textarea' },
+              { key: 'motto', label: 'Motto', type: 'text' },
+            ].map((field) => (
+              <label key={field.key} className="block border-b border-slate-100 pb-3 last:border-0">
+                <span className="mb-1 block text-xs font-bold text-slate-600">{field.label}</span>
+                {field.type === 'select' ? (
+                  <select value={form.tingkatan || 'Calon Penegak'} onChange={(event) => updateField(field.key, event.target.value)}
+                    className="w-full select-text rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
+                    {['Calon Penegak', 'Penegak Bantara', 'Penegak Laksana', 'Penegak Garuda'].map((level) => <option key={level}>{level}</option>)}
+                  </select>
+                ) : field.type === 'textarea' ? (
+                  <textarea rows={2} value={form[field.key] || ''} onChange={(event) => updateField(field.key, event.target.value)}
+                    className="w-full select-text resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800" />
+                ) : (
+                  <input type={field.type} value={form[field.key] || ''} onChange={(event) => updateField(field.key, event.target.value)}
+                    className="w-full select-text rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800" />
+                )}
+              </label>
+            ))}
+            <div className="border-b border-slate-100 pb-3">
+              <span className="block text-xs font-bold text-slate-600">Usia</span>
+              <strong className="text-sm text-slate-900">{(() => { const d = form.tanggalLahir ? new Date(form.tanggalLahir + 'T00:00:00') : null; if (!d || Number.isNaN(d.getTime())) return form.usia ? form.usia + ' tahun' : '-'; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a + ' tahun'; })()}</strong>
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-b border-slate-100 pb-3 text-xs">
+              <div><span className="block font-bold text-slate-500">Peran</span><strong className="text-slate-800">{statusAnggota}</strong></div>
+              <div><span className="block font-bold text-slate-500">Jenjang saat ini</span><strong className="text-slate-800">{(user as any).tingkatan || user.tingkat || 'Belum diatur'}</strong></div>
+            </div>
+            {form.nomorWA && <a href={`https://wa.me/${String(form.nomorWA).replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="inline-block text-sm font-semibold text-emerald-700 underline">Buka WhatsApp</a>}
           </div>
-          {form.nomorWA && <a href={`https://wa.me/${String(form.nomorWA).replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-emerald-700 underline">Buka WhatsApp</a>}
-          {saveError && <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{saveError}</p>}
-          {saveSuccess && <p role="status" className="w-full rounded-xl border border-green-200 bg-green-50 p-3 text-xs text-green-700">{saveSuccess}</p>}
-          <button type="button" onClick={handleSave} disabled={isSaving || !onUpdateUser}
-            className="w-full rounded-xl bg-[#e51c24] px-4 py-3 text-sm font-bold text-white disabled:opacity-60 flex items-center justify-center gap-2">
-            {isSaving && <span aria-hidden="true" className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
-            {isSaving ? 'Menyimpan perubahan...' : 'Simpan Perubahan'}
-          </button>
-        </div>
-          </>
         ) : (
-          <div className="w-full grid grid-cols-1 gap-3 text-left">
+          <div className="w-full divide-y divide-slate-100 text-left">
             {[
               { label: 'Nama Lengkap', value: user.nama },
               { label: 'Nama Panggilan', value: (user as any).namaPanggilan },
+              { label: 'Peran', value: statusAnggota },
               { label: 'Tingkatan', value: (user as any).tingkatan || user.tingkat },
               { label: 'Tempat Lahir', value: (user as any).tempatLahir },
-              { label: 'Tanggal Lahir', value: formatBirthDate((user as any).tanggalLahir || user.ttl) },
+              { label: 'Tanggal Lahir', value: birthDateFormatted },
               { label: 'Nomor WhatsApp', value: (user as any).nomorWA },
               { label: 'Alamat', value: (user as any).alamat },
               { label: 'Motto', value: (user as any).motto },
               { label: 'Usia', value: typeof user.usia === 'number' ? `${user.usia} tahun` : '-' }
             ].map((field) => (
-              <div key={field.label} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <div key={field.label} className="py-3 first:pt-0 last:pb-0">
                 <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{field.label}</span>
-                <strong className="text-sm text-slate-800 break-words">{field.value || '-'}</strong>
+                <strong className="break-words text-sm text-slate-800">{field.value || '-'}</strong>
               </div>
             ))}
           </div>
         )}
-      {/* 3. Aksi Logout */}
-        {onLogout && (
-          <button
-            type="button"
-            onClick={onLogout}
-            className="w-full max-w-xs py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 active:bg-red-200 text-[#e51c24] text-xs font-bold border border-red-200 shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>🚪</span>
-            <span>Keluar dari Akun</span>
+      </section>
+
+      {editable && (
+        <div className="space-y-2">
+          {saveError && <p role="alert" className="w-full rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{saveError}</p>}
+          {saveSuccess && <p role="status" className="w-full rounded-xl border border-green-200 bg-green-50 p-3 text-xs text-green-700">{saveSuccess}</p>}
+          <button type="button" onClick={handleSave} disabled={isSaving || !onUpdateUser}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e51c24] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+            {isSaving && <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+            {isSaving ? 'Menyimpan perubahan...' : 'Simpan Perubahan'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {onLogout && (
+        <div className="flex justify-center pt-1">
+          <button type="button" onClick={onLogout}
+            className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-[#e51c24] shadow-xs transition-all hover:bg-red-100 active:bg-red-200">
+            <span>🚪</span><span>Keluar dari Akun</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

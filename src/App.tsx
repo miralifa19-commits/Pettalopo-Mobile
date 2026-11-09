@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
@@ -25,7 +25,8 @@ import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { KelolaAplikasiView } from './components/views/KelolaAplikasiView';
 import { ApkUpdater } from './components/ApkUpdater';
 import { onAuthStateChanged, signOut as webSignOut } from 'firebase/auth';
-import { auth } from './firebase/config';
+import { auth, db } from './firebase/config';
+import { collection, getDocsFromServer } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
@@ -39,6 +40,7 @@ import {
   DEFAULT_ADMIN_ACCOUNT 
 } from './services/firebaseService';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
+import { PullToRefresh } from './components/common/PullToRefresh';
 
 export default function App() {
   // Pertahankan tampilan akhir aplikasi saat dibuka kembali
@@ -57,6 +59,9 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   // Splash React singkat; portal login tetap dibuka setelah splash selesai.
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
+  const [mainScrollElement, setMainScrollElement] = useState<HTMLElement | null>(null);
+  const [isDewanListScreen, setIsDewanListScreen] = useState(true);
+  const [chatRefreshToken, setChatRefreshToken] = useState(0);
 
   // Simpan tampilan aktif terakhir setiap berpindah menu
   useEffect(() => {
@@ -268,6 +273,35 @@ export default function App() {
     };
   }, [user.uid]);
 
+  const pullRefreshEnabled = activeMenu === 'home' || activeMenu === 'presensi' || (activeMenu === 'ruang_kerja_dewan' && isDewanListScreen) || activeMenu === 'chat' || activeMenu === 'pengumuman';
+
+  const handlePullRefresh = useCallback(async () => {
+    if (!auth.currentUser) throw new Error('Sesi Firebase belum tersedia');
+    if (activeMenu === 'home' || activeMenu === 'ruang_kerja_dewan') {
+      const [prokerSnapshot, membersSnapshot] = await Promise.all([
+        getDocsFromServer(collection(db, 'program_kerja')),
+        getDocsFromServer(collection(db, 'public_members'))
+      ]);
+      const fetchedItems = prokerSnapshot.docs.map((item) => ({ ...item.data(), id: item.id } as ProgramKerjaItem));
+      const mergedItems = fetchedItems.length < 24 ? [...fetchedItems, ...DEFAULT_PROGRAM_KERJA_ITEMS.filter((fallback) => !fetchedItems.some((item) => item.id === fallback.id))] : fetchedItems;
+      setProgramKerjaList(mergedItems);
+      setAllMembers(membersSnapshot.docs.map((member) => ({ ...member.data(), uid: member.id } as UserAccount)));
+      return;
+    }
+    if (activeMenu === 'presensi') {
+      await Promise.all([getDocsFromServer(collection(db, 'attendance_sessions')), getDocsFromServer(collection(db, 'attendance_records'))]);
+      return;
+    }
+    if (activeMenu === 'chat') {
+      await getDocsFromServer(collection(db, 'ambalan_chats'));
+      setChatRefreshToken((value) => value + 1);
+      return;
+    }
+    if (activeMenu === 'pengumuman') await getDocsFromServer(collection(db, 'ambalan_notifications'));
+  }, [activeMenu]);
+
+  const handleDewanListScreenChange = useCallback((isListScreen: boolean) => setIsDewanListScreen(isListScreen), []);
+
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
@@ -322,7 +356,8 @@ export default function App() {
           </div>
         </header>
         )}
-        <main className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+        <main ref={setMainScrollElement} className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28" style={{ overscrollBehaviorY: "contain" }}>
+          <PullToRefresh enabled={pullRefreshEnabled} scrollElement={mainScrollElement} onRefresh={handlePullRefresh}>
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -358,7 +393,7 @@ export default function App() {
           {activeMenu === 'mabigus' && <ComingSoonView title="Mabigus" subtitle="Informasi Majelis Pembimbing Gugus Depan sedang disiapkan." icon="🛡️" onBackToDashboard={() => setActiveMenu('home')} />}
           {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
           {activeMenu === 'ruang_kerja_dewan' && isDewanAccount && (
-            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
+            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onListScreenChange={handleDewanListScreenChange} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'sangga' && (
@@ -387,6 +422,7 @@ export default function App() {
             <ChatAmbalanView 
               currentUser={user} 
               programKerjaList={programKerjaList}
+              refreshToken={chatRefreshToken}
               onBack={() => setActiveMenu('home')}
             />
           )}
@@ -477,6 +513,7 @@ export default function App() {
               onBackToDashboard={() => setActiveMenu('home')}
             />
           )}
+          </PullToRefresh>
         </main>
 
         {activeMenu !== 'chat' && (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { UserAccount } from '../../types';
 import { ShiningAmbalanLogo } from '../common/ShiningAmbalanLogo';
 import { MenuHeaderCard } from '../common/MenuHeaderCard';
@@ -67,6 +67,11 @@ export const AkunView: React.FC<AkunViewProps> = ({
   const birthDateFormatted = formatBirthDate((user as any).tanggalLahir || user.ttl);
   const [form, setForm] = useState<any>({ ...user });
   const [photoPreview, setPhotoPreview] = useState<string>(photoUrl || '');
+  const [cropSource, setCropSource] = useState<string>('');
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+  const [cropImageSize, setCropImageSize] = useState({ width: 0, height: 0 });
+  const cropDragRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
@@ -76,25 +81,62 @@ export const AkunView: React.FC<AkunViewProps> = ({
   const updateField = (key: string, value: string) => setForm((current: any) => ({ ...current, [key]: value }));
   const handlePhoto = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+      setSaveError('File yang dipilih bukan gambar. Silakan pilih foto lain.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        const scale = Math.min(1, 640 / Math.max(image.width, image.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
-        const context = canvas.getContext('2d');
-        if (!context) return;
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-        setPhotoPreview(dataUrl);
-        setForm((current: any) => ({ ...current, foto: dataUrl }));
-      };
-      image.src = String(reader.result || '');
+      setCropSource(String(reader.result || ''));
+      setCropZoom(1);
+      setCropOffset({ x: 0, y: 0 });
+      setCropImageSize({ width: 0, height: 0 });
+      setSaveError('');
     };
+    reader.onerror = () => setSaveError('Foto tidak dapat dibaca. Silakan pilih kembali.');
     reader.readAsDataURL(file);
+  };
+
+  const applyPhotoCrop = () => {
+    const image = new Image();
+    image.onload = () => {
+      const size = 640;
+      const minSide = Math.min(image.naturalWidth, image.naturalHeight);
+      const sourceSide = minSide / cropZoom;
+      const previewScale = 280 / minSide;
+      const centerX = image.naturalWidth / 2 - cropOffset.x / (previewScale * cropZoom);
+      const centerY = image.naturalHeight / 2 - cropOffset.y / (previewScale * cropZoom);
+      const sourceX = Math.max(0, Math.min(image.naturalWidth - sourceSide, centerX - sourceSide / 2));
+      const sourceY = Math.max(0, Math.min(image.naturalHeight - sourceSide, centerY - sourceSide / 2));
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        setSaveError('Foto belum dapat diproses. Silakan coba kembali.');
+        return;
+      }
+      context.drawImage(image, sourceX, sourceY, sourceSide, sourceSide, 0, 0, size, size);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      setPhotoPreview(dataUrl);
+      setForm((current: any) => ({ ...current, foto: dataUrl }));
+      setCropSource('');
+    };
+    image.onerror = () => setSaveError('Foto tidak dapat diproses. Silakan pilih foto lain.');
+    image.src = cropSource;
+  };
+
+  const moveCrop = (clientX: number, clientY: number) => {
+    const drag = cropDragRef.current;
+    if (!drag || !cropImageSize.width || !cropImageSize.height) return;
+    const minSide = Math.min(cropImageSize.width, cropImageSize.height);
+    const baseScale = 280 / minSide;
+    const maxX = Math.max(0, (cropImageSize.width * baseScale * cropZoom - 280) / 2);
+    const maxY = Math.max(0, (cropImageSize.height * baseScale * cropZoom - 280) / 2);
+    setCropOffset({
+      x: Math.max(-maxX, Math.min(maxX, drag.offsetX + clientX - drag.x)),
+      y: Math.max(-maxY, Math.min(maxY, drag.offsetY + clientY - drag.y))
+    });
   };
   const handleSave = async () => {
     if (!onUpdateUser || !editable) return;
@@ -211,7 +253,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
           <label className={`relative mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-slate-100 bg-slate-50 shadow-sm sm:h-36 sm:w-36 ${editable ? 'cursor-pointer' : ''}`}>
             {photoPreview ? <img src={photoPreview} alt="Foto profil" className="h-full w-full object-cover" /> : <ShiningAmbalanLogo className="h-20 w-20" alt="Logo Ambalan" />}
             {editable && <span className="absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[10px] text-white">Ganti Foto</span>}
-            {editable && <input type="file" accept="image/*" className="sr-only" onChange={(event) => handlePhoto(event.target.files?.[0])} aria-label="Ganti foto profil" />}
+            {editable && <input type="file" accept="image/*" className="sr-only" onChange={(event) => { handlePhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} aria-label="Ganti foto profil" />}
           </label>
           <h1 className="mb-1 text-center text-xl font-black tracking-tight text-slate-900">{form.nama || 'Nama Lengkap'}</h1>
           <p className="mb-5 break-all text-center text-xs text-slate-500">{user.email || auth.currentUser?.email || 'Email belum tersedia'}</p>
@@ -283,6 +325,54 @@ export const AkunView: React.FC<AkunViewProps> = ({
             {isSaving && <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
             {isSaving ? 'Menyimpan perubahan...' : 'Simpan Perubahan'}
           </button>
+        </div>
+      )}
+
+      {cropSource && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="photo-crop-title">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <h2 id="photo-crop-title" className="mb-1 text-center text-base font-extrabold text-slate-900">Sesuaikan Foto Profil</h2>
+            <p className="mb-4 text-center text-xs text-slate-500">Geser foto agar wajah berada di tengah, lalu atur pembesaran.</p>
+            <div
+              className="relative mx-auto h-[280px] w-[280px] max-w-full touch-none select-none overflow-hidden rounded-full border-4 border-slate-200 bg-slate-100"
+              onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture(event.pointerId);
+                cropDragRef.current = { x: event.clientX, y: event.clientY, offsetX: cropOffset.x, offsetY: cropOffset.y };
+              }}
+              onPointerMove={(event) => moveCrop(event.clientX, event.clientY)}
+              onPointerUp={() => { cropDragRef.current = null; }}
+              onPointerCancel={() => { cropDragRef.current = null; }}
+            >
+              <img
+                src={cropSource}
+                alt="Pratinjau penyesuaian foto"
+                draggable={false}
+                onLoad={(event) => setCropImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+                className="pointer-events-none absolute left-1/2 top-1/2 h-full w-full max-w-none object-cover"
+                style={{ transform: `translate(calc(-50% + ${cropOffset.x}px), calc(-50% + ${cropOffset.y}px)) scale(${cropZoom})` }}
+              />
+              <div className="pointer-events-none absolute inset-0 rounded-full border border-white/70" />
+            </div>
+            <label className="mt-5 block text-xs font-bold text-slate-700">
+              Perbesar / perkecil
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.01"
+                value={cropZoom}
+                onChange={(event) => {
+                  setCropZoom(Number(event.target.value));
+                  setCropOffset({ x: 0, y: 0 });
+                }}
+                className="mt-2 w-full accent-[#e51c24]"
+              />
+            </label>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setCropSource('')} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">Batal</button>
+              <button type="button" onClick={applyPhotoCrop} disabled={!cropImageSize.width} className="rounded-xl bg-[#e51c24] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">Gunakan Foto</button>
+            </div>
+          </div>
         </div>
       )}
 

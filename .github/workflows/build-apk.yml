@@ -6,15 +6,12 @@ concurrency:
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - perbaikan-pdf
-      - update/surat-laporan-triwulan-2026-11-05
-      - fix/firestore-auth-public-directory
-      - fix/firestore-login-timeout-logging
-      - fix/google-auth-release-1.4
-      - release/admin-open-access-1.10-main
+    inputs:
+      publish_release:
+        description: "Terbitkan GitHub Release setelah APK selesai diuji"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -685,7 +682,7 @@ jobs:
           PY
 
       - name: Publish GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && inputs.publish_release == true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}

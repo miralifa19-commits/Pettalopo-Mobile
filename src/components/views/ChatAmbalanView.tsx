@@ -28,7 +28,7 @@ import {
   Dewan8Position 
 } from '../../data/dewanStructure';
 import { db, auth } from '../../firebase/config';
-import { collection, addDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, limit } from 'firebase/firestore';
 
 interface ChatAmbalanViewProps {
   currentUser: UserAccount;
@@ -246,7 +246,6 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     try {
       const q = query(
         collection(db, 'ambalan_chats'),
-        orderBy('createdAt', 'asc'),
         limit(120)
       );
       const unsub = onSnapshot(q, (snapshot) => {
@@ -272,6 +271,16 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
               isAi: data.isAi === true
             });
           }
+        });
+
+        // Dokumen lama dapat memakai createdAtNumber; jangan memakai orderBy
+        // createdAt karena Firestore akan menghilangkan dokumen tanpa field itu.
+        (Object.keys(incoming) as GroupId[]).forEach((grp) => {
+          incoming[grp].sort((left: any, right: any) => {
+            const leftTime = Number(left.createdAt ?? left.createdAtNumber ?? 0);
+            const rightTime = Number(right.createdAt ?? right.createdAtNumber ?? 0);
+            return leftTime - rightTime;
+          });
         });
 
         setMessagesByGroup((prev) => {

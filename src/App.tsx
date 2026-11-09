@@ -320,7 +320,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-[100dvh] min-h-0 overflow-hidden overscroll-y-none bg-white flex flex-col font-sans antialiased text-slate-800">
+    <div className="h-screen min-h-0 overflow-hidden overscroll-y-none bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
         <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
       )}

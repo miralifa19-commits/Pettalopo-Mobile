@@ -57,6 +57,8 @@ interface MessageItem {
   senderSangga?: string;
   text: string;
   time: string;
+  createdAt?: number;
+  createdAtNumber?: number;
   isMe: boolean;
   isAi?: boolean;
   isSystemNotice?: boolean;
@@ -267,6 +269,8 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
               senderSangga: data.senderSangga,
               text: data.text || '',
               time: data.time || '',
+              createdAt: typeof data.createdAt === 'number' ? data.createdAt : undefined,
+              createdAtNumber: typeof data.createdAtNumber === 'number' ? data.createdAtNumber : undefined,
               isMe: data.senderId === (currentUser.uid || auth.currentUser?.uid),
               isAi: data.isAi === true
             });

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users } from 'lucide-react';
+import { Home, MessageCircle, Settings, MoreVertical, Megaphone, CalendarCheck, UserRound, Users, RefreshCw } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { NotificationsModal } from './components/NotificationsModal';
 
@@ -25,8 +25,7 @@ import { AmbalanAuthModal } from './components/auth/AmbalanAuthModal';
 import { KelolaAplikasiView } from './components/views/KelolaAplikasiView';
 import { ApkUpdater } from './components/ApkUpdater';
 import { onAuthStateChanged, signOut as webSignOut } from 'firebase/auth';
-import { auth, db } from './firebase/config';
-import { collection, getDocsFromServer, query, where } from 'firebase/firestore';
+import { auth } from './firebase/config';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
@@ -40,7 +39,6 @@ import {
   DEFAULT_ADMIN_ACCOUNT 
 } from './services/firebaseService';
 import { DEFAULT_PROGRAM_KERJA_ITEMS } from './data/defaultProgramKerja';
-import { PullToRefresh } from './components/common/PullToRefresh';
 
 export default function App() {
   // Pertahankan tampilan akhir aplikasi saat dibuka kembali
@@ -57,11 +55,9 @@ export default function App() {
   const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
   const [selectedDashboardMonthIndex, setSelectedDashboardMonthIndex] = useState<number | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAccountEditable, setIsAccountEditable] = useState(false);
   // Splash React singkat; portal login tetap dibuka setelah splash selesai.
   const [showPettalopoSplash, setShowPettalopoSplash] = useState(true);
-  const [mainScrollElement, setMainScrollElement] = useState<HTMLElement | null>(null);
-  const [isDewanListScreen, setIsDewanListScreen] = useState(true);
-  const [chatRefreshToken, setChatRefreshToken] = useState(0);
 
   // Simpan tampilan aktif terakhir setiap berpindah menu
   useEffect(() => {
@@ -92,6 +88,14 @@ export default function App() {
   // Wajib validasi sesi Firebase; data akun lokal hanya cache, bukan bukti login.
   const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(true);
   const [profilePhotoFailed, setProfilePhotoFailed] = useState(false);
+  const [refreshSequence, setRefreshSequence] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+  const pullStartY = useRef<number | null>(null);
+  const pullStartedAt = useRef<number>(0);
+  const pullDistance = useRef<number>(0);
+  const pullHoldTimer = useRef<number | null>(null);
+  const [isPullReady, setIsPullReady] = useState(false);
 
   // Program Kerja List State
   const [programKerjaList, setProgramKerjaList] = useState<ProgramKerjaItem[]>(() => {
@@ -106,7 +110,7 @@ export default function App() {
   });
 
   const isAdmin = user.role === 'admin' || user.email?.toLowerCase() === 'miralifa19@gmail.com' || auth.currentUser?.email?.toLowerCase() === 'miralifa19@gmail.com';
-  const profilePhoto = auth.currentUser?.photoURL || '';
+  const profilePhoto = user.foto || (user as any).fotoUrl || (user as any).photoURL || (user as any).photo || (user as any).avatarUrl || auth.currentUser?.photoURL || '';
   const isGoogleSignedIn = !isGooglePortalOpen && !!auth.currentUser && !auth.currentUser.isAnonymous;
   const profileName = user.nama && !['Anggota Ambalan', 'Tamu Ambalan'].includes(user.nama)
     ? user.nama
@@ -225,7 +229,7 @@ export default function App() {
   useEffect(() => {
     if (!auth.currentUser) return;
     return subscribeTo8DewanPositions(setDewanPositions);
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
 
   // Read the public member directory after Firebase Anonymous Auth is ready.
   useEffect(() => {
@@ -253,7 +257,7 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
 
   // Shared program data is read after Firebase Anonymous Auth is ready.
   useEffect(() => {
@@ -271,56 +275,65 @@ export default function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user.uid]);
+  }, [user.uid, refreshSequence]);
 
-  const pullRefreshEnabled = activeMenu === 'home' || activeMenu === 'presensi' || (activeMenu === 'ruang_kerja_dewan' && isDewanListScreen) || activeMenu === 'chat' || activeMenu === 'pengumuman';
+  const handlePullStart = (event: React.TouchEvent<HTMLElement>) => {
+    if (mainScrollRef.current?.scrollTop !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select, button, a')) return;
+    pullStartY.current = event.touches[0]?.clientY ?? null;
+    pullStartedAt.current = Date.now();
+    pullDistance.current = 0;
+    setIsPullReady(false);
+    if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+    pullHoldTimer.current = window.setTimeout(() => {
+      if (pullDistance.current >= 72 && mainScrollRef.current?.scrollTop === 0) {
+        setIsPullReady(true);
+      }
+    }, 3000);
+  };
 
-  const handlePullRefresh = useCallback(async () => {
-    if (!auth.currentUser) throw new Error('Sesi Firebase belum tersedia');
-    if (activeMenu === 'home' || activeMenu === 'ruang_kerja_dewan') {
-      const [prokerSnapshot, membersSnapshot] = await Promise.all([
-        getDocsFromServer(collection(db, 'program_kerja')),
-        getDocsFromServer(collection(db, 'public_members'))
-      ]);
-      const fetchedItems = prokerSnapshot.docs.map((item) => ({ ...item.data(), id: item.id } as ProgramKerjaItem));
-      const mergedItems = fetchedItems.length < 24 ? [...fetchedItems, ...DEFAULT_PROGRAM_KERJA_ITEMS.filter((fallback) => !fetchedItems.some((item) => item.id === fallback.id))] : fetchedItems;
-      setProgramKerjaList(mergedItems);
-      setAllMembers(membersSnapshot.docs.map((member) => ({ ...member.data(), uid: member.id } as UserAccount)));
-      return;
+  const handlePullMove = (event: React.TouchEvent<HTMLElement>) => {
+    if (pullStartY.current === null) return;
+    const currentY = event.touches[0]?.clientY;
+    if (currentY === undefined) return;
+    pullDistance.current = Math.max(0, currentY - pullStartY.current);
+    if (pullDistance.current >= 72 && Date.now() - pullStartedAt.current >= 3000) {
+      setIsPullReady(true);
     }
-    if (activeMenu === 'presensi') {
-      const canReadAllAttendance = auth.currentUser.emailVerified && auth.currentUser.email?.toLowerCase() === 'miralifa19@gmail.com';
-      const attendanceRecords = canReadAllAttendance
-        ? collection(db, 'attendance_records')
-        : query(collection(db, 'attendance_records'), where('userId', '==', auth.currentUser.uid));
-      await Promise.all([getDocsFromServer(collection(db, 'attendance_sessions')), getDocsFromServer(attendanceRecords)]);
-      return;
-    }
-    if (activeMenu === 'chat') {
-      await getDocsFromServer(collection(db, 'ambalan_chats'));
-      setChatRefreshToken((value) => value + 1);
-      return;
-    }
-    if (activeMenu === 'pengumuman') await getDocsFromServer(collection(db, 'ambalan_notifications'));
-  }, [activeMenu]);
+  };
 
-  const handleDewanListScreenChange = useCallback((isListScreen: boolean) => setIsDewanListScreen(isListScreen), []);
+  const handlePullEnd = (event: React.TouchEvent<HTMLElement>) => {
+    const startY = pullStartY.current;
+    const endY = event.changedTouches[0]?.clientY;
+    const shouldRefresh = isPullReady && startY !== null && endY !== undefined
+      && endY - startY >= 72 && mainScrollRef.current?.scrollTop === 0;
+    pullStartY.current = null;
+    pullDistance.current = 0;
+    if (pullHoldTimer.current !== null) window.clearTimeout(pullHoldTimer.current);
+    pullHoldTimer.current = null;
+    setIsPullReady(false);
+    if (!shouldRefresh) return;
+    setIsRefreshing(true);
+    setRefreshSequence((current) => current + 1);
+    window.setTimeout(() => setIsRefreshing(false), 650);
+  };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
+    <div className="h-screen min-h-0 overflow-hidden overscroll-y-none bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
         <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
       )}
       
       {/* Main Native App Container */}
-      <div className="w-full max-w-[480px] mx-auto min-h-screen bg-white flex flex-col relative">
+      <div className="w-full max-w-[480px] mx-auto h-full min-h-0 overflow-hidden bg-white flex flex-col relative">
         
         <ApkUpdater />
 
         {/* Dynamic Main Body Scroll View */}
         {activeMenu === 'home' && (
         <header className="pettalopo-topbar pettalopo-topbar-home">
-          <button type="button" className="pettalopo-member-shortcut" onClick={() => setActiveMenu('akun')} aria-label={isGoogleSignedIn ? "Buka Akun Saya" : "Masuk ke akun"}>
+          <button type="button" className="pettalopo-member-shortcut" onClick={() => { setIsAccountEditable(false); setActiveMenu('akun'); }} aria-label={isGoogleSignedIn ? "Buka Profil Saya" : "Masuk ke akun"}>
             <span className="pettalopo-member-avatar">
               {isGoogleSignedIn && profilePhoto && !profilePhotoFailed
                 ? <img src={profilePhoto} alt="" referrerPolicy="no-referrer" onError={() => setProfilePhotoFailed(true)} />
@@ -352,7 +365,7 @@ export default function App() {
                     <span>🛠️</span><span>Kelola Aplikasi</span>
                   </button>
                 )}
-                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setActiveMenu('akun'); }}>
+                <button type="button" onClick={() => { setIsQuickMenuOpen(false); setIsAccountEditable(true); setActiveMenu('akun'); }}>
                   <UserRound size={17} /><span>Akun</span>
                 </button>
               </div>
@@ -360,8 +373,19 @@ export default function App() {
           </div>
         </header>
         )}
-        <main ref={setMainScrollElement} className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28" style={{ overscrollBehaviorY: "contain" }}>
-          <PullToRefresh enabled={pullRefreshEnabled} scrollElement={mainScrollElement} onRefresh={handlePullRefresh}>
+        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd} style={{ minHeight: 0, height: 0, flex: '1 1 0%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain', touchAction: 'pan-y' }} className="min-h-0 p-3.5 sm:p-4 pt-3 bg-white pb-28">
+          {isPullReady && !isRefreshing && (
+            <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
+              <RefreshCw size={15} className="text-[#e51c24]" />
+              Lepaskan untuk memperbarui
+            </div>
+          )}
+          {isRefreshing && (
+            <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
+              <RefreshCw size={15} className="animate-spin text-[#e51c24]" />
+              Memperbarui data...
+            </div>
+          )}
           {activeMenu === 'home' && (
             <HomeView
               user={user}
@@ -397,7 +421,7 @@ export default function App() {
           {activeMenu === 'mabigus' && <ComingSoonView title="Mabigus" subtitle="Informasi Majelis Pembimbing Gugus Depan sedang disiapkan." icon="🛡️" onBackToDashboard={() => setActiveMenu('home')} />}
           {activeMenu === 'anggota_ambalan' && <AnggotaAmbalanView allMembers={allMembers} onBack={() => setActiveMenu('home')} />}
           {activeMenu === 'ruang_kerja_dewan' && isDewanAccount && (
-            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onListScreenChange={handleDewanListScreenChange} onBack={() => setActiveMenu('home')} />
+            <DewanAmbalanView currentUser={user} allMembers={allMembers} programKerjaList={programKerjaList} onUpdateProgramKerjaList={setProgramKerjaList} onBack={() => setActiveMenu('home')} />
           )}
 
           {activeMenu === 'sangga' && (
@@ -426,7 +450,6 @@ export default function App() {
             <ChatAmbalanView 
               currentUser={user} 
               programKerjaList={programKerjaList}
-              refreshToken={chatRefreshToken}
               onBack={() => setActiveMenu('home')}
             />
           )}
@@ -450,7 +473,7 @@ export default function App() {
           {activeMenu === 'pengaturan' && (
             <PengaturanView
               currentUser={user}
-              onNavigateToAkun={() => setActiveMenu('akun')}
+              onNavigateToAkun={() => { setIsAccountEditable(false); setActiveMenu('akun'); }}
             />
           )}
 
@@ -474,9 +497,10 @@ export default function App() {
           {activeMenu === 'akun' && (
             <AkunView
               user={user}
+              editable={isAccountEditable}
               onUpdateUser={(updated) => setUser(updated)}
               onLogout={handleLogout}
-              onBack={() => setActiveMenu('home')}
+              onBack={() => { setIsAccountEditable(false); setActiveMenu('home'); }}
             />
           )}
 
@@ -517,7 +541,6 @@ export default function App() {
               onBackToDashboard={() => setActiveMenu('home')}
             />
           )}
-          </PullToRefresh>
         </main>
 
         {activeMenu !== 'chat' && (

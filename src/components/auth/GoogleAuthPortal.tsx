@@ -125,9 +125,10 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
       if (hasGoogleProvider) {
         setNamaLengkap((current) => current || user.displayName || '');
-        // Muat profil setiap kali sesi Google dipulihkan, meskipun splash
-        // masih tampil dan portal login belum dibuka.
-        void finishLogin(user);
+        // Jangan menyelesaikan login sebelum portal benar-benar dibuka.
+        if (openRef.current) {
+          void finishLogin(user);
+        }
       }
     });
     return unsubscribe;
@@ -282,6 +283,19 @@ export const GoogleAuthPortal: React.FC<GooglePortalProps> = ({ open, onComplete
       }
     }
   };
+
+  // Jika sesi Google sudah dipulihkan sebelum splash selesai, lanjutkan
+  // pemeriksaan profil saat portal login dibuka.
+  useEffect(() => {
+    if (!open) return;
+    const currentUser = auth.currentUser;
+    const hasGoogleProvider = !!currentUser
+      && !currentUser.isAnonymous
+      && currentUser.providerData?.some((provider) => provider.providerId === 'google.com');
+    if (hasGoogleProvider) {
+      void finishLogin(currentUser);
+    }
+  }, [open]);
 
   const copyDomainToClipboard = () => {
     const domain = window.location.hostname;

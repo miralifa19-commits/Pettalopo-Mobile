@@ -291,13 +291,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-800">
+    <div className="h-[100dvh] min-h-0 overflow-hidden overscroll-y-none bg-white flex flex-col font-sans antialiased text-slate-800">
       {showPettalopoSplash && (
         <SplashScreen onFinish={() => setShowPettalopoSplash(false)} />
       )}
       
       {/* Main Native App Container */}
-      <div className="w-full max-w-[480px] mx-auto min-h-screen bg-white flex flex-col relative">
+      <div className="w-full max-w-[480px] mx-auto h-full min-h-0 overflow-hidden bg-white flex flex-col relative">
         
         <ApkUpdater />
 
@@ -344,7 +344,7 @@ export default function App() {
           </div>
         </header>
         )}
-        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd} style={{ overscrollBehaviorY: 'contain' }} className="flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
+        <main ref={mainScrollRef} onTouchStart={handlePullStart} onTouchEnd={handlePullEnd} style={{ minHeight: 0, overscrollBehaviorY: 'none', touchAction: 'pan-y' }} className="min-h-0 flex-1 p-3.5 sm:p-4 pt-3 overflow-y-auto bg-white pb-28">
           {isRefreshing && (
             <div className="flex items-center justify-center gap-2 py-2 text-[11px] font-semibold text-slate-500" role="status" aria-live="polite">
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-[#e51c24]" />

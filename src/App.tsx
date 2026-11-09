@@ -26,7 +26,7 @@ import { KelolaAplikasiView } from './components/views/KelolaAplikasiView';
 import { ApkUpdater } from './components/ApkUpdater';
 import { onAuthStateChanged, signOut as webSignOut } from 'firebase/auth';
 import { auth, db } from './firebase/config';
-import { collection, getDocsFromServer } from 'firebase/firestore';
+import { collection, getDocsFromServer, query, where } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { GoogleAuthPortal } from './components/auth/GoogleAuthPortal';
@@ -289,7 +289,10 @@ export default function App() {
       return;
     }
     if (activeMenu === 'presensi') {
-      await Promise.all([getDocsFromServer(collection(db, 'attendance_sessions')), getDocsFromServer(collection(db, 'attendance_records'))]);
+      const attendanceRecords = isAdmin
+        ? collection(db, 'attendance_records')
+        : query(collection(db, 'attendance_records'), where('userId', '==', auth.currentUser.uid));
+      await Promise.all([getDocsFromServer(collection(db, 'attendance_sessions')), getDocsFromServer(attendanceRecords)]);
       return;
     }
     if (activeMenu === 'chat') {

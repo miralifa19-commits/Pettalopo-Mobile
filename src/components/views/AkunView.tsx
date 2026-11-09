@@ -153,7 +153,7 @@ export const AkunView: React.FC<AkunViewProps> = ({
         namaLengkap: updatedUser.nama || '',
         tanggalLahir: updatedUser.tanggalLahir,
         ttl: updatedUser.ttl,
-        usia: updatedUser.usia,
+        ...(updatedUser.usia !== undefined ? { usia: updatedUser.usia } : {}),
         gudep: updatedUser.gudep || '',
         satuan: updatedUser.satuan || '',
         tingkat: updatedUser.tingkat || '',

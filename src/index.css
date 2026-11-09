@@ -635,3 +635,55 @@ html, body, #root {
   flex: 0 0 auto;
   padding-bottom: var(--safe-bottom) !important;
 }
+
+
+/* Header merah seragam untuk seluruh halaman selain Beranda. */
+.pettalopo-topbar-page{
+  position:relative!important;
+  top:auto!important;
+  z-index:40!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:calc(62px + env(safe-area-inset-top,0px))!important;
+  margin:0!important;
+  padding:calc(9px + env(safe-area-inset-top,0px)) 16px 9px!important;
+  flex:0 0 auto!important;
+  background:#e51c24!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.pettalopo-page-back{
+  display:grid!important;
+  place-items:center!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  flex:0 0 40px!important;
+  padding:0!important;
+  border:1.5px solid rgba(255,255,255,.9)!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  color:#fff!important;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.pettalopo-page-back:active{background:rgba(255,255,255,.16)!important}
+.pettalopo-page-back:focus-visible{outline:2px solid #fff!important;outline-offset:3px}
+.pettalopo-page-title{
+  min-width:0;
+  margin:0!important;
+  color:#fff!important;
+  font-size:clamp(16px,4.5vw,19px)!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+  letter-spacing:-.02em!important;
+  overflow-wrap:anywhere;
+}
+@media(max-width:380px){
+  .pettalopo-topbar-page{padding-left:13px!important;padding-right:13px!important;gap:10px!important}
+}

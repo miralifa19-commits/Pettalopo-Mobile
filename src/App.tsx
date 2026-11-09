@@ -326,7 +326,7 @@ export default function App() {
       )}
       
       {/* Main Native App Container */}
-      <div className="w-full max-w-[480px] mx-auto h-full min-h-0 overflow-hidden bg-white flex flex-col relative">
+      <div className="pettalopo-app-shell w-full max-w-[480px] mx-auto h-full min-h-0 overflow-hidden bg-white flex flex-col relative">
         
         <ApkUpdater />
 

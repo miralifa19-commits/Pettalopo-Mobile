@@ -620,3 +620,29 @@ html, body, #root {
   min-height: 0;
   overflow: hidden;
 }
+
+
+/* Unified Android safe-area handling: apply device insets once at the app shell. */
+:root {
+  --pettalopo-safe-area-top: env(safe-area-inset-top, 0px);
+  --pettalopo-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pettalopo-app-shell {
+  box-sizing: border-box;
+  padding-top: var(--pettalopo-safe-area-top);
+  padding-bottom: var(--pettalopo-safe-area-bottom);
+}
+.pettalopo-app-shell > main {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.pettalopo-app-shell > .pettalopo-bottom-nav {
+  position: sticky !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  margin: 0 auto;
+  flex: 0 0 auto;
+  padding-bottom: 8px !important;
+}

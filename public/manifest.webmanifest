@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Pettalopo Mobile",
+  "short_name": "Pettalopo",
+  "description": "Aplikasi resmi Ambalan La Surullah Petta Lopo.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#C81E28",
+  "icons": [
+    {
+      "src": "assets/pettalopo-logo.png",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,6 +1,12 @@
 name: Deploy Pettalopo Mobile Preview to GitHub Pages
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -47,6 +53,7 @@ jobs:
           path: dist
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     # Use a separate environment so branch restrictions on the existing
     # github-pages environment do not block the preview branch.
     environment:

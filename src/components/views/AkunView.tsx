@@ -348,8 +348,12 @@ export const AkunView: React.FC<AkunViewProps> = ({
                 alt="Pratinjau penyesuaian foto"
                 draggable={false}
                 onLoad={(event) => setCropImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
-                className="pointer-events-none absolute left-1/2 top-1/2 h-full w-full max-w-none object-cover"
-                style={{ transform: `translate(calc(-50% + ${cropOffset.x}px), calc(-50% + ${cropOffset.y}px)) scale(${cropZoom})` }}
+                className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+                style={{
+                  width: cropImageSize.width ? cropImageSize.width * (280 / Math.min(cropImageSize.width, cropImageSize.height)) : 280,
+                  height: cropImageSize.height ? cropImageSize.height * (280 / Math.min(cropImageSize.width, cropImageSize.height)) : 280,
+                  transform: `translate(calc(-50% + ${cropOffset.x}px), calc(-50% + ${cropOffset.y}px)) scale(${cropZoom})`
+                }}
               />
               <div className="pointer-events-none absolute inset-0 rounded-full border border-white/70" />
             </div>

@@ -147,7 +147,30 @@ export const AkunView: React.FC<AkunViewProps> = ({
       // Profil pribadi adalah sumber utama avatar dan data akun.
       // Jangan batalkan penyimpanan lokal jika direktori publik memiliki dokumen lama
       // yang tidak cocok dengan batasan field Firestore.
-      await setDoc(doc(db, 'users', signedInUser.uid), { ...updatedUser, updatedAt }, { merge: true });
+      const privateProfile = {
+        uid: signedInUser.uid,
+        nama: updatedUser.nama || '',
+        namaLengkap: updatedUser.nama || '',
+        tanggalLahir: updatedUser.tanggalLahir,
+        ttl: updatedUser.ttl,
+        ...(updatedUser.usia !== undefined ? { usia: updatedUser.usia } : {}),
+        gudep: updatedUser.gudep || '',
+        satuan: updatedUser.satuan || '',
+        tingkat: updatedUser.tingkat || '',
+        tingkatan: updatedUser.tingkatan || '',
+        sangga: updatedUser.sangga || '',
+        jabatan: updatedUser.jabatan || '',
+        nomorKta: updatedUser.nomorKta || '',
+        foto: updatedUser.foto || '',
+        fotoUrl: updatedUser.foto || '',
+        updatedAt
+      };
+      // Kirim hanya kolom profil yang boleh diedit anggota. Field hak akses
+      // tetap dikelola admin agar aturan Firestore tidak menolak seluruh simpanan.
+      if (new Blob([JSON.stringify(privateProfile)]).size > 900_000) {
+        throw Object.assign(new Error('Ukuran data profil terlalu besar.'), { code: 'resource-exhausted' });
+      }
+      await setDoc(doc(db, 'users', signedInUser.uid), privateProfile, { merge: true });
       onUpdateUser(updatedUser);
       setForm(updatedUser);
       setPhotoPreview(updatedUser.foto);
@@ -161,7 +184,15 @@ export const AkunView: React.FC<AkunViewProps> = ({
       setSaveSuccess('Perubahan profil berhasil disimpan.');
     } catch (error: any) {
       console.error('[AkunView] Gagal menyimpan profil:', error);
-      setSaveError('Profil belum berhasil disimpan. Periksa koneksi internet dan coba lagi.');
+      const code = String(error?.code || 'unknown').replace('firestore/', '');
+      const message = code === 'permission-denied'
+        ? 'Penyimpanan ditolak oleh aturan akses Firebase. Data profil belum tersimpan.'
+        : code === 'unavailable' || code === 'deadline-exceeded'
+        ? 'Koneksi ke Firebase terputus. Periksa internet lalu coba simpan kembali.'
+        : code === 'resource-exhausted'
+        ? 'Ukuran data profil terlalu besar. Kurangi ukuran foto lalu coba lagi.'
+        : 'Profil belum berhasil disimpan. Silakan coba kembali.';
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }

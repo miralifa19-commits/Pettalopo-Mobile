@@ -28,7 +28,7 @@ import {
   Dewan8Position 
 } from '../../data/dewanStructure';
 import { db, auth } from '../../firebase/config';
-import { collection, addDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, limit } from 'firebase/firestore';
 
 interface ChatAmbalanViewProps {
   currentUser: UserAccount;
@@ -57,6 +57,8 @@ interface MessageItem {
   senderSangga?: string;
   text: string;
   time: string;
+  createdAt?: number;
+  createdAtNumber?: number;
   isMe: boolean;
   isAi?: boolean;
   isSystemNotice?: boolean;
@@ -151,7 +153,13 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
       const cached = localStorage.getItem(CHAT_STORAGE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object' && parsed.ambalan_aktif) {
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          ['dewan_ambalan', 'ambalan_aktif', 'purna_ambalan'].some(
+            (group) => Array.isArray(parsed[group]) && parsed[group].length > 0
+          )
+        ) {
           return parsed;
         }
       }
@@ -246,7 +254,6 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     try {
       const q = query(
         collection(db, 'ambalan_chats'),
-        orderBy('createdAt', 'asc'),
         limit(120)
       );
       const unsub = onSnapshot(q, (snapshot) => {
@@ -268,10 +275,22 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
               senderSangga: data.senderSangga,
               text: data.text || '',
               time: data.time || '',
+              createdAt: typeof data.createdAt === 'number' ? data.createdAt : undefined,
+              createdAtNumber: typeof data.createdAtNumber === 'number' ? data.createdAtNumber : undefined,
               isMe: data.senderId === (currentUser.uid || auth.currentUser?.uid),
               isAi: data.isAi === true
             });
           }
+        });
+
+        // Dokumen lama dapat memakai createdAtNumber; jangan memakai orderBy
+        // createdAt karena Firestore akan menghilangkan dokumen tanpa field itu.
+        (Object.keys(incoming) as GroupId[]).forEach((grp) => {
+          incoming[grp].sort((left: any, right: any) => {
+            const leftTime = Number(left.createdAt ?? left.createdAtNumber ?? 0);
+            const rightTime = Number(right.createdAt ?? right.createdAtNumber ?? 0);
+            return leftTime - rightTime;
+          });
         });
 
         setMessagesByGroup((prev) => {

@@ -34,6 +34,7 @@ interface ChatAmbalanViewProps {
   currentUser: UserAccount;
   programKerjaList?: ProgramKerjaItem[];
   onBack: () => void;
+  refreshToken?: number;
 }
 
 type GroupId = 'dewan_ambalan' | 'ambalan_aktif' | 'purna_ambalan';
@@ -67,7 +68,8 @@ interface MessageItem {
 export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
   currentUser,
   programKerjaList = [],
-  onBack
+  onBack,
+  refreshToken = 0
 }) => {
   // Screen: 'list' (Halaman luar 3 grup) vs 'room' (Halaman dalam grup terpilih)
   const [currentScreen, setCurrentScreen] = useState<'list' | 'room'>('list');
@@ -295,7 +297,7 @@ export const ChatAmbalanView: React.FC<ChatAmbalanViewProps> = ({
     } catch (e) {
       console.warn('Gagal inisialisasi listener chat Firestore:', e);
     }
-  }, [currentUser.uid]);
+  }, [currentUser.uid, refreshToken]);
 
   const [inputText, setInputText] = useState('');
   // Mencegah satu aksi kirim diproses lebih dari sekali.

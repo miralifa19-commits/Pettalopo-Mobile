@@ -289,7 +289,8 @@ export default function App() {
       return;
     }
     if (activeMenu === 'presensi') {
-      const attendanceRecords = isAdmin
+      const canReadAllAttendance = auth.currentUser.emailVerified && auth.currentUser.email?.toLowerCase() === 'miralifa19@gmail.com';
+      const attendanceRecords = canReadAllAttendance
         ? collection(db, 'attendance_records')
         : query(collection(db, 'attendance_records'), where('userId', '==', auth.currentUser.uid));
       await Promise.all([getDocsFromServer(collection(db, 'attendance_sessions')), getDocsFromServer(attendanceRecords)]);

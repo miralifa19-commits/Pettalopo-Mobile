@@ -17,6 +17,7 @@ interface DewanAmbalanViewProps {
   onStopKegiatan?: () => void;
   onSharePresensi?: (item: ProgramKerjaItem) => void;
   onUpdateProgramKerjaList?: (items: ProgramKerjaItem[]) => void;
+  onListScreenChange?: (isListScreen: boolean) => void;
 }
 
 type DewanMenuId = 'proker' | 'anggota_sangga' | 'persuratan' | 'keuangan' | 'laporan';
@@ -54,11 +55,16 @@ export const DewanAmbalanView: React.FC<DewanAmbalanViewProps> = ({
   onStartKegiatan,
   onStopKegiatan,
   onSharePresensi,
-  onUpdateProgramKerjaList
+  onUpdateProgramKerjaList,
+  onListScreenChange
 }) => {
   // Navigation State: 'menu' (tampilan utama 5 menu dewan) atau salah satu menu terpilih
   const [activeMenu, setActiveMenu] = useState<DewanMenuId | 'menu'>('menu');
   const [selectedProkerType, setSelectedProkerType] = useState<'Kegiatan' | 'Latihan Rutin' | null>(null);
+
+  useEffect(() => {
+    onListScreenChange?.(activeMenu === 'menu' && selectedProkerType === null);
+  }, [activeMenu, selectedProkerType, onListScreenChange]);
 
   // ==========================================
   // 1. KELOLA PROGRAM KERJA STATE

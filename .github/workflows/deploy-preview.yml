@@ -1,0 +1,73 @@
+name: Deploy Pettalopo GitHub Pages Preview
+
+on:
+  push:
+    branches:
+      - feature/pull-to-refresh-scoped-1.14
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout current published app
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-src
+
+      - name: Checkout pull-to-refresh preview
+        uses: actions/checkout@v4
+        with:
+          ref: feature/pull-to-refresh-scoped-1.14
+          path: preview-src
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build current main site as the root page
+        working-directory: main-src
+        env:
+          GITHUB_PAGES: 'true'
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
+          npm run build
+
+      - name: Build feature preview under /preview/
+        working-directory: preview-src
+        env:
+          VITE_BASE_PATH: /Pettalopo-Mobile/preview/
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
+          npm run build
+
+      - name: Assemble site without replacing the existing app
+        run: |
+          mkdir -p site
+          cp -R main-src/dist/. site/
+          mkdir -p site/preview
+          cp -R preview-src/dist/. site/preview/
+          touch site/.nojekyll
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy preview and preserve the current root app
+        id: deployment
+        uses: actions/deploy-pages@v4
